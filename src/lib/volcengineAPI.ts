@@ -219,7 +219,7 @@ async function sign(params: {
  * @returns 生成任务ID
  */
 export const generateArtPhoto = async (
-  prompt: string = "请将这张照片转换为艺术照风格",
+  prompt: string = "参考图分工：图 1 为人脸参考图，图 2 为艺术风格参考图。要求：1:1 还原图 1 面部特征，严格复刻图 2 的姿势、风格、场景氛围和光影逻辑。色彩过渡均匀，背景禁用高饱和色。分辨率超高清（300dpi，像素≥2000×3000），确保细节清晰。禁止混淆两图特征，整体画面需通透自然，符合艺术照审美。",
   imageUrls: string[] = []
 ): Promise<string> => {
   try {
@@ -227,18 +227,12 @@ export const generateArtPhoto = async (
     const datetime = getDateTimeNow();
     const host = new URL(VOLCENGINE_ENDPOINT).host;
     
-    // 构造查询参数 (不包含Authorization相关参数)
-    const queryParams = {
-      Action: VOLCENGINE_ACTION,
-      Version: VOLCENGINE_VERSION,
-    };
-    
     // 构造请求体
     const requestBody: any = {
-      force_single: false,
+      force_single: true,
       max_ratio: 3,
       min_ratio: 0.33,
-      req_key: "art",
+      req_key: "jimeng_t2i_v40",
       scale: 0.5,
       size: 4194304,
       prompt: prompt
@@ -247,7 +241,16 @@ export const generateArtPhoto = async (
     // 如果提供了imageUrls，则添加到请求体中
     if (imageUrls && imageUrls.length > 0) {
       requestBody.image_urls = imageUrls.slice(0, 10); // 限制最多10张图片
-      requestBody.image_urls.push(`https://wms.webinfra.cloud/art-photos/template1.jpeg`); // 先手动插入参考图
+      // 确保始终有艺术风格参考图
+      if (requestBody.image_urls.length < 2) {
+        requestBody.image_urls.push(`https://wms.webinfra.cloud/art-photos/template1.jpeg`);
+      }
+    } else {
+      // 如果没有提供imageUrls，使用默认的图片
+      requestBody.image_urls = [
+        `https://wms.webinfra.cloud/art-photos/template1.jpeg`, // 默认人物照片
+        `https://wms.webinfra.cloud/art-photos/template1.jpeg`  // 默认艺术风格参考图
+      ];
     }
     
     // 构造headers
@@ -257,29 +260,48 @@ export const generateArtPhoto = async (
       'X-Date': datetime,
     };
     
-    // 签名参数
+    // 构造查询参数 (包含Authorization所需参数)
+    const queryParams = {
+      Action: VOLCENGINE_ACTION,
+      Version: VOLCENGINE_VERSION,
+      'X-Algorithm': 'HMAC-SHA256',
+      'X-Credential': `${VOLCENGINE_ACCESS_KEY_ID}/${datetime.substring(0, 8)}/${VOLCENGINE_REGION}/${VOLCENGINE_SERVICE_NAME}/request`,
+      'X-Date': datetime,
+      'X-Expires': '3600',
+      'X-NotSignBody': '1',
+      'X-SignedHeaders': 'content-type;host;x-date',
+      'X-SignedQueries': 'Action;Version;X-Algorithm;X-Credential;X-Date;X-Expires;X-NotSignBody;X-SignedHeaders;X-SignedQueries'
+    };
+    
+    // 用于签名的查询参数 (不包含Authorization相关参数)
+    const signQueryParams = {
+      Action: VOLCENGINE_ACTION,
+      Version: VOLCENGINE_VERSION,
+    };
+    
+    // 签名参数 - 当X-NotSignBody=1时，bodySha应为空字符串的哈希值
     const signParams = {
       headers,
-      query: queryParams,
+      query: signQueryParams,
       region: VOLCENGINE_REGION,
       serviceName: VOLCENGINE_SERVICE_NAME,
       method: 'POST',
       pathName: '/',
       accessKeyId: VOLCENGINE_ACCESS_KEY_ID,
       secretAccessKey: VOLCENGINE_SECRET_ACCESS_KEY,
-      needSignHeaderKeys: [],
-      bodySha: await hash(JSON.stringify(requestBody))
+      needSignHeaderKeys: ['content-type', 'host', 'x-date'],
+      bodySha: await hash('') // 当X-NotSignBody=1时，使用空字符串的哈希值
     };
     
     // 生成签名
     const authorization = await sign(signParams);
     
-    // 添加Authorization头
+    // 更新Authorization头
     headers['Authorization'] = authorization;
     
     // 发起请求 (查询参数直接附加在URL上)
     const queryString = queryParamsToString(queryParams);
-    const url = queryString ? `${VOLCENGINE_ENDPOINT}/?${queryString}` : `${VOLCENGINE_ENDPOINT}/`;
+    const url = `${VOLCENGINE_ENDPOINT}/?${queryString}`;
     
     const response = await fetch(url, {
       method: 'POST',
@@ -291,6 +313,7 @@ export const generateArtPhoto = async (
     
     // 检查API调用是否成功
     if (!response.ok || result?.code !== 0) {
+      console.error('火山引擎API调用失败:', result);
       throw new Error(result?.message || 'API调用失败');
     }
     
