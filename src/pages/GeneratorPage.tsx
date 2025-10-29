@@ -7,8 +7,8 @@ import HistoryItem from '../components/HistoryItem';
 import PaymentModal from '../components/PaymentModal';
 import HelpModal from '../components/HelpModal';
 import ImagePreviewModal from '../components/ImagePreviewModal';
-import { formatDateTime } from '../lib/utils';
-import { streamGenerateArtPhoto, processStreamResponse } from '../lib/cozeAPI';
+import { formatDateTime, uploadImageToOSS } from '../lib/utils';
+import { generateArtPhoto, getTaskStatus } from '../lib/volcengineAPI';
 
 // 定义历史记录项类型
 interface HistoryItemType {
@@ -19,6 +19,26 @@ interface HistoryItemType {
   isPaid: boolean;
   regenerateCount: number;
 }
+
+const PROMPT_TEXT = `参考图分工：​
+图 1：人物基础参考图（仅用于提取人脸核心特征，不含姿势 / 风格参考）​
+图 2：艺术风格参考图（仅用于复刻姿势、穿着风格、场景氛围、光影逻辑，不含人脸参考）​
+主体核心要求：​
+人脸特征：1:1 还原图 1（人物参考图）的面部轮廓、五官比例、肤色质感、发型细节，确保人脸辨识度无任何扭曲（如五官位置、面部痣 / 疤等特征需完全匹配）​
+姿势 / 风格：严格复刻图 2（艺术风格参考图）的肢体姿势（含肢体角度、动作幅度、姿态细节）、穿着风格（含衣物款式、纹理质感、搭配逻辑）、场景氛围（含场景类型、背景基调），需与图 2 风格完全统一​
+艺术风格规范（以图 2 为准）：​
+色彩：遵循图 2 的色彩调性，过渡均匀，主体与背景色调和谐；背景禁用高饱和色，避免抢夺人脸焦点，且背景质感需呼应图 2 的场景风格​
+统一性：仅保留图 2 的艺术风格（如柔和写实、简约高级等），禁止混入水彩、卡通、夸张滤镜等其他风格，确保整体艺术感连贯​
+画质与细节标准：​
+分辨率：超高清（300dpi，像素≥2000×3000），需清晰呈现：①图 1 人脸的发丝、皮肤纹理；②图 2 姿势的衣物褶皱、肢体线条；③图 2 背景的笔触 / 质感细节​
+光影：沿用图 2 的柔和光影逻辑（如侧光 / 柔光），人脸光影需自然衔接图 2 风格（无明显阴影死角），既突出图 2 姿势的立体感，又不破坏图 1 人脸的原有特征​
+背景：仅按图 2 的场景延伸逻辑处理（如室内配简约淡色墙面、室外配柔和自然背景），禁止添加无关元素，确保 “图 1 人脸 + 图 2 姿势” 为视觉中心​
+禁止项（必规避，防分工混淆）：​
+禁止用图 2 的人脸特征替代图 1（如改变图 1 五官比例、肤色）​
+禁止用图 1 的姿势 / 风格替代图 2（如调整图 2 的肢体角度、衣物款式）​
+禁止使用与图 2 调性冲突的颜色（如鲜艳红、亮绿）​
+禁止笔触不当（人脸模糊、姿势线条生硬），整体画面需通透自然，符合 “艺术照” 审美（非写实照片）​
+`;
 
 export default function GeneratorPage() {
   const navigate = useNavigate();
@@ -32,6 +52,7 @@ export default function GeneratorPage() {
   const [showImagePreviewModal, setShowImagePreviewModal] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [currentHistoryItem, setCurrentHistoryItem] = useState<HistoryItemType | null>(null);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<Record<string, string>>({}); // 用于缓存已上传图片的URL
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -121,21 +142,50 @@ export default function GeneratorPage() {
         setTimeout(() => reject(new Error('生成超时，请重试')), 30000)
       );
       
-      // 调用真实的Coze API生成艺术照
-      const stream = await streamGenerateArtPhoto(selectedImage);
+      // 检查图片是否已经上传过，避免重复上传
+      let imageUrl = uploadedImageUrls[selectedImage];
+      if (!imageUrl) {
+        // 上传图片到OSS
+        imageUrl = await uploadImageToOSS(selectedImage);
+        // 缓存已上传的图片URL
+        setUploadedImageUrls(prev => ({ ...prev, [selectedImage]: imageUrl }));
+      }
       
-      // 处理流式响应，获取生成的艺术照
-      const artPhotoUrl = await processStreamResponse(stream);
+      // 调用火山引擎API生成艺术照
+      const taskId = await generateArtPhoto(PROMPT_TEXT, [imageUrl]);
       
-      // 如果API调用成功，设置生成的图片
-      // 使用从流式响应中提取的URL，如果未提取到则使用原图作为示例
-      setGeneratedImage(artPhotoUrl || selectedImage);
+      // 模拟轮询获取结果（实际实现中需要根据API文档调整）
+      let artPhotoUrl = '';
+      const maxAttempts = 30;
+      let attempts = 0;
+      
+      while (attempts < maxAttempts) {
+        attempts++;
+        // 等待2秒再查询
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const statusResponse = await getTaskStatus(taskId);
+        if (statusResponse.data?.state === 'DONE') {
+          artPhotoUrl = statusResponse.data?.result?.image_url || selectedImage;
+          break;
+        } else if (statusResponse.data?.state === 'FAILED') {
+          throw new Error('艺术照生成失败');
+        }
+        // 如果还在处理中，继续轮询
+      }
+      
+      if (!artPhotoUrl) {
+        throw new Error('艺术照生成超时');
+      }
+      
+      // 设置生成的图片
+      setGeneratedImage(artPhotoUrl);
       
        // 保存到历史记录
       const newHistoryItem: HistoryItemType = {
         id: Date.now().toString(),
         originalImage: selectedImage,
-        generatedImage: artPhotoUrl || selectedImage, // 使用从流式响应中提取的URL
+        generatedImage: artPhotoUrl,
         createdAt: formatDateTime(new Date()),
         isPaid: false,
         regenerateCount: 3
@@ -166,15 +216,44 @@ export default function GeneratorPage() {
     setRegenerateCount(prev => prev - 1);
     
     try {
-      // 调用真实的Coze API重新生成艺术照
-      const stream = await streamGenerateArtPhoto(selectedImage || '');
+      // 检查图片是否已经上传过，避免重复上传
+      let imageUrl = uploadedImageUrls[selectedImage || ''];
+      if (!imageUrl && selectedImage) {
+        // 上传图片到OSS
+        imageUrl = await uploadImageToOSS(selectedImage);
+        // 缓存已上传的图片URL
+        setUploadedImageUrls(prev => ({ ...prev, [selectedImage]: imageUrl }));
+      }
       
-      // 处理流式响应，获取生成的艺术照
-      const artPhotoUrl = await processStreamResponse(stream);
+      // 调用火山引擎API重新生成艺术照
+      const taskId = await generateArtPhoto(PROMPT_TEXT, [imageUrl]);
       
-      // 如果API调用成功，设置生成的图片
-      // 使用从流式响应中提取的URL，如果未提取到则使用原图作为示例
-      setGeneratedImage(artPhotoUrl || selectedImage || '');
+      // 模拟轮询获取结果（实际实现中需要根据API文档调整）
+      let artPhotoUrl = '';
+      const maxAttempts = 30;
+      let attempts = 0;
+      
+      while (attempts < maxAttempts) {
+        attempts++;
+        // 等待2秒再查询
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const statusResponse = await getTaskStatus(taskId);
+        if (statusResponse.data?.state === 'DONE') {
+          artPhotoUrl = statusResponse.data?.result?.image_url || selectedImage || '';
+          break;
+        } else if (statusResponse.data?.state === 'FAILED') {
+          throw new Error('艺术照生成失败');
+        }
+        // 如果还在处理中，继续轮询
+      }
+      
+      if (!artPhotoUrl) {
+        throw new Error('艺术照生成超时');
+      }
+      
+      // 设置生成的图片
+      setGeneratedImage(artPhotoUrl);
       
       // 更新当前历史记录项的重生成次数
       if (currentHistoryItem) {

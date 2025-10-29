@@ -12,6 +12,7 @@
 
 - 安装 [Node.js](https://nodejs.org/en)
 - 安装 [pnpm](https://pnpm.io/installation)
+- 配置环境变量：复制 `.env.example` 文件为 `.env`，并填入火山引擎API的访问密钥
 
 ### 操作步骤
 

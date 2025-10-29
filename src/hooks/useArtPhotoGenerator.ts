@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { streamGenerateArtPhoto, processStreamResponse } from '../lib/cozeAPI';
+import { generateArtPhoto, getTaskStatus } from '../lib/volcengineAPI';
+import { uploadImageToOSS } from '../lib/utils';
 
 // 定义历史记录项类型
 export interface HistoryItemType {
@@ -23,6 +24,7 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
   const [regenerateCount, setRegenerateCount] = useState(3);
   const [historyItems, setHistoryItems] = useState<HistoryItemType[]>([]);
   const [currentHistoryItem, setCurrentHistoryItem] = useState<HistoryItemType | null>(null);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<Record<string, string>>({}); // 用于缓存已上传图片的URL
   
   // 从localStorage加载历史记录和重生成次数
   useEffect(() => {
@@ -68,20 +70,49 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
         setTimeout(() => reject(new Error('生成超时，请重试')), 30000)
       );
       
-      // 调用真实的Coze API生成艺术照
-      const stream = await streamGenerateArtPhoto(selectedImage);
+      // 检查图片是否已经上传过，避免重复上传
+      let imageUrl = uploadedImageUrls[selectedImage];
+      if (!imageUrl) {
+        // 上传图片到OSS
+        imageUrl = await uploadImageToOSS(selectedImage);
+        // 缓存已上传的图片URL
+        setUploadedImageUrls(prev => ({ ...prev, [selectedImage]: imageUrl }));
+      }
       
-      // 处理流式响应，获取生成的艺术照
-      const artPhotoUrl = await processStreamResponse(stream);
+      // 调用火山引擎API生成艺术照
+      const taskId = await generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl]);
       
-      // 如果API调用成功，设置生成的图片
-      // 使用从流式响应中提取的URL，如果未提取到则使用原图作为示例
-      setGeneratedImage(artPhotoUrl || selectedImage);
+      // 模拟轮询获取结果（实际实现中需要根据API文档调整）
+      let artPhotoUrl = '';
+      const maxAttempts = 30;
+      let attempts = 0;
+      
+      while (attempts < maxAttempts) {
+        attempts++;
+        // 等待2秒再查询
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const statusResponse = await getTaskStatus(taskId);
+        if (statusResponse.data?.state === 'DONE') {
+          artPhotoUrl = statusResponse.data?.result?.image_url || selectedImage;
+          break;
+        } else if (statusResponse.data?.state === 'FAILED') {
+          throw new Error('艺术照生成失败');
+        }
+        // 如果还在处理中，继续轮询
+      }
+      
+      if (!artPhotoUrl) {
+        throw new Error('艺术照生成超时');
+      }
+      
+      // 设置生成的图片
+      setGeneratedImage(artPhotoUrl);
       
       // 添加到历史记录
       const newHistoryItem = addToHistory({
         originalImage: selectedImage,
-        generatedImage: artPhotoUrl || selectedImage, // 使用从流式响应中提取的URL
+        generatedImage: artPhotoUrl,
         createdAt: new Date().toISOString(),
         isPaid: false,
         regenerateCount: 3
@@ -106,20 +137,49 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
     setRegenerateCount(prev => prev - 1);
     
     try {
-      // 调用真实的Coze API重新生成艺术照
-      const stream = await streamGenerateArtPhoto(selectedImage || '');
+      // 检查图片是否已经上传过，避免重复上传
+      let imageUrl = uploadedImageUrls[selectedImage || ''];
+      if (!imageUrl && selectedImage) {
+        // 上传图片到OSS
+        imageUrl = await uploadImageToOSS(selectedImage);
+        // 缓存已上传的图片URL
+        setUploadedImageUrls(prev => ({ ...prev, [selectedImage]: imageUrl }));
+      }
       
-      // 处理流式响应，获取生成的艺术照
-      const artPhotoUrl = await processStreamResponse(stream);
+      // 调用火山引擎API重新生成艺术照
+      const taskId = await generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl]);
       
-      // 如果API调用成功，设置生成的图片
-      // 使用从流式响应中提取的URL，如果未提取到则使用原图作为示例
-      setGeneratedImage(artPhotoUrl || selectedImage || '');
+      // 模拟轮询获取结果（实际实现中需要根据API文档调整）
+      let artPhotoUrl = '';
+      const maxAttempts = 30;
+      let attempts = 0;
+      
+      while (attempts < maxAttempts) {
+        attempts++;
+        // 等待2秒再查询
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const statusResponse = await getTaskStatus(taskId);
+        if (statusResponse.data?.state === 'DONE') {
+          artPhotoUrl = statusResponse.data?.result?.image_url || selectedImage || '';
+          break;
+        } else if (statusResponse.data?.state === 'FAILED') {
+          throw new Error('艺术照生成失败');
+        }
+        // 如果还在处理中，继续轮询
+      }
+      
+      if (!artPhotoUrl) {
+        throw new Error('艺术照生成超时');
+      }
+      
+      // 设置生成的图片
+      setGeneratedImage(artPhotoUrl);
       
       // 更新历史记录项
       if (currentHistoryItem) {
         updateHistoryItem(currentHistoryItem.id, {
-          generatedImage: artPhotoUrl || selectedImage || '',
+          generatedImage: artPhotoUrl,
           regenerateCount: regenerateCount - 1
         });
       }
