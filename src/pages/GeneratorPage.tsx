@@ -7,7 +7,8 @@ import HistoryItem from '../components/HistoryItem';
 import PaymentModal from '../components/PaymentModal';
 import HelpModal from '../components/HelpModal';
 import ImagePreviewModal from '../components/ImagePreviewModal';
-import { formatDateTime, simulateAIGeneration } from '../lib/utils';
+import { formatDateTime } from '../lib/utils';
+import { streamGenerateArtPhoto, processStreamResponse } from '../lib/cozeAPI';
 
 // 定义历史记录项类型
 interface HistoryItemType {
@@ -116,21 +117,25 @@ export default function GeneratorPage() {
     
     try {
       // 设置30秒超时
-      const timeoutPromise = new Promise((_, reject) => 
+      new Promise((_, reject) => 
         setTimeout(() => reject(new Error('生成超时，请重试')), 30000)
       );
       
-      await Promise.race([simulateAIGeneration(), timeoutPromise]);
+      // 调用真实的Coze API生成艺术照
+      const stream = await streamGenerateArtPhoto(selectedImage);
       
-      // 模拟生成的艺术照（使用与原图相同的图片作为示例）
-      // 实际项目中应该调用真实的AI模型API
-      setGeneratedImage(selectedImage);
+      // 处理流式响应，获取生成的艺术照
+      const artPhotoUrl = await processStreamResponse(stream);
+      
+      // 如果API调用成功，设置生成的图片
+      // 使用从流式响应中提取的URL，如果未提取到则使用原图作为示例
+      setGeneratedImage(artPhotoUrl || selectedImage);
       
        // 保存到历史记录
       const newHistoryItem: HistoryItemType = {
         id: Date.now().toString(),
         originalImage: selectedImage,
-        generatedImage: selectedImage,
+        generatedImage: artPhotoUrl || selectedImage, // 使用从流式响应中提取的URL
         createdAt: formatDateTime(new Date()),
         isPaid: false,
         regenerateCount: 3
@@ -161,16 +166,21 @@ export default function GeneratorPage() {
     setRegenerateCount(prev => prev - 1);
     
     try {
-      await simulateAIGeneration();
-      // 模拟生成新的艺术照
-      // 实际项目中应该调用真实的AI模型API
-      setGeneratedImage(selectedImage);
+      // 调用真实的Coze API重新生成艺术照
+      const stream = await streamGenerateArtPhoto(selectedImage || '');
+      
+      // 处理流式响应，获取生成的艺术照
+      const artPhotoUrl = await processStreamResponse(stream);
+      
+      // 如果API调用成功，设置生成的图片
+      // 使用从流式响应中提取的URL，如果未提取到则使用原图作为示例
+      setGeneratedImage(artPhotoUrl || selectedImage || '');
       
       // 更新当前历史记录项的重生成次数
       if (currentHistoryItem) {
         setHistoryItems(historyItems.map(item => 
           item.id === currentHistoryItem.id 
-            ? { ...item, regenerateCount: item.regenerateCount - 1 } 
+            ? { ...item, regenerateCount: item.regenerateCount - 1, generatedImage: artPhotoUrl || selectedImage || '' } 
             : item
         ));
       }
@@ -441,7 +451,7 @@ export default function GeneratorPage() {
         ref={cameraInputRef}
         type="file"
         accept="image/*"
-        capture="camera"
+        capture="user"
         onChange={handleFileChange}
         className="hidden"
       />

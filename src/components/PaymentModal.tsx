@@ -12,7 +12,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   onClose, 
   onComplete 
 }) => {
-  const handlePayment = (method: string) => {
+  const handlePayment = (_method: string) => {
     // 模拟支付过程
     setTimeout(() => {
       onComplete();

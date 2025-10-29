@@ -1,7 +1,7 @@
 # 后端 API 接口列表
 
 ## 概述
-本项目是一个基于 React 的前端应用，用于生成艺术照。项目中目前使用了一些外部 API 来获取示例图片，但核心的 AI 图片生成功能在代码中是模拟实现的，尚未接入真实的后端 API。
+本项目是一个基于 React 的前端应用，用于生成艺术照。项目中目前使用了一些外部 API 来获取示例图片，并已集成 Coze AI API 来实现真实的艺术照生成功能。
 
 ## 现有的外部 API 接口
 
@@ -23,6 +23,25 @@ GET https://space.coze.cn/api/coze_space/gen_image?image_size=square&prompt=Oil%
 **使用场景**:
 1. LandingPage.tsx - 获取艺术照风格示例图片
 2. GeneratorPage.tsx - 获取加载动画图片
+
+### 2. Coze AI 聊天机器人 API (已集成)
+用于生成艺术照的核心功能。
+
+**SDK**: [@coze/api](https://github.com/coze-dev/coze-js)
+
+**环境变量配置**:
+- `VITE_COZE_API_TOKEN`: Coze API Token
+- `VITE_COZE_BASE_URL`: Coze API 基础 URL (默认: https://api.coze.cn)
+- `VITE_COZE_BOT_ID`: Coze 机器人 ID
+
+**核心方法**:
+- `cozeClient.chat.create`: 创建聊天会话
+- `cozeClient.chat.stream`: 流式聊天
+
+**集成文件**:
+- [/src/lib/cozeAPI.ts](file:///Users/aaronzheng/Downloads/283465596418/src/lib/cozeAPI.ts): Coze API 封装
+- [/src/pages/GeneratorPage.tsx](file:///Users/aaronzheng/Downloads/283465596418/src/pages/GeneratorPage.tsx): 页面组件中的API调用
+- [/src/hooks/useArtPhotoGenerator.ts](file:///Users/aaronzheng/Downloads/283465596418/src/hooks/useArtPhotoGenerator.ts): Hook中的API调用
 
 ## 需要实现的后端 API 接口
 
@@ -153,7 +172,8 @@ GET https://space.coze.cn/api/coze_space/gen_image?image_size=square&prompt=Oil%
 ```
 
 ## 注意事项
-1. 当前后端功能是模拟实现的，需要开发真实的后端 API 来替换模拟逻辑
-2. 所有 API 接口应考虑安全性，添加身份验证和授权机制
-3. 图片上传和生成接口需要考虑文件大小限制和格式验证
-4. 支付接口需要集成第三方支付服务（如微信支付、支付宝等）
+1. Coze AI API 已集成到项目中，但需要根据实际的API文档调整参数和响应处理逻辑
+2. 环境变量配置文件 (.env) 不应提交到代码仓库，已添加到 .gitignore 中
+3. 所有 API 接口应考虑安全性，添加身份验证和授权机制
+4. 图片上传和生成接口需要考虑文件大小限制和格式验证
+5. 支付接口需要集成第三方支付服务（如微信支付、支付宝等）

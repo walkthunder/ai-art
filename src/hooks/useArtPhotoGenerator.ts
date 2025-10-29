@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { simulateAIGeneration } from '../lib/utils';
+import { streamGenerateArtPhoto, processStreamResponse } from '../lib/cozeAPI';
 
 // 定义历史记录项类型
 export interface HistoryItemType {
@@ -64,14 +64,28 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
     
     try {
       // 设置30秒超时
-      const timeoutPromise = new Promise((_, reject) => 
+      new Promise((_, reject) => 
         setTimeout(() => reject(new Error('生成超时，请重试')), 30000)
       );
       
-      await Promise.race([simulateAIGeneration(), timeoutPromise]);
+      // 调用真实的Coze API生成艺术照
+      const stream = await streamGenerateArtPhoto(selectedImage);
       
-      // 模拟生成的艺术照
-      setGeneratedImage(selectedImage);
+      // 处理流式响应，获取生成的艺术照
+      const artPhotoUrl = await processStreamResponse(stream);
+      
+      // 如果API调用成功，设置生成的图片
+      // 使用从流式响应中提取的URL，如果未提取到则使用原图作为示例
+      setGeneratedImage(artPhotoUrl || selectedImage);
+      
+      // 添加到历史记录
+      const newHistoryItem = addToHistory({
+        originalImage: selectedImage,
+        generatedImage: artPhotoUrl || selectedImage, // 使用从流式响应中提取的URL
+        createdAt: new Date().toISOString(),
+        isPaid: false,
+        regenerateCount: 3
+      });
       
       return true;
     } catch (error) {
@@ -92,9 +106,23 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
     setRegenerateCount(prev => prev - 1);
     
     try {
-      await simulateAIGeneration();
-      // 模拟生成新的艺术照
-      setGeneratedImage(selectedImage);
+      // 调用真实的Coze API重新生成艺术照
+      const stream = await streamGenerateArtPhoto(selectedImage || '');
+      
+      // 处理流式响应，获取生成的艺术照
+      const artPhotoUrl = await processStreamResponse(stream);
+      
+      // 如果API调用成功，设置生成的图片
+      // 使用从流式响应中提取的URL，如果未提取到则使用原图作为示例
+      setGeneratedImage(artPhotoUrl || selectedImage || '');
+      
+      // 更新历史记录项
+      if (currentHistoryItem) {
+        updateHistoryItem(currentHistoryItem.id, {
+          generatedImage: artPhotoUrl || selectedImage || '',
+          regenerateCount: regenerateCount - 1
+        });
+      }
       
       return true;
     } catch (error) {

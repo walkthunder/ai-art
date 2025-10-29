@@ -76,10 +76,14 @@ export default function LandingPage() {
               key={index}
               className="w-20 h-20 rounded-full overflow-hidden shadow-md border-2 border-white"
               whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: "spring", stiffness: 300 }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 * index, duration: 0.3 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 300,
+                delay: 0.2 * index, 
+                duration: 0.3 
+              }}
             >
               <img 
                 src={imageUrl} 
