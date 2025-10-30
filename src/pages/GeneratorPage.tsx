@@ -13,7 +13,7 @@ import { generateArtPhoto, getTaskStatus } from '../lib/volcengineAPI';
 // 定义历史记录项类型
 interface HistoryItemType {
   id: string;
-  originalImage: string;
+  originalImages: string[]; // 修改为数组以支持多张原始图片
   generatedImage: string;
   createdAt: string;
   isPaid: boolean;
@@ -46,6 +46,7 @@ export default function GeneratorPage() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]); // 改为数组以支持多张照片
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0); // 添加生成进度状态
   const [regenerateCount, setRegenerateCount] = useState(3);
   const [historyItems, setHistoryItems] = useState<HistoryItemType[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -201,12 +202,16 @@ export default function GeneratorPage() {
     }
     
     setIsGenerating(true);
+    setGenerationProgress(0); // 重置进度
     
     try {
       // 设置30秒超时
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('生成超时,请重试')), 30000)
       );
+      
+      // 更新进度
+      setGenerationProgress(20);
       
       // 上传所有图片到OSS
       const imageUrls: string[] = [];
@@ -222,6 +227,9 @@ export default function GeneratorPage() {
         imageUrls.push(imageUrl);
       }
       
+      // 更新进度
+      setGenerationProgress(40);
+      
       // 调用火山引擎API生成艺术照，传入所有上传的照片和选中的模板
       const taskId = await Promise.race([
         generateArtPhoto(PROMPT_TEXT, [imageUrls[0], selectedTemplate, ...imageUrls.slice(1)]),
@@ -231,6 +239,10 @@ export default function GeneratorPage() {
       if (!taskId || typeof taskId !== 'string') {
         throw new Error('生成任务ID获取失败');
       }
+      
+      // 更新进度
+      setGenerationProgress(60);
+      
       // 模拟轮询获取结果(实际实现中需要根据API文档调整)
       let artPhotoUrl = '';
       const maxAttempts = 30;
@@ -253,6 +265,9 @@ export default function GeneratorPage() {
         // 如果还在处理中,继续轮询
       }
       
+      // 更新进度
+      setGenerationProgress(80);
+      
       if (!artPhotoUrl) {
         throw new Error('艺术照生成超时');
       }
@@ -260,10 +275,13 @@ export default function GeneratorPage() {
       // 设置生成的图片
       setGeneratedImage(artPhotoUrl);
       
+      // 更新进度
+      setGenerationProgress(100);
+      
        // 保存到历史记录
       const newHistoryItem: HistoryItemType = {
         id: Date.now().toString(),
-        originalImage: selectedImages[0], // 使用第一张作为原始图片
+        originalImages: selectedImages, // 保存所有原始图片
         generatedImage: artPhotoUrl,
         createdAt: formatDateTime(new Date()),
         isPaid: false,
@@ -282,6 +300,8 @@ export default function GeneratorPage() {
       toast(error instanceof Error ? error.message : '生成失败,请重试');
     } finally {
       setIsGenerating(false);
+      // 2秒后重置进度
+      setTimeout(() => setGenerationProgress(0), 2000);
     }
   };
   
@@ -302,6 +322,7 @@ export default function GeneratorPage() {
     }
     
     setIsGenerating(true);
+    setGenerationProgress(0); // 重置进度
     setRegenerateCount(prev => prev - 1);
     
     try {
@@ -309,6 +330,9 @@ export default function GeneratorPage() {
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('生成超时,请重试')), 30000)
       );
+      
+      // 更新进度
+      setGenerationProgress(20);
       
       // 上传所有图片到OSS
       const imageUrls: string[] = [];
@@ -324,6 +348,9 @@ export default function GeneratorPage() {
         imageUrls.push(imageUrl);
       }
       
+      // 更新进度
+      setGenerationProgress(40);
+      
       // 调用火山引擎API重新生成艺术照
       const taskId = await Promise.race([
         generateArtPhoto(PROMPT_TEXT, [imageUrls[0], selectedTemplate, ...imageUrls.slice(1)]),
@@ -333,6 +360,9 @@ export default function GeneratorPage() {
       if (!taskId || typeof taskId !== 'string') {
         throw new Error('生成任务ID获取失败');
       }
+      
+      // 更新进度
+      setGenerationProgress(60);
 
       // 模拟轮询获取结果(实际实现中需要根据API文档调整)
       let artPhotoUrl = '';
@@ -355,12 +385,18 @@ export default function GeneratorPage() {
         // 如果还在处理中,继续轮询
       }
       
+      // 更新进度
+      setGenerationProgress(80);
+      
       if (!artPhotoUrl) {
         throw new Error('艺术照生成超时');
       }
       
       // 设置生成的图片
       setGeneratedImage(artPhotoUrl);
+      
+      // 更新进度
+      setGenerationProgress(100);
       
       // 更新当前历史记录项的重生成次数
       if (currentHistoryItem) {
@@ -376,6 +412,8 @@ export default function GeneratorPage() {
       setRegenerateCount(prev => prev + 1); // 恢复重生成次数
     } finally {
       setIsGenerating(false);
+      // 2秒后重置进度
+      setTimeout(() => setGenerationProgress(0), 2000);
     }
   };
   
@@ -402,8 +440,8 @@ export default function GeneratorPage() {
     setShowImagePreviewModal(true);
     setCurrentHistoryItem(item);
     setRegenerateCount(item.regenerateCount);
-    // 注意：这里我们只设置第一张图片作为selectedImages[0]，实际应用中可能需要保存所有图片
-    setSelectedImages([item.originalImage]);
+    // 恢复所有原始图片
+    setSelectedImages(item.originalImages);
     setGeneratedImage(item.generatedImage);
   };
   
@@ -418,7 +456,7 @@ export default function GeneratorPage() {
       return;
     }
     
-    setSelectedImages([item.originalImage]);
+    setSelectedImages(item.originalImages);
     setCurrentHistoryItem(item);
     setRegenerateCount(item.regenerateCount);
     handleRegenerate();
@@ -565,6 +603,15 @@ export default function GeneratorPage() {
               </div>
             )}
             
+            {!selectedTemplate && (
+              <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-yellow-700 text-sm">
+                  <i className="fas fa-exclamation-circle mr-2"></i>
+                  请选择一个模板作为艺术风格参考
+                </p>
+              </div>
+            )}
+            
             {showTemplateSelector && (
               <div className="mt-4">
                 <p className="text-gray-600 text-sm mb-3">选择一个模板作为艺术风格参考：</p>
@@ -618,6 +665,34 @@ export default function GeneratorPage() {
                 </>
               )}
             </button>
+            
+            {/* 进度条 */}
+            {isGenerating && (
+              <div className="mt-3">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-[#6B5CA5] h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${generationProgress}%` }}
+                  ></div>
+                </div>
+                <div className="text-right text-xs text-gray-500 mt-1">
+                  {generationProgress}%
+                </div>
+              </div>
+            )}
+            
+            {/* 提示信息 */}
+            {selectedImages.length === 0 && (
+              <p className="text-gray-500 text-sm mt-2 text-center">
+                请先上传或拍摄照片
+              </p>
+            )}
+            
+            {selectedImages.length > 0 && !selectedTemplate && (
+              <p className="text-gray-500 text-sm mt-2 text-center">
+                请选择一个模板
+              </p>
+            )}
             
             {currentHistoryItem && (
               <div className="mt-4 flex justify-between items-center">

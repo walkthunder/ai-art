@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 // 定义历史记录项类型
 interface HistoryItemType {
   id: string;
-  originalImage: string;
+  originalImages: string[]; // 修改为数组以支持多张原始图片
   generatedImage: string;
   createdAt: string;
   isPaid: boolean;

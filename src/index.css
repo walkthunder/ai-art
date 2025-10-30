@@ -66,3 +66,9 @@ button {
 input[type="file"] {
   display: none;
 }
+
+/* FontAwesome 图标 */
+.fas, .fab {
+  display: inline-block;
+  font-style: normal;
+}
