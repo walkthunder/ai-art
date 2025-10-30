@@ -246,11 +246,8 @@ export const generateArtPhoto = async (
         requestBody.image_urls.push(`https://wms.webinfra.cloud/art-photos/template1.jpeg`);
       }
     } else {
-      // 如果没有提供imageUrls，使用默认的图片
-      requestBody.image_urls = [
-        `https://wms.webinfra.cloud/art-photos/template1.jpeg`, // 默认人物照片
-        `https://wms.webinfra.cloud/art-photos/template1.jpeg`  // 默认艺术风格参考图
-      ];
+      // 如果没有提供imageUrls，则强制报错
+      throw new Error('请提供至少一张照片');
     }
     
     // 构造headers
