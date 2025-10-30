@@ -223,7 +223,7 @@ async function generateArtPhoto(prompt, imageUrls) {
         max_ratio: 3,
         min_ratio: 0.33,
         req_key: "jimeng_t2i_v40",
-        scale: 0.9,
+        scale: 0.8,
         size: 4194304,
         prompt: prompt
       };
