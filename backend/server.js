@@ -491,6 +491,8 @@ async function getTaskStatus(taskId) {
                 updatedAt: new Date().toISOString()
               };
               
+              // 动态导入历史记录模块并保存记录
+              const history = require('./history');
               history.addHistoryRecord(historyRecord);
               console.log('历史记录保存成功');
             }
