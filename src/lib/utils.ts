@@ -79,3 +79,23 @@ export async function getTemplateImages(): Promise<string[]> {
     ];
   }
 }
+
+// 批量上传图片到OSS
+export async function uploadImagesToOSS(base64Images: string[]): Promise<string[]> {
+  const imageUrls: string[] = [];
+  
+  // 限制最多上传10张图片
+  const imagesToUpload = base64Images.slice(0, 10);
+  
+  for (const image of imagesToUpload) {
+    try {
+      const url = await uploadImageToOSS(image);
+      imageUrls.push(url);
+    } catch (error) {
+      console.error('上传单张图片失败:', error);
+      throw error; // 如果任何一张图片上传失败，抛出错误
+    }
+  }
+  
+  return imageUrls;
+}

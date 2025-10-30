@@ -43,7 +43,7 @@ const PROMPT_TEXT = `我提供了至少两张参考图，分工:​
 
 export default function GeneratorPage() {
   const navigate = useNavigate();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]); // 改为数组以支持多张照片
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [regenerateCount, setRegenerateCount] = useState(3);
@@ -148,16 +148,38 @@ export default function GeneratorPage() {
     triggerVibration();
   };
   
+  // 修改文件处理函数以支持多文件
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setSelectedImage(event.target?.result as string);
-        setGeneratedImage(null); // 重置生成的图片
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // 限制最多上传10张照片
+      const filesToProcess = Array.from(files).slice(0, 10);
+      
+      const newImages: string[] = [];
+      let processedCount = 0;
+      
+      filesToProcess.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            newImages.push(event.target.result as string);
+            processedCount++;
+            
+            // 当所有文件都处理完后更新状态
+            if (processedCount === filesToProcess.length) {
+              setSelectedImages(prev => [...prev, ...newImages]);
+              setGeneratedImage(null); // 重置生成的图片
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+  
+  // 移除指定的照片
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
   
   const triggerVibration = () => {
@@ -168,7 +190,7 @@ export default function GeneratorPage() {
   };
   
   const handleGenerate = async () => {
-    if (!selectedImage) {
+    if (selectedImages.length === 0) {
       toast('请先上传或拍摄照片');
       return;
     }
@@ -186,18 +208,23 @@ export default function GeneratorPage() {
         setTimeout(() => reject(new Error('生成超时,请重试')), 30000)
       );
       
-      // 检查图片是否已经上传过,避免重复上传
-      let imageUrl = uploadedImageUrls[selectedImage];
-      if (!imageUrl) {
-        // 上传图片到OSS
-        imageUrl = await uploadImageToOSS(selectedImage);
-        // 缓存已上传的图片URL
-        setUploadedImageUrls(prev => ({ ...prev, [selectedImage]: imageUrl }));
+      // 上传所有图片到OSS
+      const imageUrls: string[] = [];
+      for (const image of selectedImages) {
+        // 检查图片是否已经上传过,避免重复上传
+        let imageUrl = uploadedImageUrls[image];
+        if (!imageUrl) {
+          // 上传图片到OSS
+          imageUrl = await uploadImageToOSS(image);
+          // 缓存已上传的图片URL
+          setUploadedImageUrls(prev => ({ ...prev, [image]: imageUrl }));
+        }
+        imageUrls.push(imageUrl);
       }
       
-      // 调用火山引擎API生成艺术照，传入两张图片：自己的照片和选中的模板
+      // 调用火山引擎API生成艺术照，传入所有上传的照片和选中的模板
       const taskId = await Promise.race([
-        generateArtPhoto(PROMPT_TEXT, [imageUrl, selectedTemplate]),
+        generateArtPhoto(PROMPT_TEXT, [imageUrls[0], selectedTemplate, ...imageUrls.slice(1)]),
         timeoutPromise
       ]);
       
@@ -218,7 +245,7 @@ export default function GeneratorPage() {
         // 检查火山引擎API返回的状态
         if (statusResponse?.Result?.data?.status === 'done') {
           // 优先使用上传到OSS的图片URL,如果没有则使用原始图片
-          artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImage || '';
+          artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImages[0] || '';
           break;
         } else if (statusResponse?.Result?.data?.status === 'failed') {
           throw new Error('艺术照生成失败');
@@ -236,7 +263,7 @@ export default function GeneratorPage() {
        // 保存到历史记录
       const newHistoryItem: HistoryItemType = {
         id: Date.now().toString(),
-        originalImage: selectedImage,
+        originalImage: selectedImages[0], // 使用第一张作为原始图片
         generatedImage: artPhotoUrl,
         createdAt: formatDateTime(new Date()),
         isPaid: false,
@@ -264,7 +291,7 @@ export default function GeneratorPage() {
       return;
     }
     
-    if (!selectedImage) {
+    if (selectedImages.length === 0) {
       toast('请先上传或拍摄照片');
       return;
     }
@@ -283,18 +310,23 @@ export default function GeneratorPage() {
         setTimeout(() => reject(new Error('生成超时,请重试')), 30000)
       );
       
-      // 检查图片是否已经上传过,避免重复上传
-      let imageUrl = uploadedImageUrls[selectedImage || ''];
-      if (!imageUrl && selectedImage) {
-        // 上传图片到OSS
-        imageUrl = await uploadImageToOSS(selectedImage);
-        // 缓存已上传的图片URL
-        setUploadedImageUrls(prev => ({ ...prev, [selectedImage]: imageUrl }));
+      // 上传所有图片到OSS
+      const imageUrls: string[] = [];
+      for (const image of selectedImages) {
+        // 检查图片是否已经上传过,避免重复上传
+        let imageUrl = uploadedImageUrls[image];
+        if (!imageUrl) {
+          // 上传图片到OSS
+          imageUrl = await uploadImageToOSS(image);
+          // 缓存已上传的图片URL
+          setUploadedImageUrls(prev => ({ ...prev, [image]: imageUrl }));
+        }
+        imageUrls.push(imageUrl);
       }
       
       // 调用火山引擎API重新生成艺术照
       const taskId = await Promise.race([
-        generateArtPhoto(PROMPT_TEXT, [imageUrl, selectedTemplate]),
+        generateArtPhoto(PROMPT_TEXT, [imageUrls[0], selectedTemplate, ...imageUrls.slice(1)]),
         timeoutPromise
       ]);
       
@@ -315,7 +347,7 @@ export default function GeneratorPage() {
         const statusResponse = await getTaskStatus(taskId);
         // 检查火山引擎API返回的状态
         if (statusResponse?.Result?.data?.status === 'done') {
-          artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImage || '';
+          artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImages[0] || '';
           break;
         } else if (statusResponse?.Result?.data?.status === 'failed') {
           throw new Error('艺术照生成失败');
@@ -334,7 +366,7 @@ export default function GeneratorPage() {
       if (currentHistoryItem) {
         setHistoryItems(historyItems.map(item => 
           item.id === currentHistoryItem.id 
-            ? { ...item, regenerateCount: item.regenerateCount - 1, generatedImage: artPhotoUrl || selectedImage || '' } 
+            ? { ...item, regenerateCount: item.regenerateCount - 1, generatedImage: artPhotoUrl || selectedImages[0] || '' } 
             : item
         ));
       }
@@ -370,7 +402,8 @@ export default function GeneratorPage() {
     setShowImagePreviewModal(true);
     setCurrentHistoryItem(item);
     setRegenerateCount(item.regenerateCount);
-    setSelectedImage(item.originalImage);
+    // 注意：这里我们只设置第一张图片作为selectedImages[0]，实际应用中可能需要保存所有图片
+    setSelectedImages([item.originalImage]);
     setGeneratedImage(item.generatedImage);
   };
   
@@ -385,7 +418,7 @@ export default function GeneratorPage() {
       return;
     }
     
-    setSelectedImage(item.originalImage);
+    setSelectedImages([item.originalImage]);
     setCurrentHistoryItem(item);
     setRegenerateCount(item.regenerateCount);
     handleRegenerate();
@@ -433,19 +466,23 @@ export default function GeneratorPage() {
           >
             <h2 className="text-lg font-semibold text-gray-800 mb-4">上传照片</h2>
             <div className="flex flex-col items-center space-y-4">
-              {selectedImage ? (
-                <div className="relative">
-                  <img 
-                    src={selectedImage} 
-                    alt="Selected" 
-                    className="w-48 h-48 object-cover rounded-lg border-2 border-[#6B5CA5]"
-                  />
-                  <button
-                    onClick={() => setSelectedImage(null)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
-                  >
-                    ×
-                  </button>
+              {selectedImages.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+                  {selectedImages.map((image, index) => (
+                    <div key={index} className="relative">
+                      <img 
+                        src={image} 
+                        alt={`Selected ${index + 1}`} 
+                        className="w-full h-32 object-cover rounded-lg border-2 border-[#6B5CA5]"
+                      />
+                      <button
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="w-48 h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
@@ -473,6 +510,7 @@ export default function GeneratorPage() {
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   accept="image/*"
+                  multiple // 支持多文件选择
                   className="hidden"
                 />
                 <input
@@ -481,9 +519,15 @@ export default function GeneratorPage() {
                   onChange={handleFileChange}
                   accept="image/*"
                   capture="environment"
+                  multiple // 支持多文件拍摄
                   className="hidden"
                 />
               </div>
+              {selectedImages.length > 0 && (
+                <p className="text-gray-500 text-sm">
+                  已选择 {selectedImages.length} 张照片
+                </p>
+              )}
             </div>
           </motion.div>
 
@@ -555,9 +599,9 @@ export default function GeneratorPage() {
           >
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || !selectedImage}
+              disabled={isGenerating || selectedImages.length === 0}
               className={`w-full py-3 rounded-lg font-medium flex items-center justify-center ${
-                isGenerating || !selectedImage 
+                isGenerating || selectedImages.length === 0
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                   : 'bg-gradient-to-r from-[#6B5CA5] to-[#8A7DB0] text-white hover:from-[#5A4B8C] hover:to-[#7A6CA0]'
               }`}
