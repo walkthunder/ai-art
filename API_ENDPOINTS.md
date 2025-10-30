@@ -13,16 +13,15 @@
 **环境变量配置**:
 - `VITE_VOLCENGINE_ACCESS_KEY_ID`: 火山引擎访问密钥ID
 - `VITE_VOLCENGINE_SECRET_ACCESS_KEY`: 火山引擎私有访问密钥
-- `VITE_VOLCENGINE_SECURITY_TOKEN`: 火山引擎安全令牌
 
 **核心方法**:
 - `generateArtPhoto`: 提交艺术照生成任务
 - `getTaskStatus`: 查询任务状态
 
 **集成文件**:
-- [/src/lib/volcengineAPI.ts](file:///Users/penghuizheng/Projects/ai-art/src/lib/volcengineAPI.ts): 火山引擎 API 封装
-- [/src/pages/GeneratorPage.tsx](file:///Users/penghuizheng/Projects/ai-art/src/pages/GeneratorPage.tsx): 页面组件中的API调用
-- [/src/hooks/useArtPhotoGenerator.ts](file:///Users/penghuizheng/Projects/ai-art/src/hooks/useArtPhotoGenerator.ts): Hook中的API调用
+- [/src/lib/volcengineAPI.ts](file:///Users/aaronzheng/Downloads/283465596418/src/lib/volcengineAPI.ts): 火山引擎 API 封装
+- [/src/pages/GeneratorPage.tsx](file:///Users/aaronzheng/Downloads/283465596418/src/pages/GeneratorPage.tsx): 页面组件中的API调用
+- [/src/hooks/useArtPhotoGenerator.ts](file:///Users/aaronzheng/Downloads/283465596418/src/hooks/useArtPhotoGenerator.ts): Hook中的API调用
 
 ## 需要实现的后端 API 接口
 

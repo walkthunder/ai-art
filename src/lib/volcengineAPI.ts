@@ -11,6 +11,11 @@ const VOLCENGINE_REGION = 'cn-beijing';
 const VOLCENGINE_ACCESS_KEY_ID = import.meta.env.VITE_VOLCENGINE_ACCESS_KEY_ID as string;
 const VOLCENGINE_SECRET_ACCESS_KEY = import.meta.env.VITE_VOLCENGINE_SECRET_ACCESS_KEY as string;
 
+// 验证环境变量是否已设置
+if (!VOLCENGINE_ACCESS_KEY_ID || !VOLCENGINE_SECRET_ACCESS_KEY) {
+  console.warn('警告: 火山引擎API的访问密钥未设置或为空，请检查.env文件中的配置');
+}
+
 // 不参与加签过程的 header key
 const HEADER_KEYS_TO_IGNORE = new Set([
   "authorization",
@@ -79,7 +84,9 @@ async function hash(s: string) {
 function uriEscape(str: string) {
   try {
     return encodeURIComponent(str)
-      .replace(/[^A-Za-z0-9_.~\-%]+/g, escape)
+      .replace(/[^A-Za-z0-9_.~\-%]+/g, (match) => {
+        return match.split('').map(char => `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`).join('');
+      })
       .replace(/[*]/g, (ch) => `%${ch.charCodeAt(0).toString(16).toUpperCase()}`);
   } catch (e) {
     return '';
@@ -223,6 +230,11 @@ export const generateArtPhoto = async (
   imageUrls: string[] = []
 ): Promise<string> => {
   try {
+    // 检查环境变量是否已设置
+    if (!VOLCENGINE_ACCESS_KEY_ID || !VOLCENGINE_SECRET_ACCESS_KEY) {
+      throw new Error('火山引擎API的访问密钥未设置，请检查.env文件中的配置');
+    }
+    
     // 准备请求参数
     const datetime = getDateTimeNow();
     const host = new URL(VOLCENGINE_ENDPOINT).host;
@@ -300,25 +312,46 @@ export const generateArtPhoto = async (
     const queryString = queryParamsToString(queryParams);
     const url = `${VOLCENGINE_ENDPOINT}/?${queryString}`;
     
+    console.log('火山引擎API请求URL:', url);
+    console.log('请求头:', headers);
+    console.log('请求体:', JSON.stringify(requestBody, null, 2));
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(requestBody)
     });
     
+    console.log('响应状态:', response.status);
+    console.log('响应头:', response.headers);
+    
     const result = await response.json();
     
+    console.log('响应体:', JSON.stringify(result, null, 2));
+    
     // 检查API调用是否成功
-    if (!response.ok || result?.code !== 0) {
-      console.error('火山引擎API调用失败:', result);
-      throw new Error(result?.message || 'API调用失败');
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('API调用未授权，请检查访问密钥是否正确');
+      } else if (response.status === 403) {
+        throw new Error('API调用被禁止，请检查访问密钥权限');
+      } else {
+        throw new Error(`API调用失败，状态码: ${response.status}`);
+      }
+    }
+    
+    if (result?.code !== 0) {
+      throw new Error(result?.message || `API调用失败，错误码: ${result?.code}`);
     }
     
     // 返回任务ID
     return result.data?.task_id || '';
   } catch (error) {
     console.error('火山引擎API调用失败:', error);
-    throw new Error('艺术照生成失败，请稍后重试');
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error('网络请求失败，可能是由于CORS策略或网络连接问题');
+    }
+    throw new Error(error instanceof Error ? error.message : '艺术照生成失败，请稍后重试');
   }
 };
 
