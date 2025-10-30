@@ -491,7 +491,7 @@ async function getTaskStatus(taskId) {
                 updatedAt: new Date().toISOString()
               };
               
-              addHistoryRecord(historyRecord);
+              history.addHistoryRecord(historyRecord);
               console.log('历史记录保存成功');
             }
             
@@ -668,10 +668,10 @@ app.post('/api/upload-image', async (req, res) => {
 // 获取所有历史记录端点
 app.get('/api/history', async (req, res) => {
   try {
-    const history = getAllHistoryRecords();
+    const historyRecords = require('./history').getAllHistoryRecords();
     res.json({ 
       success: true, 
-      data: history 
+      data: historyRecords 
     });
   } catch (error) {
     console.error('获取历史记录失败:', error);
@@ -694,7 +694,7 @@ app.get('/api/history/:taskId', async (req, res) => {
       });
     }
     
-    const record = findHistoryRecordByTaskId(taskId);
+    const record = require('./history').findHistoryRecordByTaskId(taskId);
     if (!record) {
       return res.status(404).json({ 
         error: '未找到记录', 
@@ -722,4 +722,6 @@ app.listen(PORT, () => {
   console.log(`生成艺术照端点: http://localhost:${PORT}/api/generate-art-photo`);
   console.log(`查询任务状态端点: http://localhost:${PORT}/api/task-status/:taskId`);
   console.log(`上传图片端点: http://localhost:${PORT}/api/upload-image`);
+  console.log(`获取历史记录端点: http://localhost:${PORT}/api/history`);
+  console.log(`根据任务ID获取历史记录端点: http://localhost:${PORT}/api/history/:taskId`);
 });
