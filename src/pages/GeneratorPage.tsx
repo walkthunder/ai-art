@@ -20,24 +20,24 @@ interface HistoryItemType {
   regenerateCount: number;
 }
 
-const PROMPT_TEXT = `参考图分工：​
-图 1：人物基础参考图（仅用于提取人脸核心特征，不含姿势 / 风格参考）​
-图 2：艺术风格参考图（仅用于复刻姿势、穿着风格、场景氛围、光影逻辑，不含人脸参考）​
-主体核心要求：​
-人脸特征：1:1 还原图 1（人物参考图）的面部轮廓、五官比例、肤色质感、发型细节，确保人脸辨识度无任何扭曲（如五官位置、面部痣 / 疤等特征需完全匹配）​
-姿势 / 风格：严格复刻图 2（艺术风格参考图）的肢体姿势（含肢体角度、动作幅度、姿态细节）、穿着风格（含衣物款式、纹理质感、搭配逻辑）、场景氛围（含场景类型、背景基调），需与图 2 风格完全统一​
-艺术风格规范（以图 2 为准）：​
-色彩：遵循图 2 的色彩调性，过渡均匀，主体与背景色调和谐；背景禁用高饱和色，避免抢夺人脸焦点，且背景质感需呼应图 2 的场景风格​
-统一性：仅保留图 2 的艺术风格（如柔和写实、简约高级等），禁止混入水彩、卡通、夸张滤镜等其他风格，确保整体艺术感连贯​
-画质与细节标准：​
-分辨率：超高清（300dpi，像素≥2000×3000），需清晰呈现：①图 1 人脸的发丝、皮肤纹理；②图 2 姿势的衣物褶皱、肢体线条；③图 2 背景的笔触 / 质感细节​
-光影：沿用图 2 的柔和光影逻辑（如侧光 / 柔光），人脸光影需自然衔接图 2 风格（无明显阴影死角），既突出图 2 姿势的立体感，又不破坏图 1 人脸的原有特征​
-背景：仅按图 2 的场景延伸逻辑处理（如室内配简约淡色墙面、室外配柔和自然背景），禁止添加无关元素，确保 “图 1 人脸 + 图 2 姿势” 为视觉中心​
-禁止项（必规避，防分工混淆）：​
-禁止用图 2 的人脸特征替代图 1（如改变图 1 五官比例、肤色）​
-禁止用图 1 的姿势 / 风格替代图 2（如调整图 2 的肢体角度、衣物款式）​
-禁止使用与图 2 调性冲突的颜色（如鲜艳红、亮绿）​
-禁止笔触不当（人脸模糊、姿势线条生硬），整体画面需通透自然，符合 “艺术照” 审美（非写实照片）​
+const PROMPT_TEXT = `我提供了两张参考图，分工:​
+图0:人物基础参考图(真实人物照片，仅用于提取人脸核心特征,不含姿势/风格参考)​
+图1:艺术风格参考图(文件名以template开始,仅用于复刻姿势、穿着风格、场景氛围、光影逻辑,不含人脸参考)​
+主体核心要求:​
+人脸特征:1:1 还原图0(人物参考图)的面部轮廓、五官比例、肤色质感、发型细节,确保人脸辨识度无任何扭曲(如五官位置、面部痣/疤等特征需完全匹配)​
+姿势/风格:严格复刻图1(艺术风格参考图)的肢体姿势(含肢体角度、动作幅度、姿态细节)、穿着风格(含衣物款式、纹理质感、搭配逻辑)、场景氛围(含场景类型、背景基调),需与图1 风格完全统一​
+艺术风格规范(以图1 为准):​
+色彩:遵循图1 的色彩调性,过渡均匀,主体与背景色调和谐；背景禁用高饱和色,避免抢夺人脸焦点,且背景质感需呼应图1 的场景风格​
+统一性:仅保留图1 的艺术风格(如柔和写实、简约高级等),禁止混入水彩、卡通、夸张滤镜等其他风格,确保整体艺术感连贯​
+画质与细节标准:​
+分辨率:超高清(300dpi,像素≥2000×3000),需清晰呈现:①图0 人脸；②图1 姿势的衣物褶皱、肢体线条；③图1 背景的笔触/质感细节​
+光影:沿用图1 的柔和光影逻辑(如侧光/柔光),人脸光影需自然衔接图1 风格(无明显阴影死角),既突出图1 姿势的立体感,又不破坏图0 人脸的原有特征​
+背景:仅按图1 的场景延伸逻辑处理(如室内配简约淡色墙面、室外配柔和自然背景),禁止添加无关元素,确保 “图0 人脸 + 图1 姿势” 为视觉中心​
+禁止项:​
+禁止用图1 的人脸特征替代图0(如改变图0 五官比例、肤色)​
+禁止用图0 的姿势/风格替代图1(如调整图1 的肢体角度、衣物款式)​
+禁止使用与图1 调性冲突的颜色(如鲜艳红、亮绿)​
+禁止笔触不当(人脸模糊、姿势线条生硬),整体画面需通透自然,符合 “艺术照” 审美
 `;
 
 export default function GeneratorPage() {
@@ -70,7 +70,7 @@ export default function GeneratorPage() {
     }
   }, []);
   
-   // 保存历史记录和重生成次数到localStorage，限制历史记录数量
+   // 保存历史记录和重生成次数到localStorage,限制历史记录数量
   useEffect(() => {
     try {
       // 限制历史记录最多保存10条
@@ -139,10 +139,10 @@ export default function GeneratorPage() {
     try {
       // 设置30秒超时
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('生成超时，请重试')), 30000)
+        setTimeout(() => reject(new Error('生成超时,请重试')), 30000)
       );
       
-      // 检查图片是否已经上传过，避免重复上传
+      // 检查图片是否已经上传过,避免重复上传
       let imageUrl = uploadedImageUrls[selectedImage];
       if (!imageUrl) {
         // 上传图片到OSS
@@ -157,7 +157,10 @@ export default function GeneratorPage() {
         timeoutPromise
       ]);
       
-      // 模拟轮询获取结果（实际实现中需要根据API文档调整）
+      if (!taskId || typeof taskId !== 'string') {
+        throw new Error('生成任务ID获取失败');
+      }
+      // 模拟轮询获取结果(实际实现中需要根据API文档调整)
       let artPhotoUrl = '';
       const maxAttempts = 30;
       let attempts = 0;
@@ -165,16 +168,18 @@ export default function GeneratorPage() {
       while (attempts < maxAttempts) {
         attempts++;
         // 等待2秒再查询
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 6000));
         
         const statusResponse = await getTaskStatus(taskId);
-        if (statusResponse.data?.state === 'DONE') {
-          artPhotoUrl = statusResponse.data?.result?.image_url || selectedImage;
+        // 检查火山引擎API返回的状态
+        if (statusResponse?.Result?.data?.status === 'done') {
+          // 优先使用上传到OSS的图片URL,如果没有则使用原始图片
+          artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImage || '';
           break;
-        } else if (statusResponse.data?.state === 'FAILED') {
+        } else if (statusResponse?.Result?.data?.status === 'failed') {
           throw new Error('艺术照生成失败');
         }
-        // 如果还在处理中，继续轮询
+        // 如果还在处理中,继续轮询
       }
       
       if (!artPhotoUrl) {
@@ -203,7 +208,7 @@ export default function GeneratorPage() {
       setCurrentHistoryItem(newHistoryItem);
       
     } catch (error) {
-      toast(error instanceof Error ? error.message : '生成失败，请重试');
+      toast(error instanceof Error ? error.message : '生成失败,请重试');
     } finally {
       setIsGenerating(false);
     }
@@ -221,10 +226,10 @@ export default function GeneratorPage() {
     try {
       // 设置30秒超时
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('生成超时，请重试')), 30000)
+        setTimeout(() => reject(new Error('生成超时,请重试')), 30000)
       );
       
-      // 检查图片是否已经上传过，避免重复上传
+      // 检查图片是否已经上传过,避免重复上传
       let imageUrl = uploadedImageUrls[selectedImage || ''];
       if (!imageUrl && selectedImage) {
         // 上传图片到OSS
@@ -239,7 +244,11 @@ export default function GeneratorPage() {
         timeoutPromise
       ]);
       
-      // 模拟轮询获取结果（实际实现中需要根据API文档调整）
+      if (!taskId || typeof taskId !== 'string') {
+        throw new Error('生成任务ID获取失败');
+      }
+
+      // 模拟轮询获取结果(实际实现中需要根据API文档调整)
       let artPhotoUrl = '';
       const maxAttempts = 30;
       let attempts = 0;
@@ -250,13 +259,15 @@ export default function GeneratorPage() {
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         const statusResponse = await getTaskStatus(taskId);
-        if (statusResponse.data?.state === 'DONE') {
-          artPhotoUrl = statusResponse.data?.result?.image_url || selectedImage || '';
+        // 检查火山引擎API返回的状态
+        if (statusResponse?.Result?.data?.status === 'done') {
+          // 优先使用上传到OSS的图片URL,如果没有则使用原始图片
+          artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImage || '';
           break;
-        } else if (statusResponse.data?.state === 'FAILED') {
+        } else if (statusResponse?.Result?.data?.status === 'failed') {
           throw new Error('艺术照生成失败');
         }
-        // 如果还在处理中，继续轮询
+        // 如果还在处理中,继续轮询
       }
       
       if (!artPhotoUrl) {
@@ -276,7 +287,7 @@ export default function GeneratorPage() {
       }
       
     } catch (error) {
-      toast('重生成失败，请重试');
+      toast('重生成失败,请重试');
       setRegenerateCount(prev => prev + 1); // 恢复重生成次数
     } finally {
       setIsGenerating(false);
@@ -401,7 +412,7 @@ export default function GeneratorPage() {
             
             {/* 操作提示 */}
             <p className="text-xs text-gray-500 mt-3 text-center">
-              支持 JPG/PNG 格式，照片清晰效果更佳
+              支持 JPG/PNG 格式,照片清晰效果更佳
             </p>
           </motion.div>
           
@@ -492,7 +503,7 @@ export default function GeneratorPage() {
             
             {/* 收费提示 */}
             <p className="text-xs text-gray-500 mt-3 text-center">
-              3 次重生成算 1 次收费，支付后可保存艺术照
+              3 次重生成算 1 次收费,支付后可保存艺术照
             </p>
           </motion.div>
         </div>

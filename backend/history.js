@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // 历史记录文件路径
-const HISTORY_FILE = path.join(__dirname, 'history.json');
+const HISTORY_FILE = path.join(__dirname, '..', 'db', 'history.json');
 
 /**
  * 读取历史记录

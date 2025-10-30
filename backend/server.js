@@ -327,8 +327,27 @@ async function generateArtPhoto(prompt, imageUrls) {
               return;
             }
             
+            // 获取任务ID
+            const taskId = result.Result.data?.task_id || '';
+            
+            // 记录新创建的任务
+            if (taskId) {
+              const historyRecord = {
+                taskId: taskId,
+                originalImageUrls: imageUrls || [],
+                generatedImageUrls: [], // 初始为空，等任务完成后再填充
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+              
+              // 保存到历史记录
+              const history = require('./history');
+              history.addHistoryRecord(historyRecord);
+              console.log(`新任务 ${taskId} 已记录`);
+            }
+            
             // 返回任务ID
-            resolve(result.Result.data?.task_id || '');
+            resolve(taskId);
           } catch (parseError) {
             console.error('解析响应失败:', parseError);
             reject(new Error(`解析响应失败: ${parseError.message}`));
@@ -362,6 +381,25 @@ async function getTaskStatus(taskId) {
       // 检查环境变量是否已设置
       if (!process.env.VOLCENGINE_ACCESS_KEY_ID || !process.env.VOLCENGINE_SECRET_ACCESS_KEY) {
         throw new Error('火山引擎API的访问密钥未设置，请检查.env文件中的配置');
+      }
+      
+      // 首先检查是否已经有完成的任务记录
+      const history = require('./history');
+      const existingRecord = history.findHistoryRecordByTaskId(taskId);
+      if (existingRecord && existingRecord.generatedImageUrls && existingRecord.generatedImageUrls.length > 0) {
+        // 如果任务已完成且有图片URL，直接返回
+        console.log(`任务 ${taskId} 已完成，返回缓存结果`);
+        return resolve({
+          ResponseMetadata: {},
+          Result: {
+            code: 10000,
+            data: {
+              status: "done",
+              uploaded_image_urls: existingRecord.generatedImageUrls
+            },
+            message: "Success"
+          }
+        });
       }
       
       // 准备请求参数
@@ -432,7 +470,7 @@ async function getTaskStatus(taskId) {
             const result = JSON.parse(data);
             console.log('查询任务状态响应状态:', res.statusCode);
             console.log('查询任务状态响应headers:', JSON.stringify(res.headers, null, 2));
-            console.log('查询任务状态响应体:', JSON.stringify(result, null, 2));
+            // console.log('查询任务状态响应体:', JSON.stringify(result, null, 2));
             
             // 检查API调用是否成功
             if (res.statusCode !== 200) {
@@ -457,9 +495,11 @@ async function getTaskStatus(taskId) {
               return;
             }
             
-            // 处理火山引擎返回的Base64图片数据
-            if (result?.Result?.data?.binary_data_base64 && Array.isArray(result.Result.data.binary_data_base64)) {
-              console.log(`检测到 ${result.Result.data.binary_data_base64.length} 张图片需要上传到OSS`);
+            // 只有当任务完成时才上传图片
+            if (result?.Result?.data?.status === 'done' && 
+                result?.Result?.data?.binary_data_base64 && 
+                Array.isArray(result.Result.data.binary_data_base64)) {
+              console.log(`检测到任务 ${taskId} 已完成，开始上传 ${result.Result.data.binary_data_base64.length} 张图片到OSS`);
               
               // 上传每张图片到OSS
               const uploadedImageUrls = [];
@@ -497,8 +537,8 @@ async function getTaskStatus(taskId) {
               console.log('历史记录保存成功');
             }
             
-            // 返回任务状态信息
-            resolve(result || {});
+            // 返回完整的任务状态信息
+            resolve(result);
           } catch (parseError) {
             console.error('解析响应失败:', parseError);
             reject(new Error(`解析响应失败: ${parseError.message}`));
@@ -568,6 +608,7 @@ async function uploadImageToOSS(base64Image) {
         } else {
           // 构造可访问的文件URL
           const url = `https://${COS_DOMAIN}/${fileName}`;
+          console.error('上传到OSS成功:', url);
           resolve(url);
         }
       });

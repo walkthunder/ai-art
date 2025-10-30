@@ -96,10 +96,12 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         const statusResponse = await getTaskStatus(taskId);
-        if (statusResponse.data?.state === 'DONE') {
-          artPhotoUrl = statusResponse.data?.result?.image_url || selectedImage;
+        // 检查火山引擎API返回的状态
+        if (statusResponse?.Result?.data?.status === 'done') {
+          // 优先使用上传到OSS的图片URL，如果没有则使用原始图片
+          artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImage || '';
           break;
-        } else if (statusResponse.data?.state === 'FAILED') {
+        } else if (statusResponse?.Result?.data?.status === 'failed') {
           throw new Error('艺术照生成失败');
         }
         // 如果还在处理中，继续轮询
@@ -171,10 +173,12 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         const statusResponse = await getTaskStatus(taskId);
-        if (statusResponse.data?.state === 'DONE') {
-          artPhotoUrl = statusResponse.data?.result?.image_url || selectedImage || '';
+        // 检查火山引擎API返回的状态
+        if (statusResponse?.Result?.data?.status === 'done') {
+          // 优先使用上传到OSS的图片URL，如果没有则使用原始图片
+          artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImage || '';
           break;
-        } else if (statusResponse.data?.state === 'FAILED') {
+        } else if (statusResponse?.Result?.data?.status === 'failed') {
           throw new Error('艺术照生成失败');
         }
         // 如果还在处理中，继续轮询
