@@ -57,3 +57,25 @@ export async function uploadImageToOSS(base64Image: string): Promise<string> {
     throw new Error(error instanceof Error ? error.message : '图片上传失败，请稍后重试');
   }
 }
+
+// 获取模板图片列表
+export async function getTemplateImages(): Promise<string[]> {
+  try {
+    // 生成最近10个模板图片URL
+    const templates: string[] = [];
+    for (let i = 1; i <= 10; i++) {
+      templates.push(`https://wms.webinfra.cloud/art-photos/template${i}.jpeg`);
+    }
+    return templates;
+  } catch (error) {
+    console.error('获取模板图片列表失败:', error);
+    // 返回默认模板列表
+    return [
+      'https://wms.webinfra.cloud/art-photos/template1.jpeg',
+      'https://wms.webinfra.cloud/art-photos/template2.jpeg',
+      'https://wms.webinfra.cloud/art-photos/template3.jpeg',
+      'https://wms.webinfra.cloud/art-photos/template4.jpeg',
+      'https://wms.webinfra.cloud/art-photos/template5.jpeg'
+    ];
+  }
+}

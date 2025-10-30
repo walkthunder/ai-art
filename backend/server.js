@@ -219,11 +219,11 @@ async function generateArtPhoto(prompt, imageUrls) {
       
       // 构造请求体
       const requestBody = {
-        force_single: true,
+        force_single: false,
         max_ratio: 3,
         min_ratio: 0.33,
         req_key: "jimeng_t2i_v40",
-        scale: 0.5,
+        scale: 0.9,
         size: 4194304,
         prompt: prompt
       };

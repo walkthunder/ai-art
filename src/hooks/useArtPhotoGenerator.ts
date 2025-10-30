@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { generateArtPhoto, getTaskStatus } from '../lib/volcengineAPI';
-import { uploadImageToOSS } from '../lib/utils';
+import { uploadImageToOSS, getTemplateImages } from '../lib/utils';
 
 // 定义历史记录项类型
 export interface HistoryItemType {
@@ -25,6 +25,26 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
   const [historyItems, setHistoryItems] = useState<HistoryItemType[]>([]);
   const [currentHistoryItem, setCurrentHistoryItem] = useState<HistoryItemType | null>(null);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<Record<string, string>>({}); // 用于缓存已上传图片的URL
+  const [templateImages, setTemplateImages] = useState<string[]>([]); // 模板图片列表
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null); // 选中的模板
+  
+  // 获取模板图片列表
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const templates = await getTemplateImages();
+        setTemplateImages(templates);
+        // 默认选择第一个模板
+        if (templates.length > 0 && !selectedTemplate) {
+          setSelectedTemplate(templates[0]);
+        }
+      } catch (error) {
+        console.error('获取模板图片失败:', error);
+      }
+    };
+    
+    fetchTemplates();
+  }, []);
   
   // 从localStorage加载历史记录和重生成次数
   useEffect(() => {
@@ -39,7 +59,13 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
     if (savedRegenerateCount) {
       setRegenerateCount(parseInt(savedRegenerateCount));
     }
-  }, [onUpdateHistory]);
+    
+    // 从localStorage加载选中的模板
+    const savedTemplate = localStorage.getItem('selectedTemplate');
+    if (savedTemplate && templateImages.length > 0) {
+      setSelectedTemplate(savedTemplate);
+    }
+  }, [onUpdateHistory, templateImages.length]);
   
   // 保存历史记录和重生成次数到localStorage
   useEffect(() => {
@@ -51,14 +77,34 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
     localStorage.setItem('regenerateCount', regenerateCount.toString());
   }, [regenerateCount]);
   
+  // 保存选中的模板到localStorage
+  useEffect(() => {
+    if (selectedTemplate) {
+      try {
+        localStorage.setItem('selectedTemplate', selectedTemplate);
+      } catch (error) {
+        console.error('保存选中模板失败:', error);
+      }
+    }
+  }, [selectedTemplate]);
+  
   const handleSelectImage = (imageData: string) => {
     setSelectedImage(imageData);
     setGeneratedImage(null); // 重置生成的图片
   };
   
+  const handleSelectTemplate = (templateUrl: string) => {
+    setSelectedTemplate(templateUrl);
+  };
+  
   const handleGenerate = async () => {
     if (!selectedImage) {
       toast('请先上传或拍摄照片');
+      return false;
+    }
+    
+    if (!selectedTemplate) {
+      toast('请选择一个模板');
       return false;
     }
     
@@ -79,9 +125,9 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
         setUploadedImageUrls(prev => ({ ...prev, [selectedImage]: imageUrl }));
       }
       
-      // 调用火山引擎API生成艺术照
+      // 调用火山引擎API生成艺术照，传入两张图片：自己的照片和选中的模板
       const taskId = await Promise.race([
-        generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl]),
+        generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl, selectedTemplate]),
         timeoutPromise
       ]) as string;
       
@@ -138,6 +184,16 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
       return false;
     }
     
+    if (!selectedImage) {
+      toast('请先上传或拍摄照片');
+      return false;
+    }
+    
+    if (!selectedTemplate) {
+      toast('请选择一个模板');
+      return false;
+    }
+    
     setIsGenerating(true);
     setRegenerateCount(prev => prev - 1);
     
@@ -158,7 +214,7 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
       
       // 调用火山引擎API重新生成艺术照
       const taskId = await Promise.race([
-        generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl]),
+        generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl, selectedTemplate]),
         timeoutPromise
       ]) as string;
       
@@ -244,7 +300,10 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
     regenerateCount,
     historyItems,
     currentHistoryItem,
+    templateImages,
+    selectedTemplate,
     handleSelectImage,
+    handleSelectTemplate,
     handleGenerate,
     handleRegenerate,
     addToHistory,

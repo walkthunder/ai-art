@@ -7,7 +7,7 @@ import HistoryItem from '../components/HistoryItem';
 import PaymentModal from '../components/PaymentModal';
 import HelpModal from '../components/HelpModal';
 import ImagePreviewModal from '../components/ImagePreviewModal';
-import { formatDateTime, uploadImageToOSS } from '../lib/utils';
+import { formatDateTime, uploadImageToOSS, getTemplateImages } from '../lib/utils';
 import { generateArtPhoto, getTaskStatus } from '../lib/volcengineAPI';
 
 // 定义历史记录项类型
@@ -20,7 +20,7 @@ interface HistoryItemType {
   regenerateCount: number;
 }
 
-const PROMPT_TEXT = `我提供了两张参考图，分工:​
+const PROMPT_TEXT = `我提供了至少两张参考图，分工:​
 图0:人物基础参考图(真实人物照片，仅用于提取人脸核心特征,不含姿势/风格参考)​
 图1:艺术风格参考图(文件名以template开始,仅用于复刻姿势、穿着风格、场景氛围、光影逻辑,不含人脸参考)​
 主体核心要求:​
@@ -53,9 +53,30 @@ export default function GeneratorPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [currentHistoryItem, setCurrentHistoryItem] = useState<HistoryItemType | null>(null);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<Record<string, string>>({}); // 用于缓存已上传图片的URL
+  const [templateImages, setTemplateImages] = useState<string[]>([]); // 模板图片列表
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null); // 选中的模板
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false); // 是否显示模板选择器
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  
+  // 获取模板图片列表
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const templates = await getTemplateImages();
+        setTemplateImages(templates);
+        // 默认选择第一个模板
+        if (templates.length > 0 && !selectedTemplate) {
+          setSelectedTemplate(templates[0]);
+        }
+      } catch (error) {
+        console.error('获取模板图片失败:', error);
+      }
+    };
+    
+    fetchTemplates();
+  }, []);
   
   // 从localStorage加载历史记录和重生成次数
   useEffect(() => {
@@ -68,7 +89,13 @@ export default function GeneratorPage() {
     if (savedRegenerateCount) {
       setRegenerateCount(parseInt(savedRegenerateCount));
     }
-  }, []);
+    
+    // 从localStorage加载选中的模板
+    const savedTemplate = localStorage.getItem('selectedTemplate');
+    if (savedTemplate && templateImages.length > 0) {
+      setSelectedTemplate(savedTemplate);
+    }
+  }, [templateImages.length]);
   
    // 保存历史记录和重生成次数到localStorage,限制历史记录数量
   useEffect(() => {
@@ -90,6 +117,17 @@ export default function GeneratorPage() {
       // 存储失败时不影响应用正常运行
     }
   }, [regenerateCount]);
+  
+  // 保存选中的模板到localStorage
+  useEffect(() => {
+    if (selectedTemplate) {
+      try {
+        localStorage.setItem('selectedTemplate', selectedTemplate);
+      } catch (error) {
+        console.error('保存选中模板失败:', error);
+      }
+    }
+  }, [selectedTemplate]);
   
   const handleBack = () => {
     navigate('/');
@@ -134,6 +172,11 @@ export default function GeneratorPage() {
       return;
     }
     
+    if (!selectedTemplate) {
+      toast('请选择一个模板');
+      return;
+    }
+    
     setIsGenerating(true);
     
     try {
@@ -151,9 +194,9 @@ export default function GeneratorPage() {
         setUploadedImageUrls(prev => ({ ...prev, [selectedImage]: imageUrl }));
       }
       
-      // 调用火山引擎API生成艺术照
+      // 调用火山引擎API生成艺术照，传入两张图片：自己的照片和选中的模板
       const taskId = await Promise.race([
-        generateArtPhoto(PROMPT_TEXT, [imageUrl]),
+        generateArtPhoto(PROMPT_TEXT, [imageUrl, selectedTemplate]),
         timeoutPromise
       ]);
       
@@ -220,6 +263,16 @@ export default function GeneratorPage() {
       return;
     }
     
+    if (!selectedImage) {
+      toast('请先上传或拍摄照片');
+      return;
+    }
+    
+    if (!selectedTemplate) {
+      toast('请选择一个模板');
+      return;
+    }
+    
     setIsGenerating(true);
     setRegenerateCount(prev => prev - 1);
     
@@ -240,7 +293,7 @@ export default function GeneratorPage() {
       
       // 调用火山引擎API重新生成艺术照
       const taskId = await Promise.race([
-        generateArtPhoto(PROMPT_TEXT, [imageUrl]),
+        generateArtPhoto(PROMPT_TEXT, [imageUrl, selectedTemplate]),
         timeoutPromise
       ]);
       
@@ -261,7 +314,6 @@ export default function GeneratorPage() {
         const statusResponse = await getTaskStatus(taskId);
         // 检查火山引擎API返回的状态
         if (statusResponse?.Result?.data?.status === 'done') {
-          // 优先使用上传到OSS的图片URL,如果没有则使用原始图片
           artPhotoUrl = statusResponse?.Result?.data?.uploaded_image_urls?.[0] || selectedImage || '';
           break;
         } else if (statusResponse?.Result?.data?.status === 'failed') {
@@ -338,6 +390,12 @@ export default function GeneratorPage() {
     handleRegenerate();
   };
   
+  // 处理模板选择
+  const handleTemplateSelect = (templateUrl: string) => {
+    setSelectedTemplate(templateUrl);
+    setShowTemplateSelector(false);
+  };
+  
   return (
     <div className="min-h-screen w-full flex flex-col relative overflow-hidden pb-20">
       <Background />
@@ -361,7 +419,7 @@ export default function GeneratorPage() {
           </button>
         </div>
       </header>
-      
+
       <main className="flex-1 px-4 py-6 z-10">
         {/* 核心操作区 */}
         <div className="space-y-6">
@@ -372,210 +430,256 @@ export default function GeneratorPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-lg font-bold text-[#6B5CA5] mb-4">照片上传</h2>
-            
-            {/* 预览框 */}
-            <div className="flex justify-center mb-4">
-              <div className="w-[180px] h-[180px] rounded-lg bg-gray-100 flex flex-col items-center justify-center overflow-hidden border border-gray-200">
-                {selectedImage ? (
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">上传照片</h2>
+            <div className="flex flex-col items-center space-y-4">
+              {selectedImage ? (
+                <div className="relative">
                   <img 
                     src={selectedImage} 
-                    alt="预览图" 
-                    className="w-full h-full object-cover"
+                    alt="Selected" 
+                    className="w-48 h-48 object-cover rounded-lg border-2 border-[#6B5CA5]"
                   />
-                ) : (
-                  <div className="text-center">
-                    <i className="fas fa-camera text-gray-400 text-4xl mb-2"></i>
-                    <p className="text-gray-500 text-sm">点击上传/拍照</p>
-                  </div>
-                )}
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <div className="w-48 h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-user text-gray-400 text-4xl"></i>
+                </div>
+              )}
+              
+              <div className="flex space-x-4">
+                <button
+                  onClick={handleUploadClick}
+                  className="px-4 py-2 bg-[#6B5CA5] text-white rounded-lg flex items-center"
+                >
+                  <i className="fas fa-upload mr-2"></i>
+                  上传照片
+                </button>
+                <button
+                  onClick={handleCameraClick}
+                  className="px-4 py-2 bg-[#6B5CA5] text-white rounded-lg flex items-center"
+                >
+                  <i className="fas fa-camera mr-2"></i>
+                  拍照
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <input
+                  type="file"
+                  ref={cameraInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                />
               </div>
             </div>
-            
-            {/* 操作按钮 */}
-            <div className="flex space-x-4">
-              <button 
-                onClick={handleCameraClick} 
-                className="flex-1 py-3 px-4 bg-white border border-[#6B5CA5] rounded-lg text-[#6B5CA5] font-medium flex items-center justify-center transition-all duration-200 hover:bg-[#6B5CA5]/5"
+          </motion.div>
+
+          {/* 模板选择模块 */}
+          <motion.div 
+            className="bg-white/80 rounded-xl p-6 shadow-md"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">选择模板</h2>
+              <button
+                onClick={() => setShowTemplateSelector(!showTemplateSelector)}
+                className="text-[#6B5CA5] text-sm flex items-center"
               >
-                <i className="fas fa-camera mr-2"></i>
-                <span>拍照</span>
-              </button>
-              <button 
-                onClick={handleUploadClick} 
-                className="flex-1 py-3 px-4 bg-white border border-[#6B5CA5] rounded-lg text-[#6B5CA5] font-medium flex items-center justify-center transition-all duration-200 hover:bg-[#6B5CA5]/5"
-              >
-                <i className="fas fa-upload mr-2"></i>
-                <span>上传</span>
+                {showTemplateSelector ? '收起' : '展开'}模板
+                <i className={`fas fa-chevron-${showTemplateSelector ? 'up' : 'down'} ml-1`}></i>
               </button>
             </div>
             
-            {/* 操作提示 */}
-            <p className="text-xs text-gray-500 mt-3 text-center">
-              支持 JPG/PNG 格式,照片清晰效果更佳
-            </p>
+            {selectedTemplate && (
+              <div className="mb-4">
+                <p className="text-gray-600 text-sm mb-2">当前选中模板：</p>
+                <div className="relative inline-block">
+                  <img 
+                    src={selectedTemplate} 
+                    alt="Selected Template" 
+                    className="w-32 h-32 object-cover rounded-lg border-2 border-[#6B5CA5]"
+                  />
+                  <div className="absolute bottom-2 right-2 bg-[#6B5CA5] text-white text-xs px-2 py-1 rounded">
+                    已选中
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {showTemplateSelector && (
+              <div className="mt-4">
+                <p className="text-gray-600 text-sm mb-3">选择一个模板作为艺术风格参考：</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {templateImages.map((templateUrl, index) => (
+                    <div 
+                      key={index} 
+                      className={`relative cursor-pointer rounded-lg overflow-hidden border-2 ${
+                        selectedTemplate === templateUrl ? 'border-[#6B5CA5] ring-2 ring-[#6B5CA5]' : 'border-gray-200'
+                      }`}
+                      onClick={() => handleTemplateSelect(templateUrl)}
+                    >
+                      <img 
+                        src={templateUrl} 
+                        alt={`Template ${index + 1}`} 
+                        className="w-full h-24 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
-          
-          {/* 生成与重生成模块 */}
+
+          {/* 生成按钮 */}
           <motion.div 
             className="bg-white/80 rounded-xl p-6 shadow-md"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            {!generatedImage ? (
-              <>
-                <div className="flex justify-center">
-                  <button 
-                    onClick={handleGenerate}
-                    disabled={isGenerating || !selectedImage}
-                    className={`py-3 px-8 bg-[#6B5CA5] text-white rounded-lg font-medium transition-all duration-200 hover:bg-[#5A4B9E] ${
-                      !selectedImage ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isGenerating ? (
-                      <div className="flex items-center">
-                        <img 
-                          src="https://space.coze.cn/api/coze_space/gen_image?image_size=square&prompt=Artistic%20loading%20spinner&sign=d7311fd22b6f978196d0c940b5fbfd3f" 
-                          alt="加载中" 
-                          className="w-5 h-5 mr-2 animate-spin"
-                        />
-                        <span>生成中...</span>
-                      </div>
-                    ) : (
-                      '调用 AI 生成'
-                    )}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* 生成后的预览 */}
-                <div className="flex justify-center mb-4">
-                  <div className="w-[180px] h-[180px] rounded-lg overflow-hidden border border-gray-200">
-                    <img 
-                      src={generatedImage} 
-                      alt="生成的艺术照" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex space-x-3 mb-2">
-                  <button 
-                    onClick={handleRegenerate}
-                    disabled={isGenerating || regenerateCount <= 0}
-                    className={`flex-1 py-3 px-4 bg-white border border-[#6B5CA5] rounded-lg text-[#6B5CA5] font-medium transition-all duration-200 hover:bg-[#6B5CA5]/5 ${
-                      regenerateCount <= 0 ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isGenerating ? (
-                      <div className="flex items-center justify-center">
-                        <img 
-                          src="https://space.coze.cn/api/coze_space/gen_image?image_size=square&prompt=Artistic%20loading%20spinner&sign=d7311fd22b6f978196d0c940b5fbfd3f" 
-                          alt="加载中" 
-                          className="w-4 h-4 mr-1 animate-spin"
-                        />
-                        <span>重生成中...</span>
-                      </div>
-                    ) : (
-                      '重新生成'
-                    )}
-                  </button>
-                  
-                  {regenerateCount > 0 && (
-                    <span className="text-[#FF9F43] text-sm font-medium self-center">
-                      还剩 {regenerateCount} 次重生成
-                    </span>
-                  )}
-                </div>
-                
-                <div className="flex justify-center">
-                  <button 
-                    onClick={handlePay}
-                    className="py-3 px-8 bg-[#FF9F43] text-white rounded-lg font-medium transition-all duration-200 hover:bg-[#E68930]"
-                  >
-                    支付 5 元获取
-                  </button>
-                </div>
-              </>
-            )}
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || !selectedImage}
+              className={`w-full py-3 rounded-lg font-medium flex items-center justify-center ${
+                isGenerating || !selectedImage 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-[#6B5CA5] to-[#8A7DB0] text-white hover:from-[#5A4B8C] hover:to-[#7A6CA0]'
+              }`}
+            >
+              {isGenerating ? (
+                <>
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-magic mr-2"></i>
+                  生成艺术照
+                </>
+              )}
+            </button>
             
-            {/* 收费提示 */}
-            <p className="text-xs text-gray-500 mt-3 text-center">
-              3 次重生成算 1 次收费,支付后可保存艺术照
-            </p>
-          </motion.div>
-        </div>
-        
-        {/* 生成历史区 */}
-        <motion.div 
-          className="mt-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <div className="flex items-center mb-4">
-            <h2 className="text-lg font-bold text-[#6B5CA5]">生成历史</h2>
-            <div className="h-px bg-[#6B5CA5] ml-2 flex-grow max-w-[100px]"></div>
-          </div>
-          
-          <div className="space-y-3">
-            {historyItems.length > 0 ? (
-              historyItems.map((item) => (
-                <HistoryItem 
-                  key={item.id}
-                  item={item}
-                  onClick={() => handleHistoryItemClick(item)}
-                  onContinuePayment={() => handleContinuePayment(item)}
-                  onReRegenerate={() => handleReRegenerateFromHistory(item)}
-                />
-              ))
-            ) : (
-              <div className="bg-white/80 rounded-xl p-6 text-center text-gray-500">
-                暂无生成历史
+            {currentHistoryItem && (
+              <div className="mt-4 flex justify-between items-center">
+                <span className="text-gray-600">
+                  剩余重生成次数: {regenerateCount}
+                </span>
+                <button
+                  onClick={handleRegenerate}
+                  disabled={isGenerating || regenerateCount <= 0}
+                  className={`px-4 py-2 rounded-lg text-sm ${
+                    isGenerating || regenerateCount <= 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-[#6B5CA5] text-white hover:bg-[#5A4B8C]'
+                  }`}
+                >
+                  <i className="fas fa-redo mr-1"></i>
+                  重新生成
+                </button>
               </div>
             )}
-          </div>
-        </motion.div>
+          </motion.div>
+
+          {/* 生成结果展示 */}
+          {generatedImage && (
+            <motion.div 
+              className="bg-white/80 rounded-xl p-6 shadow-md"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">生成结果</h2>
+              <div className="flex flex-col items-center">
+                <img 
+                  src={generatedImage} 
+                  alt="Generated Art Photo" 
+                  className="w-full max-w-md rounded-lg border-2 border-[#6B5CA5]"
+                />
+                <div className="mt-4 flex space-x-4">
+                  <button
+                    onClick={() => {
+                      setPreviewImage(generatedImage);
+                      setShowImagePreviewModal(true);
+                    }}
+                    className="px-4 py-2 bg-[#6B5CA5] text-white rounded-lg flex items-center"
+                  >
+                    <i className="fas fa-eye mr-2"></i>
+                    预览
+                  </button>
+                  <button
+                    onClick={handlePay}
+                    className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg flex items-center"
+                  >
+                    <i className="fas fa-download mr-2"></i>
+                    保存图片
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* 历史记录 */}
+          {historyItems.length > 0 && (
+            <motion.div 
+              className="bg-white/80 rounded-xl p-6 shadow-md"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">历史记录</h2>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {historyItems.map((item) => (
+                  <HistoryItem
+                    key={item.id}
+                    item={item}
+                    onClick={() => handleHistoryItemClick(item)}
+                    onContinuePayment={() => handleContinuePayment(item)}
+                    onReRegenerate={() => handleReRegenerateFromHistory(item)}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </div>
       </main>
-      
-      {/* 隐藏的文件输入 */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="hidden"
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        onChange={handleFileChange}
-        className="hidden"
-      />
-      
-      {/* 支付弹窗 */}
-      <PaymentModal 
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        onComplete={handleCompletePayment}
-      />
-      
+
       {/* 帮助弹窗 */}
-      <HelpModal 
-        isOpen={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-      />
-      
+      {showHelpModal && (
+        <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
+      )}
+
+      {/* 支付弹窗 */}
+      {showPaymentModal && (
+        <PaymentModal 
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)} 
+          onComplete={handleCompletePayment}
+        />
+      )}
+
       {/* 图片预览弹窗 */}
-      <ImagePreviewModal 
-        isOpen={showImagePreviewModal}
-        imageUrl={previewImage}
-        onClose={() => setShowImagePreviewModal(false)}
-      />
+      {showImagePreviewModal && previewImage && (
+        <ImagePreviewModal 
+          isOpen={showImagePreviewModal}
+          imageUrl={previewImage} 
+          onClose={() => setShowImagePreviewModal(false)} 
+        />
+      )}
     </div>
   );
 }
