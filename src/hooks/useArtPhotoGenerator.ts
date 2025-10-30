@@ -66,7 +66,7 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
     
     try {
       // 设置30秒超时
-      new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('生成超时，请重试')), 30000)
       );
       
@@ -80,7 +80,10 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
       }
       
       // 调用火山引擎API生成艺术照
-      const taskId = await generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl]);
+      const taskId = await Promise.race([
+        generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl]),
+        timeoutPromise
+      ]) as string;
       
       // 模拟轮询获取结果（实际实现中需要根据API文档调整）
       let artPhotoUrl = '';
@@ -137,6 +140,11 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
     setRegenerateCount(prev => prev - 1);
     
     try {
+      // 设置30秒超时
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('生成超时，请重试')), 30000)
+      );
+      
       // 检查图片是否已经上传过，避免重复上传
       let imageUrl = uploadedImageUrls[selectedImage || ''];
       if (!imageUrl && selectedImage) {
@@ -147,7 +155,10 @@ export const useArtPhotoGenerator = ({ onUpdateHistory }: UseArtPhotoGeneratorPr
       }
       
       // 调用火山引擎API重新生成艺术照
-      const taskId = await generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl]);
+      const taskId = await Promise.race([
+        generateArtPhoto("请将这张照片转换为艺术照风格", [imageUrl]),
+        timeoutPromise
+      ]) as string;
       
       // 模拟轮询获取结果（实际实现中需要根据API文档调整）
       let artPhotoUrl = '';

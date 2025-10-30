@@ -1,6 +1,5 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import COS from 'cos-js-sdk-v5'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -26,74 +25,35 @@ export function simulateAIGeneration(): Promise<void> {
   });
 }
 
-// 上传图片到腾讯云OSS
+// 上传图片到后端代理服务
 export async function uploadImageToOSS(base64Image: string): Promise<string> {
   try {
-    // 从环境变量中获取配置
-    const cosSecretId = import.meta.env.VITE_COS_SECRET_ID as string;
-    const cosSecretKey = import.meta.env.VITE_COS_SECRET_KEY as string;
-    const cosRegion = import.meta.env.VITE_COS_REGION as string;
-    const cosBucket = import.meta.env.VITE_COS_BUCKET as string;
-    const cosDomain = import.meta.env.VITE_COS_DOMAIN as string;
+    // 后端代理服务地址
+    const backendProxy = 'http://localhost:3001';
     
-    // 检查必要配置是否存在
-    if (!cosSecretId || !cosSecretKey || !cosRegion || !cosBucket || !cosDomain) {
-      throw new Error('缺少腾讯云OSS配置信息');
-    }
-    
-    // 初始化COS实例
-    const cos = new COS({
-      SecretId: cosSecretId,
-      SecretKey: cosSecretKey,
-    });
-    
-    // 将Base64转换为Blob
-    const byteString = atob(base64Image.split(',')[1]);
-    const mimeString = base64Image.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    const blob = new Blob([ab], { type: mimeString });
-    
-    // 生成文件名
-    const fileName = `art-photos/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${mimeString.split('/')[1]}`;
-    
-    // 获取预签名URL用于上传
-    const putSignUrl: any = await new Promise((resolve, reject) => {
-      cos.getObjectUrl({
-        Bucket: cosBucket,
-        Region: cosRegion,
-        Key: fileName,
-        Method: 'PUT',
-        Expires: 3600, // 1小时过期
-      }, function(err: any, data: any) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      });
-    });
-    
-    // 使用fetch通过预签名URL上传文件
-    const response = await fetch(putSignUrl.Url, {
-      method: 'PUT',
+    const response = await fetch(`${backendProxy}/api/upload-image`, {
+      method: 'POST',
       headers: {
-        'Content-Type': mimeString,
+        'Content-Type': 'application/json',
       },
-      body: blob,
+      body: JSON.stringify({ image: base64Image })
     });
     
-    if (response.ok) {
-      // 构造可访问的文件URL
-      return `https://${cosDomain}/${fileName}`;
-    } else {
-      throw new Error(`上传失败，HTTP状态码: ${response.status}`);
+    const result = await response.json();
+    
+    // 检查API调用是否成功
+    if (!response.ok) {
+      throw new Error(result?.message || `API调用失败，状态码: ${response.status}`);
     }
+    
+    if (!result?.success) {
+      throw new Error(result?.message || 'API调用失败');
+    }
+    
+    // 返回上传后的图片URL
+    return result.data?.imageUrl || '';
   } catch (error) {
     console.error('上传图片到OSS失败:', error);
-    throw new Error('图片上传失败，请稍后重试');
+    throw new Error(error instanceof Error ? error.message : '图片上传失败，请稍后重试');
   }
 }

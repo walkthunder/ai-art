@@ -7,6 +7,9 @@ const VOLCENGINE_VERSION = '2024-06-06';
 const VOLCENGINE_SERVICE_NAME = 'cv';
 const VOLCENGINE_REGION = 'cn-beijing';
 
+// 后端代理服务地址
+const VOLCENGINE_API_PROXY = 'http://localhost:3001';
+
 // 从环境变量中获取配置
 const VOLCENGINE_ACCESS_KEY_ID = import.meta.env.VITE_VOLCENGINE_ACCESS_KEY_ID as string;
 const VOLCENGINE_SECRET_ACCESS_KEY = import.meta.env.VITE_VOLCENGINE_SECRET_ACCESS_KEY as string;
@@ -220,7 +223,7 @@ async function sign(params: {
 }
 
 /**
- * 调用火山引擎API生成艺术照
+ * 调用火山引擎API生成艺术照（通过后端代理）
  * @param prompt 用于生成图像的提示词
  * @param imageUrls 图片文件URL数组，Note that 图1人物照片，图2艺术参考图
  * @returns 生成任务ID
@@ -230,156 +233,63 @@ export const generateArtPhoto = async (
   imageUrls: string[] = []
 ): Promise<string> => {
   try {
-    // 检查环境变量是否已设置
-    if (!VOLCENGINE_ACCESS_KEY_ID || !VOLCENGINE_SECRET_ACCESS_KEY) {
-      throw new Error('火山引擎API的访问密钥未设置，请检查.env文件中的配置');
-    }
-    
-    // 准备请求参数
-    const datetime = getDateTimeNow();
-    const host = new URL(VOLCENGINE_ENDPOINT).host;
-    
     // 构造请求体
-    const requestBody: any = {
-      force_single: true,
-      max_ratio: 3,
-      min_ratio: 0.33,
-      req_key: "jimeng_t2i_v40",
-      scale: 0.5,
-      size: 4194304,
-      prompt: prompt
+    const requestBody = {
+      prompt,
+      imageUrls
     };
     
-    // 如果提供了imageUrls，则添加到请求体中
-    if (imageUrls && imageUrls.length > 0) {
-      requestBody.image_urls = imageUrls.slice(0, 10); // 限制最多10张图片
-      // 确保始终有艺术风格参考图
-      if (requestBody.image_urls.length < 2) {
-        requestBody.image_urls.push(`https://wms.webinfra.cloud/art-photos/template1.jpeg`);
-      }
-    } else {
-      // 如果没有提供imageUrls，则强制报错
-      throw new Error('请提供至少一张照片');
-    }
-    
-    // 构造headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Host': host,
-      'X-Date': datetime,
-    };
-    
-    // 构造查询参数 (包含Authorization所需参数)
-    const queryParams = {
-      Action: VOLCENGINE_ACTION,
-      Version: VOLCENGINE_VERSION,
-      'X-Algorithm': 'HMAC-SHA256',
-      'X-Credential': `${VOLCENGINE_ACCESS_KEY_ID}/${datetime.substring(0, 8)}/${VOLCENGINE_REGION}/${VOLCENGINE_SERVICE_NAME}/request`,
-      'X-Date': datetime,
-      'X-Expires': '3600',
-      'X-NotSignBody': '1',
-      'X-SignedHeaders': 'content-type;host;x-date',
-      'X-SignedQueries': 'Action;Version;X-Algorithm;X-Credential;X-Date;X-Expires;X-NotSignBody;X-SignedHeaders;X-SignedQueries'
-    };
-    
-    // 用于签名的查询参数 (不包含Authorization相关参数)
-    const signQueryParams = {
-      Action: VOLCENGINE_ACTION,
-      Version: VOLCENGINE_VERSION,
-    };
-    
-    // 签名参数 - 当X-NotSignBody=1时，bodySha应为空字符串的哈希值
-    const signParams = {
-      headers,
-      query: signQueryParams,
-      region: VOLCENGINE_REGION,
-      serviceName: VOLCENGINE_SERVICE_NAME,
+    const response = await fetch(`${VOLCENGINE_API_PROXY}/api/generate-art-photo`, {
       method: 'POST',
-      pathName: '/',
-      accessKeyId: VOLCENGINE_ACCESS_KEY_ID,
-      secretAccessKey: VOLCENGINE_SECRET_ACCESS_KEY,
-      needSignHeaderKeys: ['content-type', 'host', 'x-date'],
-      bodySha: await hash('') // 当X-NotSignBody=1时，使用空字符串的哈希值
-    };
-    
-    // 生成签名
-    const authorization = await sign(signParams);
-    
-    // 更新Authorization头
-    headers['Authorization'] = authorization;
-    
-    // 发起请求 (查询参数直接附加在URL上)
-    const queryString = queryParamsToString(queryParams);
-    const url = `${VOLCENGINE_ENDPOINT}/?${queryString}`;
-    
-    console.log('火山引擎API请求URL:', url);
-    console.log('请求头:', headers);
-    console.log('请求体:', JSON.stringify(requestBody, null, 2));
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: headers,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(requestBody)
     });
     
-    console.log('响应状态:', response.status);
-    console.log('响应头:', response.headers);
-    
     const result = await response.json();
-    
-    console.log('响应体:', JSON.stringify(result, null, 2));
     
     // 检查API调用是否成功
     if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('API调用未授权，请检查访问密钥是否正确');
-      } else if (response.status === 403) {
-        throw new Error('API调用被禁止，请检查访问密钥权限');
-      } else {
-        throw new Error(`API调用失败，状态码: ${response.status}`);
-      }
+      throw new Error(result?.message || `API调用失败，状态码: ${response.status}`);
     }
     
-    if (result?.code !== 0) {
-      throw new Error(result?.message || `API调用失败，错误码: ${result?.code}`);
+    if (!result?.success) {
+      throw new Error(result?.message || 'API调用失败');
     }
     
     // 返回任务ID
-    return result.data?.task_id || '';
+    return result.data?.taskId || '';
   } catch (error) {
     console.error('火山引擎API调用失败:', error);
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error('网络请求失败，可能是由于CORS策略或网络连接问题');
-    }
     throw new Error(error instanceof Error ? error.message : '艺术照生成失败，请稍后重试');
   }
 };
 
 /**
- * 查询任务状态
+ * 查询任务状态（通过后端代理）
  * @param taskId 任务ID
  * @returns 任务状态和结果
  */
 export const getTaskStatus = async (taskId: string): Promise<any> => {
   try {
-    // 这里需要实现查询任务状态的逻辑
-    // 由于示例中没有提供查询接口，暂时返回模拟数据
-    // 实际实现时需要调用相应的查询API
+    const response = await fetch(`${VOLCENGINE_API_PROXY}/api/task-status/${taskId}`);
     
-    // 模拟响应
-    return {
-      status: 'success',
-      data: {
-        task_id: taskId,
-        state: 'DONE', // 或者 'PROCESSING', 'FAILED'
-        result: {
-          image_url: 'https://example.com/generated-art-photo.jpg' // 生成的艺术照URL
-        }
-      }
-    };
+    const result = await response.json();
+    
+    // 检查API调用是否成功
+    if (!response.ok) {
+      throw new Error(result?.message || `API调用失败，状态码: ${response.status}`);
+    }
+    
+    if (!result?.success) {
+      throw new Error(result?.message || 'API调用失败');
+    }
+    
+    return result.data;
   } catch (error) {
     console.error('查询任务状态失败:', error);
-    throw new Error('查询任务状态失败，请稍后重试');
+    throw new Error(error instanceof Error ? error.message : '查询任务状态失败，请稍后重试');
   }
 };
 
