@@ -106,9 +106,8 @@ async function createUserWithOpenid(userId, openid) {
 async function getUserByOpenid(openid) {
   try {
     const sql = `
-      SELECT id, openid, unionid, nickname, avatar_url, phone, level, status,
-             daily_limit, used_today, total_quota, used_quota,
-             created_at, updated_at, payment_status, regenerate_count, last_login_at
+      SELECT id, openid, nickname, avatar_url,
+             created_at, updated_at, payment_status, regenerate_count
       FROM users
       WHERE openid = ?
     `;
@@ -133,21 +132,9 @@ async function getUserByOpenid(openid) {
  */
 async function getUserByUnionid(unionid) {
   try {
-    const sql = `
-      SELECT id, openid, unionid, nickname, avatar_url, phone, level, status,
-             daily_limit, used_today, total_quota, used_quota,
-             created_at, updated_at, payment_status, regenerate_count, last_login_at
-      FROM users
-      WHERE unionid = ?
-    `;
-    
-    const rows = await query(sql, [unionid]);
-    
-    if (rows.length === 0) {
-      return null;
-    }
-    
-    return rows[0];
+    // unionid 字段暂未在数据库中实现，返回 null
+    console.warn('getUserByUnionid: unionid 字段未在数据库中实现');
+    return null;
   } catch (error) {
     console.error('根据unionid查询用户失败:', error);
     throw new Error(`根据unionid查询用户失败: ${error.message}`);
@@ -162,9 +149,9 @@ async function getUserByUnionid(unionid) {
 async function getUserById(userId) {
   try {
     const sql = `
-      SELECT id, openid, unionid, nickname, avatar_url, phone, level, status,
-             daily_limit, used_today, total_quota, used_quota,
-             created_at, updated_at, payment_status, regenerate_count, last_login_at
+      SELECT id, openid, nickname, avatar_url,
+             created_at, updated_at, payment_status, regenerate_count,
+             usage_count, usage_limit, invite_code, has_ever_paid, first_payment_at, last_payment_at
       FROM users
       WHERE id = ?
     `;
