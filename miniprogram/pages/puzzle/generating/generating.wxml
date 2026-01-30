@@ -71,5 +71,10 @@
     
     <!-- 温馨提示 -->
     <text class="tip-text" wx:if="{{!error}}">页面刷新后可通过历史记录查看结果</text>
+    
+    <!-- AI生成提示（合规要求） -->
+    <view class="ai-notice">
+      <text class="ai-notice-text">本服务为AI生成内容，结果仅供参考</text>
+    </view>
   </view>
 </view>

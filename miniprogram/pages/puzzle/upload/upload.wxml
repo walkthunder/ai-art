@@ -179,6 +179,11 @@
     <view class="bottom-tips">
       <text class="tips-text">💡 提示：上传不同年代的家人照片，AI将合成穿越时空的全家福</text>
     </view>
+    
+    <!-- AI生成提示（合规要求） -->
+    <view class="ai-notice">
+      <text class="ai-notice-text">本服务为AI生成内容，结果仅供参考</text>
+    </view>
   </view>
   
   <!-- 处理中状态 - 页面居中 -->

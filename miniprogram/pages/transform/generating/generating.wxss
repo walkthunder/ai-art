@@ -391,3 +391,22 @@
 .elder-mode .tip-text {
   font-size: 30rpx;
 }
+
+/* AI生成提示（合规要求） */
+.ai-notice {
+  width: 100%;
+  text-align: center;
+  margin-top: 32rpx;
+  padding-bottom: 32rpx;
+}
+
+.ai-notice-text {
+  font-size: 22rpx;
+  color: rgba(139, 0, 0, 0.6);
+  line-height: 1.5;
+}
+
+/* 老年模式 - AI提示 */
+.elder-mode .ai-notice-text {
+  font-size: 26rpx;
+}
