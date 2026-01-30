@@ -554,7 +554,7 @@
 
 .ai-notice-text {
   font-size: 22rpx;
-  color: rgba(139, 0, 0, 0.6);
+  color: #fff2b3;
   line-height: 1.5;
 }
 
