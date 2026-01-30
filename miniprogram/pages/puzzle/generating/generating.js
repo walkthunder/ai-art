@@ -42,7 +42,7 @@ Page({
     isRetrying: false,
     canRetry: true,
     retryCount: 0,
-    lanternVideoUrl: getAssetUrl('lantern.mp4')
+    lanternImageUrl: getAssetUrl('lantern.png')
   },
 
   pollTimer: null,
