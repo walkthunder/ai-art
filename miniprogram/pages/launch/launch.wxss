@@ -3,17 +3,7 @@
  * Requirements: 2.1, 10.1-10.3
  */
 
-/* 大小字切换按钮 - 在返回键下方 */
-.elder-mode-toggle-fixed {
-  position: fixed;
-  top: calc(env(safe-area-inset-top) + 100rpx);
-  left: 32rpx;
-  z-index: 999;
-}
-
-.elder-mode .elder-mode-toggle-fixed {
-  top: calc(env(safe-area-inset-top) + 120rpx);
-}
+/* 大小字切换按钮 - 使用内联样式动态定位，不需要固定样式 */
 
 /* 页面容器 - 固定一屏高度 */
 .launch-page {

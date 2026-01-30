@@ -15,7 +15,7 @@
     <view class="modal-body">
       <!-- 标题 -->
       <view class="modal-header">
-        <text class="modal-title">🎊 选择套餐</text>
+        <text class="modal-title">🎊 选择模板</text>
         <text class="modal-subtitle">解锁更多功能，获得更好体验</text>
       </view>
       
@@ -24,7 +24,7 @@
         <view 
           wx:for="{{packages}}" 
           wx:key="id"
-          class="package-item {{selectedPackage === item.id ? 'selected' : ''}} {{item.id === 'free' ? 'free' : ''}} {{item.recommended ? 'premium' : ''}} {{item.id === 'free' && isFreeExhausted ? 'disabled' : ''}}"
+          class="package-item {{selectedPackage === item.id ? 'selected' : ''}} {{item.id === 'free' ? 'free' : ''}} {{item.recommended ? 'premium' : ''}} {{(usageCount === 0 && !hasEverPaid && item.id === 'free') || (usageCount === 0 && hasEverPaid && (item.id === 'free' || item.id === 'basic')) ? 'disabled' : ''}}"
           bindtap="selectPackage"
           data-id="{{item.id}}"
         >

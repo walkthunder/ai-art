@@ -112,6 +112,110 @@
   transform: scale(0.95);
 }
 
+/* 状态切换区域 */
+.status-switch-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.switch-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.switch-btn {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  transition: all 0.2s;
+}
+
+.free-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.free-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.vip-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.vip-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.switch-tips {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
+/* 开发者登录区域 */
+.dev-login-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #e8f5e9;
+  border-radius: 8px;
+  border: 1px solid #81c784;
+}
+
+.login-input-group {
+  margin-bottom: 12px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #81c784;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.login-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.login-btn[disabled] {
+  opacity: 0.6;
+}
+
+.login-tips {
+  display: block;
+  font-size: 12px;
+  color: #2e7d32;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
 /* 输入区域 */
 .input-section {
   margin-bottom: 20px;

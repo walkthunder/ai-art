@@ -260,11 +260,30 @@ Page({
       
       // 扣减使用次数
       try {
-        await app.decrementUsageCount(taskId);
+        await app.decrementUsageCount(taskId, 'puzzle');
         console.log('[PuzzleTemplate] 使用次数已扣减');
       } catch (err) {
         console.error('[PuzzleTemplate] 扣减使用次数失败:', err);
-        // 扣减失败不影响生成流程，继续执行
+        
+        // 显示错误提示
+        wx.hideLoading();
+        wx.showModal({
+          title: '使用次数不足',
+          content: err.message || '您的使用次数已用完，请购买套餐后继续使用',
+          showCancel: false,
+          confirmText: '我知道了',
+          success: () => {
+            // 返回上一页
+            wx.navigateBack({
+              fail: () => {
+                wx.redirectTo({
+                  url: '/pages/puzzle/launch/launch'
+                });
+              }
+            });
+          }
+        });
+        return; // 阻止继续执行
       }
       
       // 存储任务信息

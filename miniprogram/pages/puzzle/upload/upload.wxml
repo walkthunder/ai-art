@@ -198,4 +198,12 @@
       </view>
     </view>
   </view>
+  
+  <!-- 支付弹窗 -->
+  <payment-modal
+    visible="{{showPaymentModal}}"
+    currentPaymentStatus="{{currentPaymentStatus}}"
+    bind:complete="handlePaymentComplete"
+    bind:close="handlePaymentClose"
+  />
 </view>

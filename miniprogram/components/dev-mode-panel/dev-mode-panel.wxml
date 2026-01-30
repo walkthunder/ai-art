@@ -29,6 +29,40 @@
       </view>
     </view>
 
+    <!-- 用户状态切换 -->
+    <view class="status-switch-section">
+      <text class="section-title">用户状态切换:</text>
+      <view class="switch-buttons">
+        <button class="switch-btn free-btn" bindtap="switchToFree">
+          切换为免费用户
+        </button>
+        <button class="switch-btn vip-btn" bindtap="switchToVIP">
+          切换为VIP用户
+        </button>
+      </view>
+      <text class="switch-tips">• 免费用户: has_ever_paid=false, 次数=3</text>
+      <text class="switch-tips">• VIP用户: has_ever_paid=true, 次数=20</text>
+    </view>
+
+    <!-- 开发者登录 -->
+    <view class="dev-login-section">
+      <text class="section-title">开发者登录:</text>
+      <view class="login-input-group">
+        <input
+          class="login-input"
+          type="text"
+          placeholder="输入用户ID（可选）"
+          value="{{loginUserId}}"
+          bindinput="onLoginInput"
+        />
+      </view>
+      <button class="login-btn" bindtap="handleDevLogin" disabled="{{loading}}">
+        {{loading ? '登录中...' : '快速登录'}}
+      </button>
+      <text class="login-tips">• 不输入ID将自动生成测试用户</text>
+      <text class="login-tips">• 用于解决登录问题和快速测试</text>
+    </view>
+
     <!-- 自定义输入 -->
     <view class="input-section">
       <text class="section-title">自定义设置:</text>

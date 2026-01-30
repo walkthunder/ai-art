@@ -18,8 +18,8 @@
     <text class="lantern lantern-4 animate-pulse-slow">🏮</text>
   </view>
   
-  <!-- 大小字切换按钮（左上角固定位置） -->
-  <view class="elder-mode-toggle-fixed">
+  <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
+  <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
     <elder-mode-toggle />
   </view>
   

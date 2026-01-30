@@ -25,7 +25,10 @@ Page({
     uploadProgress: 0,
     // OSS 资源
     cameraUploadUrl: getAssetUrl('camera-upload.png'),
-    commonBgUrl: getAssetUrl('common-bg.jpg')
+    commonBgUrl: getAssetUrl('common-bg.jpg'),
+    // 支付弹窗
+    showPaymentModal: false,
+    currentPaymentStatus: 'free'
   },
 
   onLoad() {
@@ -54,6 +57,30 @@ Page({
     
     console.log('[TransformUpload] 用户点击上传区域');
     this.setData({ errorMessage: '' });
+    
+    // 检查使用次数
+    const app = getApp();
+    const usageInfo = await app.updateUsageCount();
+    
+    if (!usageInfo) {
+      console.error('[TransformUpload] 获取使用次数失败');
+      this.setData({
+        errorMessage: '获取使用次数失败，请重试'
+      });
+      return;
+    }
+    
+    console.log('[TransformUpload] 使用次数检查:', usageInfo);
+    
+    // 如果次数为0，显示套餐选择弹窗
+    if (usageInfo.usageCount === 0) {
+      console.log('[TransformUpload] 次数为0，显示套餐选择');
+      this.setData({
+        showPaymentModal: true,
+        currentPaymentStatus: usageInfo.paymentStatus || 'free'
+      });
+      return;
+    }
     
     try {
       // 选择图片（单张）
@@ -190,6 +217,34 @@ Page({
         });
       }
     });
+  },
+
+  /**
+   * 支付完成回调
+   */
+  async handlePaymentComplete(e) {
+    console.log('[TransformUpload] 支付完成:', e.detail);
+    
+    // 关闭支付弹窗
+    this.setData({ showPaymentModal: false });
+    
+    // 更新使用次数
+    const app = getApp();
+    await app.updateUsageCount();
+    
+    // 显示成功提示
+    wx.showToast({
+      title: '购买成功',
+      icon: 'success'
+    });
+  },
+
+  /**
+   * 关闭支付弹窗
+   */
+  handlePaymentClose() {
+    console.log('[TransformUpload] 关闭支付弹窗');
+    this.setData({ showPaymentModal: false });
   },
 
   /**

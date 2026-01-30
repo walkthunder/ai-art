@@ -98,11 +98,63 @@ function getDevModeStatus() {
   };
 }
 
+/**
+ * 开发者模式快速登录
+ * @param {string} userId - 用户ID（可选，不提供则生成测试ID）
+ * @returns {Promise<Object>} 登录结果
+ */
+async function devLogin(userId = null) {
+  const { post } = require('./cloudbase-request');
+  
+  try {
+    // 如果没有提供userId，生成一个测试ID
+    const testUserId = userId || `dev_user_${Date.now()}`;
+    
+    console.log('[DevMode] 开发者登录:', testUserId);
+    
+    // 调用后端开发者登录API
+    const response = await post('/api/dev/login', {
+      userId: testUserId
+    }, {
+      showError: false
+    });
+    
+    if (response.success) {
+      // 更新全局状态
+      const app = getApp();
+      app.globalData.userId = response.data.userId;
+      app.globalData.usageCount = response.data.usageCount;
+      app.globalData.userType = response.data.hasEverPaid ? 'paid' : 'free';
+      
+      // 更新本地缓存
+      wx.setStorageSync('userId', response.data.userId);
+      wx.setStorageSync('hasEverPaid', response.data.hasEverPaid);
+      wx.setStorageSync('paymentStatus', response.data.paymentStatus);
+      
+      console.log('[DevMode] 登录成功:', response.data);
+      
+      return {
+        success: true,
+        data: response.data
+      };
+    } else {
+      throw new Error(response.message || '登录失败');
+    }
+  } catch (error) {
+    console.error('[DevMode] 登录失败:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 module.exports = {
   initDevMode,
   handleTap,
   activateDevMode,
   isDevModeActive,
   disableDevMode,
-  getDevModeStatus
+  getDevModeStatus,
+  devLogin
 };

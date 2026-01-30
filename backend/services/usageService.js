@@ -36,24 +36,29 @@ async function checkUsageCount(userId, mode = null) {
     const user = rows[0];
     
     // 新的返回结构（支持模式隔离）
+    // 注意：使用 ?? 而不是 || 来处理 0 值
+    const puzzleCount = user.usage_count_puzzle ?? 3;
+    const transformCount = user.usage_count_transform ?? 3;
+    const paidCount = user.usage_count_paid ?? 0;
+    
     const result = {
       puzzle: {
-        free_count: user.usage_count_puzzle || 3,
-        remaining: user.usage_count_puzzle || 3
+        free_count: puzzleCount,
+        remaining: puzzleCount
       },
       transform: {
-        free_count: user.usage_count_transform || 3,
-        remaining: user.usage_count_transform || 3
+        free_count: transformCount,
+        remaining: transformCount
       },
       paid: {
-        count: user.usage_count_paid || 0,
-        remaining: user.usage_count_paid || 0,
+        count: paidCount,
+        remaining: paidCount,
         package_type: user.payment_status || 'free'
       },
       // 向后兼容字段
-      usage_count: (user.usage_count_puzzle || 0) + (user.usage_count_transform || 0) + (user.usage_count_paid || 0),
-      usage_limit: user.usage_limit || 3,
-      can_generate: (user.usage_count_puzzle || 0) > 0 || (user.usage_count_transform || 0) > 0 || (user.usage_count_paid || 0) > 0,
+      usage_count: puzzleCount + transformCount + paidCount,
+      usage_limit: user.usage_limit ?? 3,
+      can_generate: puzzleCount > 0 || transformCount > 0 || paidCount > 0,
       user_type: user.has_ever_paid ? 'paid' : 'free'
     };
     

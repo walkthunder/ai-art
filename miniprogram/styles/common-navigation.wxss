@@ -29,18 +29,19 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   background: #d4302b;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
 }
 
 .nav-left {
-  position: absolute;
-  left: 32rpx;
+  width: 136rpx;
+  padding-left: 32rpx;
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: flex-start;
   gap: 0;
   flex-shrink: 0;
 }
@@ -70,10 +71,19 @@
   flex: 1;
   text-align: center;
   padding: 0 16rpx;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-right {
-  width: 72rpx;
+  width: 136rpx;
+  padding-right: 32rpx;
   flex-shrink: 0;
   display: flex;
   align-items: center;

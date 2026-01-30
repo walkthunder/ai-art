@@ -30,6 +30,16 @@ Component({
     currentPaymentStatus: {
       type: String,
       value: 'free'
+    },
+    // 剩余使用次数
+    usageCount: {
+      type: Number,
+      value: 3
+    },
+    // 是否曾经付费
+    hasEverPaid: {
+      type: Boolean,
+      value: false
     }
   },
   
@@ -66,7 +76,7 @@ Component({
   methods: {
     // 根据当前付费状态过滤可选套餐
     filterPackages(currentStatus) {
-      console.log('[PaymentModal] filterPackages called with currentStatus:', currentStatus);
+      console.log('[PaymentModal] filterPackages called with currentStatus:', currentStatus, 'usageCount:', this.data.usageCount);
       
       const currentLevel = PACKAGE_LEVEL[currentStatus] || 0;
       const allPackages = Object.values(cloudbasePayment.FALLBACK_PACKAGES);
@@ -81,10 +91,10 @@ Component({
       
       console.log('[PaymentModal] filteredPackages count:', filteredPackages.length);
       
-      // 检查是否免费次数已用尽（当前状态为free且打开支付弹窗）
-      const isFreeExhausted = currentStatus === 'free';
+      // 检查是否免费次数已用尽（剩余次数为0）
+      const isFreeExhausted = this.data.usageCount === 0;
       
-      console.log('[PaymentModal] isFreeExhausted:', isFreeExhausted);
+      console.log('[PaymentModal] isFreeExhausted:', isFreeExhausted, '(usageCount:', this.data.usageCount, ')');
       
       // 默认选中第一个付费套餐（如果免费次数已用尽）或第一个可用套餐
       let defaultSelected = 'free';
@@ -113,12 +123,29 @@ Component({
     selectPackage(e) {
       const { id } = e.currentTarget.dataset;
       
-      console.log('[PaymentModal] selectPackage:', id, 'isFreeExhausted:', this.data.isFreeExhausted);
+      console.log('[PaymentModal] selectPackage:', id, 'usageCount:', this.data.usageCount, 'hasEverPaid:', this.data.hasEverPaid);
       
-      // 如果免费次数已用尽，禁止选择免费版
-      if (this.data.isFreeExhausted && id === 'free') {
-        console.log('[PaymentModal] 禁止选择免费版');
-        return;
+      // 次数为0时的限制
+      if (this.data.usageCount === 0) {
+        // 免费用户：不能选择免费版
+        if (!this.data.hasEverPaid && id === 'free') {
+          console.log('[PaymentModal] 免费用户次数为0，禁止选择免费版');
+          wx.showToast({
+            title: '次数已用尽，请选择付费套餐',
+            icon: 'none'
+          });
+          return;
+        }
+        
+        // 付费用户：不能选择免费版和尝鲜版
+        if (this.data.hasEverPaid && (id === 'free' || id === 'basic')) {
+          console.log('[PaymentModal] 付费用户次数为0，禁止选择免费版和尝鲜版');
+          wx.showToast({
+            title: '次数已用尽，请选择高级套餐',
+            icon: 'none'
+          });
+          return;
+        }
       }
       
       this.setData({

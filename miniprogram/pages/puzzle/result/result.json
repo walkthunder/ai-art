@@ -8,6 +8,7 @@
     "loading": "/components/loading/loading",
     "product-recommendation": "/components/product-recommendation/product-recommendation",
     "share-modal": "/components/share-modal/share-modal",
+    "payment-modal": "/components/payment-modal/payment-modal",
     "usage-modal": "/components/usage-modal/usage-modal",
     "usage-display": "/components/usage-display/usage-display",
     "elder-mode-toggle": "/components/elder-mode-toggle/elder-mode-toggle"

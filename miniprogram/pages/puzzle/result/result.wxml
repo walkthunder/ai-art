@@ -161,8 +161,8 @@
     </view>
   </scroll-view>
   
-  <!-- 剩余次数显示框 - 页面底部 -->
-  <view class="usage-count-bar">
+  <!-- 剩余次数显示框 - 页面底部（仅付费用户显示） -->
+  <view class="usage-count-bar" wx:if="{{hasEverPaid}}">
     <view class="usage-count-content">
       <text class="usage-label">剩余次数：</text>
       <text class="usage-value">{{usageCount}}</text>
@@ -189,6 +189,8 @@
     visible="{{showPaymentModal}}"
     generationId="{{generationId}}"
     currentPaymentStatus="{{paymentStatus}}"
+    usageCount="{{usageCount}}"
+    hasEverPaid="{{hasEverPaid}}"
     bind:complete="onPaymentComplete"
     bind:close="closePaymentModal"
   />

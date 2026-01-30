@@ -38,6 +38,7 @@ Page({
     usageCount: 0,
     userType: 'free',
     paymentStatus: 'free',
+    hasEverPaid: false, // 是否曾经付费
     buttonDisabled: false,
     buttonText: '立即变身豪门',
     showModal: false,
@@ -102,11 +103,40 @@ Page({
       // 更新使用次数
       const result = await app.updateUsageCount();
       
+      console.log('[TransformLaunch] updateUsageCount 返回结果:', result);
+      
       if (result) {
+        // 从后端API获取用户的has_ever_paid状态
+        const cloudbaseRequest = require('../../../utils/cloudbase-request');
+        let hasEverPaid = wx.getStorageSync('hasEverPaid') || false; // 优先使用缓存
+        
+        try {
+          const userRes = await cloudbaseRequest.get(`/api/user/${app.globalData.userId}`);
+          if (userRes && userRes.success && userRes.data) {
+            hasEverPaid = userRes.data.has_ever_paid || false;
+            // 更新缓存
+            wx.setStorageSync('hasEverPaid', hasEverPaid);
+          }
+        } catch (err) {
+          console.warn('[TransformLaunch] 获取用户付费状态失败，使用缓存:', err);
+          // API调用失败时，使用缓存值，如果缓存也没有，则根据paymentStatus判断
+          if (!wx.getStorageSync('hasEverPaid')) {
+            hasEverPaid = result.paymentStatus !== 'free';
+          }
+        }
+        
+        console.log('[TransformLaunch] 准备设置数据:', {
+          usageCount: result.usageCount,
+          userType: result.userType,
+          paymentStatus: result.paymentStatus || 'free',
+          hasEverPaid: hasEverPaid
+        });
+        
         this.setData({
           usageCount: result.usageCount,
           userType: result.userType,
-          paymentStatus: result.paymentStatus || 'free'
+          paymentStatus: result.paymentStatus || 'free',
+          hasEverPaid: hasEverPaid
         });
         
         // 更新按钮状态
@@ -117,11 +147,12 @@ Page({
       }
     } catch (err) {
       console.error('[TransformLaunch] 加载使用次数失败:', err);
-      // 失败时使用默认值
+      // 失败时使用缓存和默认值
       this.setData({
         usageCount: 0,
         userType: 'free',
-        paymentStatus: 'free'
+        paymentStatus: wx.getStorageSync('paymentStatus') || 'free',
+        hasEverPaid: wx.getStorageSync('hasEverPaid') || false
       });
       this.updateButtonState();
     }
@@ -176,24 +207,27 @@ Page({
   handleStart() {
     const { buttonDisabled, usageCount, userType, paymentStatus } = this.data;
     
+    console.log('[TransformLaunch] handleStart 调用，当前状态:', {
+      usageCount,
+      buttonDisabled,
+      userType,
+      paymentStatus
+    });
+    
     // 检查使用次数是否为0
     if (usageCount === 0) {
-      console.log('[TransformLaunch] 使用次数为0，显示弹窗');
-      const modalType = usageModal.determineModalType(usageCount, userType, paymentStatus);
+      console.log('[TransformLaunch] 使用次数为0，显示支付弹窗');
       this.setData({
-        showModal: true,
-        modalType: modalType
+        showPaymentModal: true
       });
       return;
     }
     
-    // 如果按钮被禁用，显示模态框
+    // 如果按钮被禁用，显示支付弹窗
     if (buttonDisabled) {
-      console.log('[TransformLaunch] 按钮被禁用，显示弹窗');
-      const modalType = usageModal.determineModalType(usageCount, userType, paymentStatus);
+      console.log('[TransformLaunch] 按钮被禁用，显示支付弹窗');
       this.setData({
-        showModal: true,
-        modalType: modalType
+        showPaymentModal: true
       });
       return;
     }
@@ -262,8 +296,12 @@ Page({
     
     this.setData({
       showPaymentModal: false,
-      paymentStatus: newPaymentStatus
+      paymentStatus: newPaymentStatus,
+      hasEverPaid: true // 付费后立即更新状态
     });
+    
+    // 缓存到本地存储
+    wx.setStorageSync('hasEverPaid', true);
     
     // 刷新使用次数
     this.loadUsageCount();

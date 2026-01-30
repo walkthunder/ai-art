@@ -33,6 +33,7 @@
       usageCount="{{usageCount}}" 
       userType="{{userType}}"
       isElderMode="{{isElderMode}}"
+      hasEverPaid="{{hasEverPaid}}"
     />
     
     <!-- 标题区域 -->
@@ -123,6 +124,9 @@
   <payment-modal
     visible="{{showPaymentModal}}"
     isElderMode="{{isElderMode}}"
+    currentPaymentStatus="{{paymentStatus}}"
+    usageCount="{{usageCount}}"
+    hasEverPaid="{{hasEverPaid}}"
     bind:complete="onPaymentComplete"
     bind:close="closePaymentModal"
   />

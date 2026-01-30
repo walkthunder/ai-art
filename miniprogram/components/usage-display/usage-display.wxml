@@ -1,8 +1,8 @@
 <!--
   使用次数显示组件
-  显示用户剩余的生成次数
+  显示用户剩余的生成次数（仅付费用户显示）
 -->
-<view class="usage-display {{isElderMode ? 'elder-mode' : ''}}">
+<view class="usage-display {{isElderMode ? 'elder-mode' : ''}}" wx:if="{{hasEverPaid}}">
   <view class="usage-icon">🎫</view>
   <view class="usage-text">
     <text class="usage-label">剩余次数</text>

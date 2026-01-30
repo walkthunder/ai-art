@@ -27,7 +27,10 @@ Page({
     errorMessage: '',
     uploadProgress: 0,
     // OSS 资源
-    cameraUploadUrl: getAssetUrl('camera-upload.png')
+    cameraUploadUrl: getAssetUrl('camera-upload.png'),
+    // 支付弹窗
+    showPaymentModal: false,
+    currentPaymentStatus: 'free'
   },
 
   onLoad() {
@@ -57,6 +60,32 @@ Page({
     console.log('[PuzzleUpload] 点击上传框:', index);
     
     this.setData({ errorMessage: '' });
+    
+    // 检查使用次数（仅在第一次上传时检查）
+    if (this.data.uploadedCount === 0) {
+      const app = getApp();
+      const usageInfo = await app.updateUsageCount();
+      
+      if (!usageInfo) {
+        console.error('[PuzzleUpload] 获取使用次数失败');
+        this.setData({
+          errorMessage: '获取使用次数失败，请重试'
+        });
+        return;
+      }
+      
+      console.log('[PuzzleUpload] 使用次数检查:', usageInfo);
+      
+      // 如果次数为0，显示套餐选择弹窗
+      if (usageInfo.usageCount === 0) {
+        console.log('[PuzzleUpload] 次数为0，显示套餐选择');
+        this.setData({
+          showPaymentModal: true,
+          currentPaymentStatus: usageInfo.paymentStatus || 'free'
+        });
+        return;
+      }
+    }
     
     try {
       // 选择单张图片
@@ -240,6 +269,34 @@ Page({
         });
       }
     });
+  },
+
+  /**
+   * 支付完成回调
+   */
+  async handlePaymentComplete(e) {
+    console.log('[PuzzleUpload] 支付完成:', e.detail);
+    
+    // 关闭支付弹窗
+    this.setData({ showPaymentModal: false });
+    
+    // 更新使用次数
+    const app = getApp();
+    await app.updateUsageCount();
+    
+    // 显示成功提示
+    wx.showToast({
+      title: '购买成功',
+      icon: 'success'
+    });
+  },
+
+  /**
+   * 关闭支付弹窗
+   */
+  handlePaymentClose() {
+    console.log('[PuzzleUpload] 关闭支付弹窗');
+    this.setData({ showPaymentModal: false });
   },
 
   /**

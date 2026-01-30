@@ -14,13 +14,25 @@ Page({
   data: {
     isElderMode: false,
     userCount: '15,430', // 已生成家庭数量
-    commonBgUrl: getAssetUrl('common-bg.jpg')
+    commonBgUrl: getAssetUrl('common-bg.jpg'),
+    statusBarHeight: 0,
+    navBarHeight: 44,
+    menuRight: 0
   },
 
   onLoad() {
     const app = getApp();
+    const menuButtonInfo = app.globalData.menuButtonInfo;
+    
+    // 计算胶囊按钮右侧位置（屏幕宽度 - 胶囊右边距）
+    const systemInfo = wx.getSystemInfoSync();
+    const menuRight = systemInfo.windowWidth - menuButtonInfo.right;
+    
     this.setData({
-      isElderMode: app.globalData.isElderMode
+      isElderMode: app.globalData.isElderMode,
+      statusBarHeight: app.globalData.statusBarHeight || 0,
+      navBarHeight: app.globalData.navBarHeight || 44,
+      menuRight: menuRight
     });
     
     // 获取统计数据（可从后端获取）

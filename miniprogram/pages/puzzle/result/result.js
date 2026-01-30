@@ -38,6 +38,7 @@ Page({
     isPremiumUser: false,
     // 付费状态
     paymentStatus: 'free',
+    hasEverPaid: false, // 是否曾经付费
     generationId: '',
     // 使用次数模态框
     showUsageModal: false,
@@ -60,6 +61,13 @@ Page({
       hasLivePhoto: options.hasLivePhoto === 'true',
       generationId: options.generationId || Date.now().toString()
     });
+    
+    // 检查是否从分享进入
+    if (options.shareId && options.from === 'share') {
+      console.log('[PuzzleResult] 从分享进入，shareId:', options.shareId);
+      this.loadSharedResult(options.shareId);
+      return;
+    }
     
     let imageUrl = '';
     if (options.image) {
@@ -125,6 +133,25 @@ Page({
       const result = await app.updateUsageCount();
       
       if (result) {
+        // 从后端API获取用户的has_ever_paid状态
+        const cloudbaseRequest = require('../../../utils/cloudbase-request');
+        let hasEverPaid = wx.getStorageSync('hasEverPaid') || false; // 优先使用缓存
+        
+        try {
+          const userRes = await cloudbaseRequest.get(`/api/user/${app.globalData.userId}`);
+          if (userRes && userRes.success && userRes.data) {
+            hasEverPaid = userRes.data.has_ever_paid || false;
+            // 更新缓存
+            wx.setStorageSync('hasEverPaid', hasEverPaid);
+          }
+        } catch (err) {
+          console.warn('[PuzzleResult] 获取用户付费状态失败，使用缓存:', err);
+          // API调用失败时，使用缓存值
+          if (!wx.getStorageSync('hasEverPaid')) {
+            hasEverPaid = result.paymentStatus !== 'free';
+          }
+        }
+        
         // 如果返回的是默认值 3，说明 API 调用失败
         // 此时应该使用全局状态中的值，而不是默认值
         let usageCount = result.usageCount;
@@ -138,32 +165,77 @@ Page({
         this.setData({
           usageCount: usageCount,
           userType: result.userType,
-          paymentStatus: result.paymentStatus || 'free'
+          paymentStatus: result.paymentStatus || 'free',
+          hasEverPaid: hasEverPaid
         });
         
         console.log('[PuzzleResult] 使用次数已加载:', {
           usageCount: usageCount,
           userType: result.userType,
-          paymentStatus: result.paymentStatus
+          paymentStatus: result.paymentStatus,
+          hasEverPaid: hasEverPaid
         });
         
         return {
           ...result,
-          usageCount: usageCount
+          usageCount: usageCount,
+          hasEverPaid: hasEverPaid
         };
       }
     } catch (err) {
       console.error('[PuzzleResult] 加载使用次数失败:', err);
-      // 失败时使用全局状态中的值
+      // 失败时使用全局状态和缓存中的值
       const app = getApp();
       this.setData({
         usageCount: app.globalData.usageCount,
         userType: app.globalData.userType,
-        paymentStatus: wx.getStorageSync('paymentStatus') || 'free'
+        paymentStatus: wx.getStorageSync('paymentStatus') || 'free',
+        hasEverPaid: wx.getStorageSync('hasEverPaid') || false
       });
     }
     
     return null;
+  },
+
+  /**
+   * 加载分享的作品
+   * @param {string} shareId - 分享的生成记录ID
+   */
+  async loadSharedResult(shareId) {
+    try {
+      wx.showLoading({ title: '加载中...', mask: true });
+      
+      // 调用后端API获取分享的作品
+      const cloudbaseRequest = require('../../../utils/cloudbase-request');
+      
+      // 尝试从历史记录中获取
+      const historyRes = await cloudbaseRequest.get(`/api/history/${shareId}`);
+      
+      wx.hideLoading();
+      
+      if (historyRes && historyRes.success && historyRes.data) {
+        const result = historyRes.data;
+        this.setData({
+          selectedImage: result.result_image_url || result.image_url,
+          generationId: shareId,
+          isSharedView: true // 标记为分享视图
+        });
+        console.log('[PuzzleResult] 分享作品加载成功');
+      } else {
+        throw new Error('未找到分享的作品');
+      }
+    } catch (err) {
+      console.error('[PuzzleResult] 加载分享作品失败:', err);
+      wx.hideLoading();
+      wx.showModal({
+        title: '提示',
+        content: '分享内容已失效或不存在',
+        showCancel: false,
+        success: () => {
+          wx.redirectTo({ url: '/pages/puzzle/launch/launch' });
+        }
+      });
+    }
   },
 
   onUnload() {
@@ -448,12 +520,12 @@ Page({
   },
 
   async handleSaveImage() {
-    const { selectedImage, isSaving, paymentStatus } = this.data;
+    const { selectedImage, isSaving, hasEverPaid } = this.data;
     
     console.log('[PuzzleResult] handleSaveImage 被调用:', {
       selectedImage: !!selectedImage,
       isSaving,
-      paymentStatus,
+      hasEverPaid,
       showPaymentModal: this.data.showPaymentModal
     });
     
@@ -462,9 +534,9 @@ Page({
       return;
     }
     
-    // 未付费用户显示支付弹窗
-    if (paymentStatus === 'free') {
-      console.log('[PuzzleResult] 用户未付费，显示支付弹窗，设置 showPaymentModal=true');
+    // 免费用户（从未付费）显示支付弹窗
+    if (!hasEverPaid) {
+      console.log('[PuzzleResult] 用户从未付费，显示支付弹窗，设置 showPaymentModal=true');
       this.setData({ showPaymentModal: true });
       console.log('[PuzzleResult] 设置后 showPaymentModal:', this.data.showPaymentModal);
       return;
@@ -483,23 +555,42 @@ Page({
   },
 
   async doSaveImage() {
-    const { selectedImage, generationId } = this.data;
+    const { selectedImage, generationId, hasEverPaid } = this.data;
     
     this.setData({ isSaving: true });
     
     try {
       wx.showLoading({ title: '保存中...', mask: true });
       
+      console.log('[PuzzleResult] 开始下载图片:', selectedImage);
+      
       const downloadRes = await new Promise((resolve, reject) => {
         wx.downloadFile({ url: selectedImage, success: resolve, fail: reject });
       });
       
+      console.log('[PuzzleResult] 下载结果:', downloadRes);
+      
       if (downloadRes.statusCode !== 200) throw new Error('下载图片失败');
       
-      // 直接保存到相册
+      let finalImagePath = downloadRes.tempFilePath;
+      
+      // 免费用户添加水印
+      if (!hasEverPaid) {
+        try {
+          wx.showLoading({ title: '添加水印中...', mask: true });
+          const { addWatermark } = require('../../../utils/watermark');
+          finalImagePath = await addWatermark(downloadRes.tempFilePath, '团圆照相馆');
+          console.log('[PuzzleResult] 水印添加成功');
+        } catch (watermarkErr) {
+          console.error('[PuzzleResult] 水印添加失败，使用原图:', watermarkErr);
+          // 水印添加失败不影响保存，继续使用原图
+        }
+      }
+      
+      // 保存到相册
       await new Promise((resolve, reject) => {
         wx.saveImageToPhotosAlbum({
-          filePath: downloadRes.tempFilePath,
+          filePath: finalImagePath,
           success: () => {
             wx.hideLoading();
             wx.showToast({ title: '保存成功', icon: 'success' });
@@ -520,8 +611,16 @@ Page({
           confirmText: '去设置',
           success: (res) => { if (res.confirm) wx.openSetting(); }
         });
+      } else if (err.errMsg && err.errMsg.includes('domain list')) {
+        // 域名白名单错误
+        wx.showModal({
+          title: '配置提示',
+          content: '图片域名未配置，请在小程序后台添加downloadFile合法域名，或在开发工具中关闭域名校验。\n\n开发工具：详情 > 本地设置 > 不校验合法域名',
+          showCancel: false,
+          confirmText: '我知道了'
+        });
       } else {
-        wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+        wx.showToast({ title: '保存失败，请重试', icon: 'none', duration: 2000 });
       }
     } finally {
       this.setData({ isSaving: false });
@@ -538,8 +637,12 @@ Page({
     this.setData({
       showPaymentModal: false,
       paymentStatus: newPaymentStatus,
-      isPremiumUser: newPaymentStatus === 'premium' || newPaymentStatus === 'basic'
+      isPremiumUser: newPaymentStatus === 'premium' || newPaymentStatus === 'basic',
+      hasEverPaid: true // 付费后立即更新状态
     });
+    
+    // 缓存到本地存储
+    wx.setStorageSync('hasEverPaid', true);
     
     // 支付/选择完成后自动保存图片
     setTimeout(() => {
@@ -650,10 +753,11 @@ Page({
   },
 
   onShareAppMessage() {
+    const { generationId, selectedImage } = this.data;
     return getShareAppMessage({
       title: '看看我的AI全家福！🎊',
-      imageUrl: this.data.selectedImage,
-      path: '/pages/puzzle/launch/launch'
+      imageUrl: selectedImage,
+      path: `/pages/puzzle/result/result?shareId=${generationId}&from=share`
     });
   },
 

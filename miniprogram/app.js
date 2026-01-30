@@ -449,19 +449,22 @@ App({
         const paymentStatus = wx.getStorageSync('paymentStatus') || 'free';
         
         // 计算总使用次数（向后兼容）
-        const usageCount = (data.puzzle?.remaining || 0) + 
-                          (data.transform?.remaining || 0) + 
-                          (data.paid?.remaining || 0);
+        // 使用 ?? 而不是 || 来正确处理 0 值
+        const puzzleRemaining = data.puzzle?.remaining ?? 0;
+        const transformRemaining = data.transform?.remaining ?? 0;
+        const paidRemaining = data.paid?.remaining ?? 0;
+        const usageCount = puzzleRemaining + transformRemaining + paidRemaining;
         
         // 更新全局状态
         this.globalData.usageCount = usageCount;
         this.globalData.userType = data.user_type || 'free';
         
         console.log('[App] 使用次数已更新:', {
-          puzzle: data.puzzle?.remaining,
-          transform: data.transform?.remaining,
-          paid: data.paid?.remaining,
-          total: usageCount
+          puzzle: puzzleRemaining,
+          transform: transformRemaining,
+          paid: paidRemaining,
+          total: usageCount,
+          can_generate: data.can_generate
         });
         
         const result = {

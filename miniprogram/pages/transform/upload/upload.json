@@ -7,6 +7,7 @@
   "usingComponents": {
     "corner-background": "/components/corner-background/corner-background",
     "loading": "/components/loading/loading",
-    "elder-mode-toggle": "/components/elder-mode-toggle/elder-mode-toggle"
+    "elder-mode-toggle": "/components/elder-mode-toggle/elder-mode-toggle",
+    "payment-modal": "/components/payment-modal/payment-modal"
   }
 }

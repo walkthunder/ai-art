@@ -29,57 +29,60 @@
   </view>
 
   <!-- 历史记录列表 -->
-  <scroll-view class="items-container" scroll-y>
-    <view wx:for="{{items}}" wx:key="id" class="history-item">
-      <!-- 模式标签 -->
-      <view class="item-header">
-        <view class="mode-badge {{item.mode}}">{{item.modeLabel}}</view>
-        <text class="item-time">{{item.createdAtFormatted}}</text>
-      </view>
+  <scroll-view class="history-scroll" scroll-y>
+    <view class="items-container">
+      <view wx:for="{{items}}" wx:key="id" class="history-item">
+        <!-- 模式标签 -->
+        <view class="item-header">
+          <view class="mode-badge {{item.mode}}">{{item.modeLabel}}</view>
+          <text class="item-time">{{item.createdAtFormatted}}</text>
+        </view>
 
-      <!-- 原始图片 -->
-      <view class="original-images">
-        <view 
-          wx:for="{{item.originalImages}}" 
-          wx:key="*this"
-          class="image-thumbnail"
-          data-image="{{item}}"
-          bindtap="onPreviewImage"
-        >
+        <!-- 原始图片 -->
+        <view class="original-images">
+          <view 
+            wx:for="{{item.originalImages}}" 
+            wx:for-item="imgUrl"
+            wx:key="*this"
+            class="image-thumbnail"
+            data-image="{{imgUrl}}"
+            bindtap="onPreviewImage"
+          >
+            <image 
+              src="{{imgUrl}}" 
+              mode="aspectFill"
+              class="thumbnail-img"
+            />
+          </view>
+        </view>
+
+        <!-- 箭头 -->
+        <view class="arrow-container">
+          <text class="arrow">→</text>
+        </view>
+
+        <!-- 生成结果 -->
+        <view class="generated-image">
           <image 
-            src="{{item}}" 
-            mode="aspectFill"
-            class="thumbnail-img"
+            src="{{item.generatedImage}}" 
+            mode="widthFix"
+            class="result-img"
+            data-image="{{item.generatedImage}}"
+            bindtap="onPreviewImage"
           />
+        </view>
+
+        <!-- 操作按钮 -->
+        <view class="item-actions">
+          <button class="action-btn save-btn">保存</button>
+          <button class="action-btn delete-btn" data-id="{{item.id}}" bindtap="onDeleteItem">删除</button>
         </view>
       </view>
 
-      <!-- 箭头 -->
-      <view class="arrow-container">
-        <text class="arrow">→</text>
+      <!-- 加载更多提示 -->
+      <view wx:if="{{!hasMore && items.length > 0}}" class="load-more-tip">
+        <text>已加载全部</text>
       </view>
-
-      <!-- 生成结果 -->
-      <view class="generated-image">
-        <image 
-          src="{{item.generatedImage}}" 
-          mode="aspectFill"
-          class="result-img"
-          data-image="{{item.generatedImage}}"
-          bindtap="onPreviewImage"
-        />
-      </view>
-
-      <!-- 操作按钮 -->
-      <view class="item-actions">
-        <button class="action-btn save-btn">保存</button>
-        <button class="action-btn delete-btn" data-id="{{item.id}}" bindtap="onDeleteItem">删除</button>
-      </view>
-    </view>
-
-    <!-- 加载更多提示 -->
-    <view wx:if="{{!hasMore && items.length > 0}}" class="load-more-tip">
-      <text>已加载全部</text>
     </view>
   </scroll-view>
 

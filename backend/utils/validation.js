@@ -97,6 +97,22 @@ function validateUUID(uuid) {
 }
 
 /**
+ * 校验用户ID格式（支持UUID和开发者模式ID）
+ * @param {string} userId - 待校验的用户ID
+ * @returns {boolean}
+ */
+function validateUserId(userId) {
+  if (typeof userId !== 'string') return false;
+  // 支持标准UUID格式
+  if (validateUUID(userId)) return true;
+  // 支持开发者模式用户ID（dev_user_开头）
+  if (userId.startsWith('dev_user_')) return true;
+  // 支持简单的测试用户ID（纯数字或字母数字组合）
+  if (/^[a-zA-Z0-9_-]+$/.test(userId) && userId.length >= 1 && userId.length <= 100) return true;
+  return false;
+}
+
+/**
  * 校验手机号格式（中国大陆）
  * @param {string} phone - 待校验的手机号
  * @returns {boolean}
@@ -146,8 +162,8 @@ function validateGenerateArtPhotoParams(params) {
   }
   
   // 校验userId
-  if (params.userId && !validateUUID(params.userId)) {
-    errors.push('userId必须是有效的UUID格式');
+  if (params.userId && !validateUserId(params.userId)) {
+    errors.push('userId格式无效');
   }
   
   // 校验templateUrl（可选）- 允许相对路径
@@ -456,6 +472,7 @@ module.exports = {
   validateEnum,
   validateNumberRange,
   validateUUID,
+  validateUserId,
   validatePhone,
   
   // 业务校验函数

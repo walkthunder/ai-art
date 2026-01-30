@@ -2,7 +2,7 @@
   富贵变身模式模板选择页 - 复用原网页 TemplateSelector 样式
   Requirements: 2.3
 -->
-<view class="transform-template-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">>
+<view class="transform-template-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
   <!-- 四角装饰背景 -->
   <corner-background />
   
@@ -55,7 +55,7 @@
         <image 
           class="template-image" 
           src="{{item.url}}" 
-          mode="aspectFill"
+          mode="widthFix"
           lazy-load
         />
         

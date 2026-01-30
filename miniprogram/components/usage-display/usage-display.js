@@ -22,6 +22,11 @@ Component({
     isElderMode: {
       type: Boolean,
       value: false
+    },
+    // 是否曾经付费（用于控制显示）
+    hasEverPaid: {
+      type: Boolean,
+      value: false
     }
   },
 
