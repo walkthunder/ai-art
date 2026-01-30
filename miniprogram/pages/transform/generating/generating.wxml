@@ -2,7 +2,7 @@
   富贵变身模式生成中页面 - 复用原网页 GeneratingPage 样式
   Requirements: 2.3, 14.1-14.5
 -->
-<view class="generating-page {{isElderMode ? 'elder-mode' : ''}}">
+<view class="transform-generating-page {{isElderMode ? 'elder-mode' : ''}}">>
   <!-- 四角装饰背景 -->
   <corner-background />
   

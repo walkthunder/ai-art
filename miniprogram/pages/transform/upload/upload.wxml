@@ -2,7 +2,7 @@
   富贵变身模式上传页 - 复用 puzzle upload 设计
   Requirements: 2.3, 6.1-6.5
 -->
-<view class="upload-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+<view class="transform-upload-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">>
   <!-- 四角装饰背景 -->
   <corner-background />
   

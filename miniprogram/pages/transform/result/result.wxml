@@ -3,7 +3,7 @@
   Requirements: 2.3, 8.1-8.4
   新增: Live Photo 微动态功能
 -->
-<view class="result-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+<view class="transform-result-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">>
   <!-- 四角装饰背景 -->
   <corner-background />
   

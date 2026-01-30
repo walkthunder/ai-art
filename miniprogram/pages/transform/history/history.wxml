@@ -2,7 +2,7 @@
   富贵变身模式历史记录页 - 复用原网页 TransformHistoryPage 样式
   Requirements: 2.3, 11.1-11.4
 -->
-<view class="history-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+<view class="transform-history-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">>
   <!-- 四角装饰背景 -->
   <corner-background />
   

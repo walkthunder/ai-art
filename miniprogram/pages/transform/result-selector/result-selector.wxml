@@ -2,7 +2,7 @@
   富贵变身模式结果选择页 - 复用原网页 ResultSelectorPage 样式
   Requirements: 2.3, 15.1-15.4
 -->
-<view class="result-selector-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+<view class="transform-result-selector-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">>
   <!-- 四角装饰背景 -->
   <corner-background />
   

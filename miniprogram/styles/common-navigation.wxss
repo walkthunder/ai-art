@@ -106,18 +106,38 @@
 
 /* ========================================
    富贵变身模式 (Transform) 导航栏覆盖
+   所有 Transform 相关页面使用金色主题
    ======================================== */
 
-.transform-launch-page .nav-bar {
-  background: #D4AF37;
+.transform-launch-page .nav-bar,
+.transform-upload-page .nav-bar,
+.transform-generating-page .nav-bar,
+.transform-result-page .nav-bar,
+.transform-result-selector-page .nav-bar,
+.transform-template-page .nav-bar,
+.transform-history-page .nav-bar {
+  background: #d4af37;
 }
 
-.transform-launch-page .back-icon {
-  color: #DC143C;
-}
-
-.transform-launch-page .nav-title {
+.transform-launch-page .back-icon,
+.transform-upload-page .back-icon,
+.transform-generating-page .back-icon,
+.transform-result-page .back-icon,
+.transform-result-selector-page .back-icon,
+.transform-template-page .back-icon,
+.transform-history-page .back-icon {
   color: #8B4513;
+}
+
+.transform-launch-page .nav-title,
+.transform-upload-page .nav-title,
+.transform-generating-page .nav-title,
+.transform-result-page .nav-title,
+.transform-result-selector-page .nav-title,
+.transform-template-page .nav-title,
+.transform-history-page .nav-title {
+  color: #8B4513;
+  text-align: center;
 }
 
 /* ========================================
