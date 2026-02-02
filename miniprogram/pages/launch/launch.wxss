@@ -128,15 +128,15 @@
   display: block;
   font-size: 64rpx;
   font-weight: bold;
-  color: var(--color-festival-red);
-  text-shadow: 0 4rpx 12rpx rgba(212, 48, 43, 0.25);
+  color: #FF3B30;
+  text-shadow: 0 4rpx 12rpx rgba(255, 59, 48, 0.4);
   letter-spacing: 6rpx;
 }
 
 .sub-title {
   display: block;
   font-size: 36rpx;
-  color: var(--color-festival-gold);
+  color: #fef0b1;
   font-weight: 600;
   margin-top: 4rpx;
   letter-spacing: 4rpx;
@@ -145,7 +145,7 @@
 .slogan {
   display: block;
   font-size: 24rpx;
-  color: #6B7280;
+  color: #FFFFFF;
   margin-top: 8rpx;
 }
 
@@ -308,11 +308,13 @@
 /* 底部提示 */
 .bottom-tip {
   margin-top: 16rpx;
+  text-align: center;
 }
 
 .tip-text {
   font-size: 22rpx;
-  color: #9CA3AF;
+  color: #FFFFFF;
+  text-align: center;
 }
 
 /* ========================================

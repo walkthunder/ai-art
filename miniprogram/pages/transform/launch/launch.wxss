@@ -119,6 +119,7 @@
 /* 标题区域 */
 .title-section {
   text-align: center;
+  margin-top: 40rpx;
 }
 
 .slogan-text {
@@ -197,7 +198,7 @@
 .preview-before,
 .preview-after {
   flex: 1;
-  max-width: 200rpx;
+  max-width: 240rpx;
 }
 
 .preview-placeholder {
@@ -231,7 +232,7 @@
 }
 
 .preview-label {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #6B4423;
   font-weight: 600;
   text-align: center;
@@ -265,8 +266,8 @@
 }
 
 .preview-arrow {
-  width: 48rpx;
-  height: 48rpx;
+  width: 56rpx;
+  height: 56rpx;
   background: var(--color-festival-gold);
   border-radius: 50%;
   display: flex;
@@ -276,7 +277,7 @@
 }
 
 .arrow-text {
-  font-size: 28rpx;
+  font-size: 32rpx;
   color: white;
   font-weight: bold;
 }
