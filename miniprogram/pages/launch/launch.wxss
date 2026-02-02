@@ -188,7 +188,7 @@
 .digit {
   font-size: 32rpx;
   font-weight: bold;
-  color: #FF3B30;
+  color: #e2a150;
   line-height: 40rpx;
   height: 40rpx;
   text-align: center;
@@ -198,7 +198,7 @@
 .comma-text {
   font-size: 32rpx;
   font-weight: bold;
-  color: #FF3B30;
+  color: #e2a150;
   line-height: 40rpx;
   margin: 0 2rpx;
 }
