@@ -264,7 +264,7 @@
 
 .tip-value {
   font-size: 28rpx;
-  color: #000000;
+  color: #fff293;
   font-weight: 500;
 }
 
