@@ -18,8 +18,8 @@
   <!-- 顶部导航栏 -->
   <view class="nav-bar" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;">
     <view class="nav-left">
-      <view class="back-btn" bindtap="goBack">
-        <text class="back-icon">‹</text>
+      <view class="home-btn" bindtap="goHome">
+        <text class="home-icon">🏠</text>
       </view>
     </view>
     <text class="nav-title">生成结果</text>
@@ -143,17 +143,6 @@
           <text class="btn-text">分享家族群</text>
         </view>
       </button>
-      
-      <!-- 返回首页 -->
-      <view 
-        class="action-btn home-btn"
-        bindtap="goHome"
-      >
-        <view class="btn-inner blue">
-          <text class="btn-icon">🏠</text>
-          <text class="btn-text">返回首页</text>
-        </view>
-      </view>
     </view>
     
     <!-- AI生成提示（合规要求） -->
