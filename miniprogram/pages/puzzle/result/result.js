@@ -579,7 +579,7 @@ Page({
         try {
           wx.showLoading({ title: '添加水印中...', mask: true });
           const { addWatermark } = require('../../../utils/watermark');
-          finalImagePath = await addWatermark(downloadRes.tempFilePath, '团圆照相馆');
+          finalImagePath = await addWatermark(downloadRes.tempFilePath, 'AI · 团圆照相馆');
           console.log('[PuzzleResult] 水印添加成功');
         } catch (watermarkErr) {
           console.error('[PuzzleResult] 水印添加失败，使用原图:', watermarkErr);
@@ -634,15 +634,20 @@ Page({
     const newPaymentStatus = packageType;
     wx.setStorageSync('paymentStatus', newPaymentStatus);
     
+    // 只有选择付费套餐时才标记为"曾经付费"
+    const hasEverPaid = packageType === 'basic' || packageType === 'premium';
+    
     this.setData({
       showPaymentModal: false,
       paymentStatus: newPaymentStatus,
       isPremiumUser: newPaymentStatus === 'premium' || newPaymentStatus === 'basic',
-      hasEverPaid: true // 付费后立即更新状态
+      hasEverPaid: hasEverPaid
     });
     
     // 缓存到本地存储
-    wx.setStorageSync('hasEverPaid', true);
+    if (hasEverPaid) {
+      wx.setStorageSync('hasEverPaid', true);
+    }
     
     // 支付/选择完成后自动保存图片
     setTimeout(() => {
