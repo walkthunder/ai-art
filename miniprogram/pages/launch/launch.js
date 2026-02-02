@@ -51,7 +51,7 @@ Page({
 
   /**
    * 启动数字翻滚动画
-   * 从 15430 开始，每次随机增加 1-9
+   * 从 15430 开始，每次随机增加 1-5
    */
   startCounterAnimation() {
     let currentCount = 15430;
@@ -62,8 +62,8 @@ Page({
         return;
       }
       
-      // 随机增加 1-9
-      const increment = Math.floor(Math.random() * 9) + 1;
+      // 随机增加 1-5
+      const increment = Math.floor(Math.random() * 5) + 1;
       currentCount += increment;
       
       // 更新数字显示
