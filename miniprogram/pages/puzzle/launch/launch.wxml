@@ -96,10 +96,10 @@
         <view class="btn-shine" wx:if="{{!buttonDisabled}}"></view>
       </view>
       
-      <!-- 历史记录入口 -->
-      <view class="history-entry" bindtap="viewHistory">
-        <text class="history-icon">📋</text>
-        <text class="history-text">查看历史记录</text>
+      <!-- 我的记录按钮 -->
+      <view class="history-btn" bindtap="viewHistory" hover-class="history-btn-hover">
+        <text class="history-icon">🕐</text>
+        <text class="history-text">我的记录</text>
       </view>
       
       <!-- AI生成提示 -->

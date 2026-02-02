@@ -427,15 +427,22 @@
   line-height: 1.5;
 }
 
-/* 历史记录入口 */
-.history-entry {
+/* 我的记录按钮 */
+.history-btn {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
   gap: 8rpx;
-  padding: 16rpx 32rpx;
-  margin-top: 16rpx;
+  padding: 14rpx 32rpx;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.history-btn-hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: scale(0.98);
 }
 
 .history-icon {
@@ -443,14 +450,22 @@
 }
 
 .history-text {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #8B4513;
-  text-decoration: underline;
+  font-weight: 500;
 }
 
 /* 老年模式 - AI提示 */
 .elder-mode .ai-notice-text {
   font-size: 26rpx;
+}
+
+.elder-mode .history-btn {
+  padding: 20rpx 40rpx;
+}
+
+.elder-mode .history-icon {
+  font-size: 34rpx;
 }
 
 .elder-mode .history-text {
