@@ -37,7 +37,85 @@
     <!-- 统计信息 -->
     <view class="stats-section animate-fade-in">
       <view class="stats-badge">
-        <text class="stats-number">{{userCount}}</text>
+        <view class="stats-number-wrapper">
+          <!-- 万位 -->
+          <view class="digit-roller">
+            <view class="digit-column" style="transform: translateY(-{{digits[0] * 10}}%); transition-duration: 0.3s;">
+              <text class="digit">0</text>
+              <text class="digit">1</text>
+              <text class="digit">2</text>
+              <text class="digit">3</text>
+              <text class="digit">4</text>
+              <text class="digit">5</text>
+              <text class="digit">6</text>
+              <text class="digit">7</text>
+              <text class="digit">8</text>
+              <text class="digit">9</text>
+            </view>
+          </view>
+          <!-- 千位 -->
+          <view class="digit-roller">
+            <view class="digit-column" style="transform: translateY(-{{digits[1] * 10}}%); transition-duration: 0.3s;">
+              <text class="digit">0</text>
+              <text class="digit">1</text>
+              <text class="digit">2</text>
+              <text class="digit">3</text>
+              <text class="digit">4</text>
+              <text class="digit">5</text>
+              <text class="digit">6</text>
+              <text class="digit">7</text>
+              <text class="digit">8</text>
+              <text class="digit">9</text>
+            </view>
+          </view>
+          <!-- 分隔符 -->
+          <text class="comma-text">,</text>
+          <!-- 百位 -->
+          <view class="digit-roller">
+            <view class="digit-column" style="transform: translateY(-{{digits[2] * 10}}%); transition-duration: 0.3s;">
+              <text class="digit">0</text>
+              <text class="digit">1</text>
+              <text class="digit">2</text>
+              <text class="digit">3</text>
+              <text class="digit">4</text>
+              <text class="digit">5</text>
+              <text class="digit">6</text>
+              <text class="digit">7</text>
+              <text class="digit">8</text>
+              <text class="digit">9</text>
+            </view>
+          </view>
+          <!-- 十位 -->
+          <view class="digit-roller">
+            <view class="digit-column" style="transform: translateY(-{{digits[3] * 10}}%); transition-duration: 0.3s;">
+              <text class="digit">0</text>
+              <text class="digit">1</text>
+              <text class="digit">2</text>
+              <text class="digit">3</text>
+              <text class="digit">4</text>
+              <text class="digit">5</text>
+              <text class="digit">6</text>
+              <text class="digit">7</text>
+              <text class="digit">8</text>
+              <text class="digit">9</text>
+            </view>
+          </view>
+          <!-- 个位 -->
+          <view class="digit-roller">
+            <view class="digit-column" style="transform: translateY(-{{digits[4] * 10}}%); transition-duration: 0.3s;">
+              <text class="digit">0</text>
+              <text class="digit">1</text>
+              <text class="digit">2</text>
+              <text class="digit">3</text>
+              <text class="digit">4</text>
+              <text class="digit">5</text>
+              <text class="digit">6</text>
+              <text class="digit">7</text>
+              <text class="digit">8</text>
+              <text class="digit">9</text>
+            </view>
+          </view>
+        </view>
         <text class="stats-label">个家庭已生成</text>
       </view>
     </view>

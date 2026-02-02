@@ -164,6 +164,55 @@
   border-radius: 24rpx;
 }
 
+/* 数字翻滚容器 */
+.stats-number-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 40rpx;
+  overflow: hidden;
+}
+
+.digit-roller {
+  width: 20rpx;
+  height: 40rpx;
+  overflow: hidden;
+  position: relative;
+}
+
+.digit-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.digit {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #FF3B30;
+  line-height: 40rpx;
+  height: 40rpx;
+  text-align: center;
+  display: block;
+}
+
+.comma-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #FF3B30;
+  line-height: 40rpx;
+  margin: 0 2rpx;
+}
+
+.comma {
+  width: 8rpx;
+  height: 4rpx;
+  background: #FF3B30;
+  border-radius: 2rpx;
+  margin: 0 4rpx;
+  align-self: flex-end;
+  margin-bottom: 8rpx;
+}
+
 .stats-number {
   font-size: 32rpx;
   font-weight: bold;

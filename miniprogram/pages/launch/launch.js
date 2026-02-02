@@ -13,7 +13,9 @@ const { getAssetUrl } = require('../../utils/oss-assets');
 Page({
   data: {
     isElderMode: false,
-    userCount: '15,430', // 已生成家庭数量
+    userCount: 15430, // 当前数字
+    digits: [1, 5, 4, 3, 0], // 每位数字的值
+    showComma: false,
     commonBgUrl: getAssetUrl('common-bg.jpg'),
     statusBarHeight: 0,
     navBarHeight: 44,
@@ -35,8 +37,8 @@ Page({
       menuRight: menuRight
     });
     
-    // 获取统计数据（可从后端获取）
-    this.fetchStats();
+    // 启动数字翻滚动画
+    this.startCounterAnimation();
   },
 
   onShow() {
@@ -44,6 +46,51 @@ Page({
     const app = getApp();
     this.setData({
       isElderMode: app.globalData.isElderMode
+    });
+  },
+
+  /**
+   * 启动数字翻滚动画
+   * 从 15430 开始，每次随机增加 1-9
+   */
+  startCounterAnimation() {
+    let currentCount = 15430;
+    const targetCount = currentCount + Math.floor(Math.random() * 50) + 50; // 最终目标
+    
+    const animate = () => {
+      if (currentCount >= targetCount) {
+        return;
+      }
+      
+      // 随机增加 1-9
+      const increment = Math.floor(Math.random() * 9) + 1;
+      currentCount += increment;
+      
+      // 更新数字显示
+      this.updateDigits(currentCount);
+      
+      // 继续动画
+      setTimeout(animate, 100); // 每100ms更新一次
+    };
+    
+    // 初始显示
+    this.updateDigits(currentCount);
+    
+    // 延迟500ms后开始动画
+    setTimeout(animate, 500);
+  },
+
+  /**
+   * 更新数字显示
+   * @param {number} count - 当前数字
+   */
+  updateDigits(count) {
+    const countStr = count.toString().padStart(5, '0');
+    const digits = countStr.split('').map(d => parseInt(d));
+    
+    this.setData({
+      userCount: count,
+      digits: digits
     });
   },
 
