@@ -56,7 +56,6 @@
         <view class="preview-before">
           <view class="preview-placeholder">
             <image class="preview-image" src="{{previewBeforeUrl}}" mode="aspectFill" />
-            <text class="preview-label">普通背景</text>
           </view>
         </view>
         <view class="preview-arrow">
@@ -65,7 +64,6 @@
         <view class="preview-after">
           <view class="preview-placeholder gold">
             <image class="preview-image" src="{{previewAfterUrl}}" mode="aspectFill" />
-            <text class="preview-label">豪门背景</text>
           </view>
         </view>
       </view>

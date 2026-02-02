@@ -96,9 +96,30 @@ Page({
   async loadUsageCount() {
     try {
       const app = getApp();
+      const cloudbaseRequest = require('../../../utils/cloudbase-request');
       
       // 确保已登录
       await app.ensureLogin();
+      
+      // 确保用户已在数据库中创建
+      const userId = app.globalData.userId;
+      if (userId) {
+        try {
+          // 尝试获取用户信息
+          await cloudbaseRequest.get(`/api/user/${userId}`, null, { showError: false });
+        } catch (err) {
+          // 如果用户不存在（404），则创建用户
+          if (err.code === 404) {
+            console.log('[TransformLaunch] 用户不存在，创建新用户:', userId);
+            try {
+              await cloudbaseRequest.post('/api/user/init', { userId }, { showError: false });
+              console.log('[TransformLaunch] 用户创建成功');
+            } catch (initErr) {
+              console.error('[TransformLaunch] 创建用户失败:', initErr);
+            }
+          }
+        }
+      }
       
       // 更新使用次数
       const result = await app.updateUsageCount();
@@ -107,11 +128,10 @@ Page({
       
       if (result) {
         // 从后端API获取用户的has_ever_paid状态
-        const cloudbaseRequest = require('../../../utils/cloudbase-request');
         let hasEverPaid = wx.getStorageSync('hasEverPaid') || false; // 优先使用缓存
         
         try {
-          const userRes = await cloudbaseRequest.get(`/api/user/${app.globalData.userId}`);
+          const userRes = await cloudbaseRequest.get(`/api/user/${userId}`, null, { showError: false });
           if (userRes && userRes.success && userRes.data) {
             hasEverPaid = userRes.data.has_ever_paid || false;
             // 更新缓存
