@@ -38,6 +38,47 @@ router.post('/login', async (req, res) => {
       });
     }
     
+    // 开发模式：跳过微信登录，直接创建/返回测试用户
+    const DEV_MODE = process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development';
+    
+    if (DEV_MODE) {
+      console.log('[WeChat Login] 开发模式：跳过微信登录验证');
+      
+      // 使用固定的测试用户 ID 和 openid
+      const testUserId = '40fef12c-26d4-4167-a787-07f2865c0797';
+      const testOpenid = 'dev_test_openid_' + code.substring(0, 8);
+      
+      // 查找或创建测试用户
+      let user = await userService.getUserById(testUserId);
+      
+      if (!user) {
+        // 创建测试用户
+        user = await userService.createUserWithOpenid(testUserId, testOpenid);
+        console.log(`[WeChat Login] 开发模式：创建测试用户 ${testUserId}`);
+      } else {
+        console.log(`[WeChat Login] 开发模式：使用现有测试用户 ${testUserId}`);
+      }
+      
+      // 生成简化版 token
+      const tokenPayload = {
+        userId: user.id,
+        openid: testOpenid,
+        exp: Date.now() + 7 * 24 * 60 * 60 * 1000
+      };
+      const token = Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
+      
+      return res.json({
+        success: true,
+        data: {
+          userId: user.id,
+          openid: testOpenid,
+          token,
+          paymentStatus: user.payment_status
+        }
+      });
+    }
+    
+    // 生产模式：正常的微信登录流程
     // 检查微信配置
     if (!WECHAT_APPID || !WECHAT_SECRET) {
       console.error('微信小程序配置缺失: WECHAT_APPID 或 WECHAT_SECRET 未设置');
