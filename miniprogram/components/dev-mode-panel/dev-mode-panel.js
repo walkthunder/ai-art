@@ -199,58 +199,129 @@ Component({
           return;
         }
 
-        const response = await post('/api/dev/usage/switch-status', {
-          userId,
-          status,
-          usageCount
-        }, {
-          showError: false
-        });
-
-        // 清除本地缓存
-        wx.removeStorageSync('hasEverPaid');
-        wx.removeStorageSync('paymentStatus');
-        
-        // 更新本地缓存
-        const hasEverPaid = status === 'vip';
-        const paymentStatus = status === 'vip' ? 'premium' : 'free';
-        
-        wx.setStorageSync('hasEverPaid', hasEverPaid);
-        wx.setStorageSync('paymentStatus', paymentStatus);
-
-        // 更新全局状态
-        app.globalData.usageCount = response.data.newData.usage_count;
-        app.globalData.userType = hasEverPaid ? 'paid' : 'free';
-
-        this.showMessage(
-          `✅ ${response.message}\n` +
-          `新状态: ${hasEverPaid ? 'VIP用户' : '免费用户'}\n` +
-          `使用次数: ${response.data.newData.usage_count}`,
-          'success'
-        );
-
-        // 触发更新事件
-        this.triggerEvent('update', {
-          usageCount: response.data.newData.usage_count,
-          hasEverPaid: hasEverPaid,
-          paymentStatus: paymentStatus
-        });
-
-        // 提示刷新页面
-        setTimeout(() => {
-          wx.showModal({
-            title: '状态已更新',
-            content: '建议返回首页重新进入以刷新所有状态',
-            confirmText: '返回首页',
-            cancelText: '稍后',
-            success: (res) => {
-              if (res.confirm) {
-                wx.reLaunch({ url: '/pages/launch/launch' });
-              }
-            }
+        // 尝试切换状态
+        try {
+          const response = await post('/api/dev/usage/switch-status', {
+            userId,
+            status,
+            usageCount
+          }, {
+            showError: false
           });
-        }, 1500);
 
+          // 清除本地缓存
+          wx.removeStorageSync('hasEverPaid');
+          wx.removeStorageSync('paymentStatus');
+          
+          // 更新本地缓存
+          const hasEverPaid = status === 'vip';
+          const paymentStatus = status === 'vip' ? 'premium' : 'free';
+          
+          wx.setStorageSync('hasEverPaid', hasEverPaid);
+          wx.setStorageSync('paymentStatus', paymentStatus);
+
+          // 更新全局状态
+          app.globalData.usageCount = response.data.newData.usage_count;
+          app.globalData.userType = hasEverPaid ? 'paid' : 'free';
+
+          this.showMessage(
+            `✅ ${response.message}\n` +
+            `新状态: ${hasEverPaid ? 'VIP用户' : '免费用户'}\n` +
+            `使用次数: ${response.data.newData.usage_count}`,
+            'success'
+          );
+
+          // 触发更新事件
+          this.triggerEvent('update', {
+            usageCount: response.data.newData.usage_count,
+            hasEverPaid: hasEverPaid,
+            paymentStatus: paymentStatus
+          });
+
+          // 提示刷新页面
+          setTimeout(() => {
+            wx.showModal({
+              title: '状态已更新',
+              content: '建议返回首页重新进入以刷新所有状态',
+              confirmText: '返回首页',
+              cancelText: '稍后',
+              success: (res) => {
+                if (res.confirm) {
+                  wx.reLaunch({ url: '/pages/launch/launch' });
+                }
+              }
+            });
+          }, 1500);
+        } catch (error) {
+          // 如果用户不存在（404），先创建用户再重试
+          if (error.code === 404 && error.message && error.message.includes('用户不存在')) {
+            console.log('[DevPanel] 用户不存在，尝试创建用户:', userId);
+            
+            try {
+              // 调用 /api/user/init 创建用户
+              await post('/api/user/init', { userId }, { showError: false });
+              console.log('[DevPanel] 用户创建成功，重试切换状态');
+              
+              // 重试切换状态
+              const response = await post('/api/dev/usage/switch-status', {
+                userId,
+                status,
+                usageCount
+              }, {
+                showError: false
+              });
+
+              // 清除本地缓存
+              wx.removeStorageSync('hasEverPaid');
+              wx.removeStorageSync('paymentStatus');
+              
+              // 更新本地缓存
+              const hasEverPaid = status === 'vip';
+              const paymentStatus = status === 'vip' ? 'premium' : 'free';
+              
+              wx.setStorageSync('hasEverPaid', hasEverPaid);
+              wx.setStorageSync('paymentStatus', paymentStatus);
+
+              // 更新全局状态
+              app.globalData.usageCount = response.data.newData.usage_count;
+              app.globalData.userType = hasEverPaid ? 'paid' : 'free';
+
+              this.showMessage(
+                `✅ ${response.message}\n` +
+                `新状态: ${hasEverPaid ? 'VIP用户' : '免费用户'}\n` +
+                `使用次数: ${response.data.newData.usage_count}`,
+                'success'
+              );
+
+              // 触发更新事件
+              this.triggerEvent('update', {
+                usageCount: response.data.newData.usage_count,
+                hasEverPaid: hasEverPaid,
+                paymentStatus: paymentStatus
+              });
+
+              // 提示刷新页面
+              setTimeout(() => {
+                wx.showModal({
+                  title: '状态已更新',
+                  content: '建议返回首页重新进入以刷新所有状态',
+                  confirmText: '返回首页',
+                  cancelText: '稍后',
+                  success: (res) => {
+                    if (res.confirm) {
+                      wx.reLaunch({ url: '/pages/launch/launch' });
+                    }
+                  }
+                });
+              }, 1500);
+            } catch (retryError) {
+              console.error('创建用户或重试失败:', retryError);
+              throw retryError;
+            }
+          } else {
+            throw error;
+          }
+        }
       } catch (error) {
         console.error('切换用户状态失败:', error);
         this.showMessage(`❌ ${error.message || '切换失败'}`, 'error');
@@ -274,26 +345,67 @@ Component({
           return;
         }
 
-        const response = await post(`/api/dev/usage/${action}`, {
-          userId,
-          ...params
-        }, {
-          showError: false
-        });
+        // 尝试调用API
+        try {
+          const response = await post(`/api/dev/usage/${action}`, {
+            userId,
+            ...params
+          }, {
+            showError: false
+          });
 
-        this.showMessage(
-          `✅ ${response.message}\n新次数: ${response.data.newCount ?? response.data.count ?? 0}`,
-          'success'
-        );
+          this.showMessage(
+            `✅ ${response.message}\n新次数: ${response.data.newCount ?? response.data.count ?? 0}`,
+            'success'
+          );
 
-        // 更新父组件
-        const usageCount = response.data.newCount ?? response.data.count ?? 0;
-        this.triggerEvent('update', {
-          usageCount: usageCount
-        });
+          // 更新父组件
+          const usageCount = response.data.newCount ?? response.data.count ?? 0;
+          this.triggerEvent('update', {
+            usageCount: usageCount
+          });
 
-        // 清空输入框
-        this.setData({ inputValue: '' });
+          // 清空输入框
+          this.setData({ inputValue: '' });
+        } catch (error) {
+          // 如果用户不存在（404），先创建用户再重试
+          if (error.code === 404 && error.message && error.message.includes('用户不存在')) {
+            console.log('[DevPanel] 用户不存在，尝试创建用户:', userId);
+            
+            try {
+              // 调用 /api/user/init 创建用户
+              await post('/api/user/init', { userId }, { showError: false });
+              console.log('[DevPanel] 用户创建成功，重试API调用');
+              
+              // 重试原API调用
+              const response = await post(`/api/dev/usage/${action}`, {
+                userId,
+                ...params
+              }, {
+                showError: false
+              });
+
+              this.showMessage(
+                `✅ ${response.message}\n新次数: ${response.data.newCount ?? response.data.count ?? 0}`,
+                'success'
+              );
+
+              // 更新父组件
+              const usageCount = response.data.newCount ?? response.data.count ?? 0;
+              this.triggerEvent('update', {
+                usageCount: usageCount
+              });
+
+              // 清空输入框
+              this.setData({ inputValue: '' });
+            } catch (retryError) {
+              console.error('创建用户或重试失败:', retryError);
+              throw retryError;
+            }
+          } else {
+            throw error;
+          }
+        }
       } catch (error) {
         console.error('开发者API调用失败:', error);
         this.showMessage(`❌ ${error.message || '设置失败'}`, 'error');
