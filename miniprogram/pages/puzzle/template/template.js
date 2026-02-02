@@ -10,13 +10,14 @@
 
 const { generationAPI } = require('../../../utils/api');
 const { initNavigation } = require('../../../utils/navigation-helper');
+const { getAssetUrl } = require('../../../utils/oss-assets');
 
 // 时空拼图模板配置
 const PUZZLE_TEMPLATES = [
   {
     id: 'puzzle-1',
     name: '时光全家福',
-    url: '/assets/templates/puzzle/time-family.jpg',
+    url: getAssetUrl('templates/puzzle/time-family.jpg'),
     category: 'classic',
     tags: ['经典', '全家福', '温馨'],
     description: '经典全家福风格，温馨团圆',
@@ -26,7 +27,7 @@ const PUZZLE_TEMPLATES = [
   {
     id: 'puzzle-2',
     name: '岁月如歌',
-    url: '/assets/templates/puzzle/years-song.jpg',
+    url: getAssetUrl('templates/puzzle/years-song.jpg'),
     category: 'classic',
     tags: ['怀旧', '岁月', '回忆'],
     description: '怀旧风格，记录岁月变迁',
@@ -35,7 +36,7 @@ const PUZZLE_TEMPLATES = [
   {
     id: 'puzzle-3',
     name: '春节团圆',
-    url: '/assets/templates/puzzle/spring-reunion.jpg',
+    url: getAssetUrl('templates/puzzle/spring-reunion.jpg'),
     category: 'festival',
     tags: ['春节', '团圆', '喜庆'],
     description: '春节主题，喜庆团圆',
@@ -44,7 +45,7 @@ const PUZZLE_TEMPLATES = [
   {
     id: 'puzzle-4',
     name: '中秋月圆',
-    url: '/assets/templates/puzzle/mid-autumn.jpg',
+    url: getAssetUrl('templates/puzzle/mid-autumn.jpg'),
     category: 'festival',
     tags: ['中秋', '月圆', '团聚'],
     description: '中秋主题，月圆人团圆',
@@ -53,7 +54,7 @@ const PUZZLE_TEMPLATES = [
   {
     id: 'puzzle-5',
     name: '现代简约',
-    url: '/assets/templates/puzzle/modern-simple.jpg',
+    url: getAssetUrl('templates/puzzle/modern-simple.jpg'),
     category: 'modern',
     tags: ['现代', '简约', '时尚'],
     description: '现代简约风格，时尚大气',
@@ -62,7 +63,7 @@ const PUZZLE_TEMPLATES = [
   {
     id: 'puzzle-6',
     name: '复古怀旧',
-    url: '/assets/templates/puzzle/vintage.jpg',
+    url: getAssetUrl('templates/puzzle/vintage.jpg'),
     category: 'classic',
     tags: ['复古', '怀旧', '老照片'],
     description: '复古风格，老照片质感',

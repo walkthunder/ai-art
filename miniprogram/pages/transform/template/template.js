@@ -16,7 +16,7 @@ const TRANSFORM_TEMPLATES = [
   {
     id: 'transform-custom-1',
     name: '富贵团圆',
-    url: getAssetUrl('templates/transform/fHPym5Te7.jpg'),
+    url: getAssetUrl('templates/transform/fugui-tuanyuan.jpg'),
     category: 'chinese',
     tags: ['中式', '团圆', '喜庆', '富贵'],
     description: '中国风富贵团圆背景，喜庆大气',
@@ -26,7 +26,7 @@ const TRANSFORM_TEMPLATES = [
   {
     id: 'transform-custom-2',
     name: '豪门盛宴',
-    url: getAssetUrl('templates/transform/fHPyN0b67.jpg'),
+    url: getAssetUrl('templates/transform/haomen-shengyan.jpg'),
     category: 'luxury',
     tags: ['豪宅', '奢华', '宴会', '高端'],
     description: '豪门宴会背景，高端大气',
@@ -35,7 +35,7 @@ const TRANSFORM_TEMPLATES = [
   {
     id: 'transform-custom-3',
     name: '雅致居所',
-    url: getAssetUrl('templates/transform/fHPyoUXXv.jpg'),
+    url: getAssetUrl('templates/transform/yazhi-jusuo.jpg'),
     category: 'modern',
     tags: ['雅致', '温馨', '家庭', '舒适'],
     description: '雅致温馨的家庭背景',

@@ -120,13 +120,17 @@
 
 .template-image {
   width: 100%;
+  height: 100%;
   display: block;
+  object-fit: cover; /* 裁剪图片以填充容器 */
+  object-position: center; /* 居中裁剪 */
 }
 
 .template-image-wrapper {
   position: relative;
   width: 100%;
   padding-top: 133.33%; /* 3:4 宽高比 */
+  overflow: hidden; /* 隐藏溢出部分 */
 }
 
 .template-image-inner {

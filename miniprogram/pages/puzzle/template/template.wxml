@@ -52,12 +52,16 @@
         data-template="{{item}}"
       >
         <!-- 模板图片 -->
-        <image 
-          class="template-image" 
-          src="{{item.url}}" 
-          mode="aspectFill"
-          lazy-load
-        />
+        <view class="template-image-wrapper">
+          <view class="template-image-inner">
+            <image 
+              class="template-image" 
+              src="{{item.url}}" 
+              mode="aspectFill"
+              lazy-load
+            />
+          </view>
+        </view>
         
         <!-- 选中标记 -->
         <view wx:if="{{selectedTemplate.id === item.id}}" class="check-mark">
