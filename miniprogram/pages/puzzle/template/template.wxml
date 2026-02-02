@@ -81,11 +81,6 @@
         <view class="template-info">
           <text class="template-name">{{item.name}}</text>
         </view>
-        
-        <!-- 付费标记 -->
-        <view wx:if="{{item.isPremium}}" class="premium-badge">
-          <text class="premium-text">VIP</text>
-        </view>
       </view>
     </view>
     
@@ -127,12 +122,23 @@
         <text class="close-icon">×</text>
       </view>
       
-      <!-- 预览图片 -->
-      <image 
-        class="preview-image" 
-        src="{{previewTemplate.url}}" 
-        mode="aspectFit"
-      />
+      <!-- 预览图片区域 - 支持缩放和拖动 -->
+      <movable-area class="preview-image-area">
+        <movable-view 
+          class="preview-image-movable"
+          direction="all"
+          scale
+          scale-min="1"
+          scale-max="3"
+          scale-value="1"
+        >
+          <image 
+            class="preview-image" 
+            src="{{previewTemplate.url}}" 
+            mode="aspectFill"
+          />
+        </movable-view>
+      </movable-area>
       
       <!-- 底部信息 -->
       <view class="preview-info">
