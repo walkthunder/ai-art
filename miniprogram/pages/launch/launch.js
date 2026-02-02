@@ -69,15 +69,16 @@ Page({
       // 更新数字显示
       this.updateDigits(currentCount);
       
-      // 继续动画
-      setTimeout(animate, 100); // 每100ms更新一次
+      // 随机延迟 1-2 秒后继续动画
+      const delay = Math.floor(Math.random() * 1000) + 1000; // 1000-2000ms
+      setTimeout(animate, delay);
     };
     
     // 初始显示
     this.updateDigits(currentCount);
     
-    // 延迟500ms后开始动画
-    setTimeout(animate, 500);
+    // 延迟 1 秒后开始动画
+    setTimeout(animate, 1000);
   },
 
   /**

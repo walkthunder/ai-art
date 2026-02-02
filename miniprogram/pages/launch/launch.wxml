@@ -40,7 +40,7 @@
         <view class="stats-number-wrapper">
           <!-- 万位 -->
           <view class="digit-roller">
-            <view class="digit-column" style="transform: translateY(-{{digits[0] * 10}}%); transition-duration: 0.3s;">
+            <view class="digit-column" style="transform: translateY(-{{digits[0] * 10}}%); transition-duration: 0.5s;">
               <text class="digit">0</text>
               <text class="digit">1</text>
               <text class="digit">2</text>
@@ -55,7 +55,7 @@
           </view>
           <!-- 千位 -->
           <view class="digit-roller">
-            <view class="digit-column" style="transform: translateY(-{{digits[1] * 10}}%); transition-duration: 0.3s;">
+            <view class="digit-column" style="transform: translateY(-{{digits[1] * 10}}%); transition-duration: 0.5s;">
               <text class="digit">0</text>
               <text class="digit">1</text>
               <text class="digit">2</text>
@@ -72,7 +72,7 @@
           <text class="comma-text">,</text>
           <!-- 百位 -->
           <view class="digit-roller">
-            <view class="digit-column" style="transform: translateY(-{{digits[2] * 10}}%); transition-duration: 0.3s;">
+            <view class="digit-column" style="transform: translateY(-{{digits[2] * 10}}%); transition-duration: 0.5s;">
               <text class="digit">0</text>
               <text class="digit">1</text>
               <text class="digit">2</text>
@@ -87,7 +87,7 @@
           </view>
           <!-- 十位 -->
           <view class="digit-roller">
-            <view class="digit-column" style="transform: translateY(-{{digits[3] * 10}}%); transition-duration: 0.3s;">
+            <view class="digit-column" style="transform: translateY(-{{digits[3] * 10}}%); transition-duration: 0.5s;">
               <text class="digit">0</text>
               <text class="digit">1</text>
               <text class="digit">2</text>
@@ -102,7 +102,7 @@
           </view>
           <!-- 个位 -->
           <view class="digit-roller">
-            <view class="digit-column" style="transform: translateY(-{{digits[4] * 10}}%); transition-duration: 0.3s;">
+            <view class="digit-column" style="transform: translateY(-{{digits[4] * 10}}%); transition-duration: 0.5s;">
               <text class="digit">0</text>
               <text class="digit">1</text>
               <text class="digit">2</text>
