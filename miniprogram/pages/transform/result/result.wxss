@@ -342,14 +342,10 @@
 
 .action-btn {
   position: relative;
-  width: 100%;
+  width: 520rpx;
   height: 96rpx;
   border-radius: 48rpx;
   overflow: hidden;
-}
-
-.action-btn.save-btn {
-  width: 420rpx;
   margin: 0 auto;
 }
 
@@ -378,16 +374,21 @@
 
 .btn-inner.red {
   background: linear-gradient(135deg, var(--color-festival-red), #8B0000);
-  border: 4rpx solid var(--color-festival-gold);
+  border: 2rpx solid rgba(255, 215, 0, 0.3);
 }
 
 .btn-inner.purple {
   background: linear-gradient(135deg, #8B5CF6, #6D28D9);
-  border: 4rpx solid var(--color-festival-gold);
+  border: 2rpx solid rgba(255, 215, 0, 0.3);
 }
 
 .btn-inner.transparent {
   background: rgba(255, 255, 255, 0.1);
+  border: 2rpx solid rgba(255, 215, 0, 0.3);
+}
+
+.btn-inner.blue {
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
   border: 2rpx solid rgba(255, 215, 0, 0.3);
 }
 
