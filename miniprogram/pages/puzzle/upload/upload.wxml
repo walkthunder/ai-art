@@ -43,102 +43,62 @@
       </view>
     </view>
     
-    <!-- 5个图片框布局 -->
+    <!-- 动态照片框布局 -->
     <view class="upload-grid">
-      <!-- 第一行：2个框 -->
+      <!-- 第一行：1-3张 -->
       <view class="upload-row">
-        <view class="upload-box" bindtap="handleUploadClick" data-index="0">
-          <image 
-            wx:if="{{selectedImages[0]}}" 
-            class="uploaded-image" 
-            src="{{selectedImages[0]}}" 
-            mode="aspectFill"
-          />
-          <image 
-            wx:else 
-            class="placeholder-image" 
-            src="{{cameraUploadUrl}}" 
-            mode="scaleToFill"
-          />
-          <view wx:if="{{selectedImages[0]}}" class="delete-btn" catchtap="removeImage" data-index="0">
-            <text class="delete-icon">✕</text>
+        <block wx:for="{{[0, 1, 2]}}" wx:key="index">
+          <view 
+            class="upload-box" 
+            wx:if="{{item <= uploadedCount}}"
+            bindtap="handleUploadClick" 
+            data-index="{{item}}"
+          >
+            <image 
+              wx:if="{{selectedImages[item]}}" 
+              class="uploaded-image" 
+              src="{{selectedImages[item]}}" 
+              mode="aspectFill"
+            />
+            <image 
+              wx:else 
+              class="placeholder-image" 
+              src="{{cameraUploadUrl}}" 
+              mode="scaleToFill"
+            />
+            <view wx:if="{{selectedImages[item]}}" class="delete-btn" catchtap="removeImage" data-index="{{item}}">
+              <text class="delete-icon">✕</text>
+            </view>
           </view>
-        </view>
-        
-        <view class="upload-box" bindtap="handleUploadClick" data-index="1">
-          <image 
-            wx:if="{{selectedImages[1]}}" 
-            class="uploaded-image" 
-            src="{{selectedImages[1]}}" 
-            mode="aspectFill"
-          />
-          <image 
-            wx:else 
-            class="placeholder-image" 
-            src="{{cameraUploadUrl}}" 
-            mode="scaleToFill"
-          />
-          <view wx:if="{{selectedImages[1]}}" class="delete-btn" catchtap="removeImage" data-index="1">
-            <text class="delete-icon">✕</text>
-          </view>
-        </view>
+        </block>
       </view>
       
-      <!-- 第二行：3个框 -->
-      <view class="upload-row">
-        <view class="upload-box" bindtap="handleUploadClick" data-index="2">
-          <image 
-            wx:if="{{selectedImages[2]}}" 
-            class="uploaded-image" 
-            src="{{selectedImages[2]}}" 
-            mode="aspectFill"
-          />
-          <image 
-            wx:else 
-            class="placeholder-image" 
-            src="{{cameraUploadUrl}}" 
-            mode="scaleToFill"
-          />
-          <view wx:if="{{selectedImages[2]}}" class="delete-btn" catchtap="removeImage" data-index="2">
-            <text class="delete-icon">✕</text>
+      <!-- 第二行：4-5张（当上传了3张后显示） -->
+      <view class="upload-row" wx:if="{{uploadedCount >= 3}}">
+        <block wx:for="{{[3, 4]}}" wx:key="index">
+          <view 
+            class="upload-box" 
+            wx:if="{{item <= uploadedCount}}"
+            bindtap="handleUploadClick" 
+            data-index="{{item}}"
+          >
+            <image 
+              wx:if="{{selectedImages[item]}}" 
+              class="uploaded-image" 
+              src="{{selectedImages[item]}}" 
+              mode="aspectFill"
+            />
+            <image 
+              wx:else 
+              class="placeholder-image" 
+              src="{{cameraUploadUrl}}" 
+              mode="scaleToFill"
+            />
+            <view wx:if="{{selectedImages[item]}}" class="delete-btn" catchtap="removeImage" data-index="{{item}}">
+              <text class="delete-icon">✕</text>
+            </view>
           </view>
-        </view>
-        
-        <view class="upload-box" bindtap="handleUploadClick" data-index="3">
-          <image 
-            wx:if="{{selectedImages[3]}}" 
-            class="uploaded-image" 
-            src="{{selectedImages[3]}}" 
-            mode="aspectFill"
-          />
-          <image 
-            wx:else 
-            class="placeholder-image" 
-            src="{{cameraUploadUrl}}" 
-            mode="scaleToFill"
-          />
-          <view wx:if="{{selectedImages[3]}}" class="delete-btn" catchtap="removeImage" data-index="3">
-            <text class="delete-icon">✕</text>
-          </view>
-        </view>
-        
-        <view class="upload-box" bindtap="handleUploadClick" data-index="4">
-          <image 
-            wx:if="{{selectedImages[4]}}" 
-            class="uploaded-image" 
-            src="{{selectedImages[4]}}" 
-            mode="aspectFill"
-          />
-          <image 
-            wx:else 
-            class="placeholder-image" 
-            src="{{cameraUploadUrl}}" 
-            mode="scaleToFill"
-          />
-          <view wx:if="{{selectedImages[4]}}" class="delete-btn" catchtap="removeImage" data-index="4">
-            <text class="delete-icon">✕</text>
-          </view>
-        </view>
+        </block>
       </view>
     </view>
     
