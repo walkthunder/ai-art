@@ -23,6 +23,17 @@ function initDevMode() {
     return;
   }
 
+  // 从本地存储恢复开发者模式状态
+  try {
+    const savedDevModeActive = wx.getStorageSync('devModeActive');
+    if (savedDevModeActive) {
+      devModeActive = true;
+      console.log('[DevMode] 从本地存储恢复开发者模式状态');
+    }
+  } catch (error) {
+    console.error('[DevMode] 恢复开发者模式状态失败:', error);
+  }
+
   console.log('[DevMode] 开发者模式已初始化，快速点击状态栏5次来激活');
 }
 
@@ -58,6 +69,13 @@ function activateDevMode(callback) {
   devModeActive = true;
   console.log('[DevMode] ✅ 开发者模式已激活！');
   
+  // 保存到本地存储
+  try {
+    wx.setStorageSync('devModeActive', true);
+  } catch (error) {
+    console.error('[DevMode] 保存开发者模式状态失败:', error);
+  }
+  
   wx.showToast({
     title: '🔧 开发者模式已激活',
     icon: 'success',
@@ -82,6 +100,14 @@ function isDevModeActive() {
 function disableDevMode() {
   devModeActive = false;
   tapCount = 0;
+  
+  // 清除本地存储
+  try {
+    wx.removeStorageSync('devModeActive');
+  } catch (error) {
+    console.error('[DevMode] 清除开发者模式状态失败:', error);
+  }
+  
   console.log('[DevMode] 开发者模式已禁用');
 }
 

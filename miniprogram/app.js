@@ -148,6 +148,13 @@ App({
    */
   async autoLogin() {
     try {
+      // 检查是否处于开发者模式
+      const devMode = this.globalData.devModeUtil;
+      if (devMode && devMode.isDevModeActive && devMode.isDevModeActive()) {
+        console.log('[App] 开发者模式已激活，跳过自动微信登录');
+        return;
+      }
+      
       const cloudbaseAuth = require('./utils/cloudbase-auth');
       
       // 检查登录状态

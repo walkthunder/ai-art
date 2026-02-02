@@ -12,8 +12,8 @@
 // true: 连接本地后端 http://localhost:3001
 // false: 连接云托管服务
 // ============================================
-const USE_LOCAL_SERVER = false;  // 改为 false 以使用云托管服务
-const LOCAL_SERVER_URL = 'http://localhost:3001';
+const USE_LOCAL_SERVER = true;  // 改为 true 以使用本地后端
+const LOCAL_SERVER_URL = 'http://localhost:3000';  // 修改为实际的本地端口
 
 // 云托管配置
 const CLOUDBASE_CONFIG = {
