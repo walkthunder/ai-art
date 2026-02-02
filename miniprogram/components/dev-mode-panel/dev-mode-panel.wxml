@@ -3,7 +3,7 @@
   用于调试和测试，允许随意修改使用次数
 -->
 <view class="dev-mode-overlay" wx:if="{{visible}}" bindtap="close">
-  <view class="dev-mode-panel" catchtap>
+  <view class="dev-mode-panel" catchtap="stopPropagation">
     <!-- 标题 -->
     <view class="panel-header">
       <text class="panel-title">🔧 开发者模式</text>

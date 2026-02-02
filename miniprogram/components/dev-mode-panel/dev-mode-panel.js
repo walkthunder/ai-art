@@ -27,6 +27,13 @@ Component({
 
   methods: {
     /**
+     * 阻止事件冒泡（空方法）
+     */
+    stopPropagation() {
+      // 阻止点击事件冒泡到外层
+    },
+
+    /**
      * 关闭面板
      */
     close() {

@@ -12,8 +12,8 @@
 // true: 连接本地后端 http://localhost:3001
 // false: 连接云托管服务
 // ============================================
-const USE_LOCAL_SERVER = false;  // 改为 false 以使用云托管服务
-const LOCAL_SERVER_URL = 'http://localhost:3001';
+const USE_LOCAL_SERVER = true;  // 改为 true 以使用本地后端
+const LOCAL_SERVER_URL = 'http://localhost:3001';  // 修改为实际的本地端口
 
 // 云托管配置
 const CLOUDBASE_CONFIG = {
@@ -470,6 +470,13 @@ const del = (path, data, options = {}) => {
   });
 };
 
+/**
+ * 检查是否处于本地调试模式
+ */
+function isLocalMode() {
+  return USE_LOCAL_SERVER;
+}
+
 module.exports = {
   setEnvId,
   cloudRequest,
@@ -478,6 +485,7 @@ module.exports = {
   put,
   del,
   showError,
+  isLocalMode,
   ERROR_MESSAGES,
   ERROR_CODES,
   RETRY_CONFIG,

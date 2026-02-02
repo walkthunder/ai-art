@@ -148,6 +148,21 @@ App({
    */
   async autoLogin() {
     try {
+      // 检查是否处于开发环境（本地调试模式）
+      const cloudbaseRequest = require('./utils/cloudbase-request');
+      if (cloudbaseRequest && cloudbaseRequest.isLocalMode && cloudbaseRequest.isLocalMode()) {
+        console.log('[App] 本地调试模式，跳过自动微信登录');
+        console.log('[App] 💡 提示：请使用开发者面板进行登录测试');
+        return;
+      }
+      
+      // 检查是否处于开发者模式
+      const devMode = this.globalData.devModeUtil;
+      if (devMode && devMode.isDevModeActive && devMode.isDevModeActive()) {
+        console.log('[App] 开发者模式已激活，跳过自动微信登录');
+        return;
+      }
+      
       const cloudbaseAuth = require('./utils/cloudbase-auth');
       
       // 检查登录状态
