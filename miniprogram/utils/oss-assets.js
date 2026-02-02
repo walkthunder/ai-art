@@ -1,7 +1,9 @@
 /**
  * 小程序静态资源 OSS URL 映射
  * 自动生成，请勿手动修改
- * 生成时间: 2026-01-30T03:29:29.980Z
+ * 生成时间: 2026-02-02T07:17:53.503Z
+ * 
+ * 注意：Transform模板添加了版本参数以绕过CDN缓存
  */
 
 const OSS_ASSETS = {
@@ -15,13 +17,22 @@ const OSS_ASSETS = {
   "preview-before.jpg": "https://wms.webinfra.cloud/miniprogram-assets/preview-before.jpg",
   "wealth-icon.png": "https://wms.webinfra.cloud/miniprogram-assets/wealth-icon.png",
   "camera-upload.png": "https://wms.webinfra.cloud/miniprogram-assets/camera-upload.png",
-  "templates/transform/classical-palace.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/classical-palace.jpg",
+  "templates/transform/classical-palace.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/classical-palace.jpg?v=20260202",
   "templates/transform/fHPym5Te7.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fHPym5Te7.jpg",
   "templates/transform/fHPyN0b67.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fHPyN0b67.jpg",
   "templates/transform/fHPyoUXXv.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fHPyoUXXv.jpg",
-  "templates/transform/luxury-chinese.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/luxury-chinese.jpg",
-  "templates/transform/luxury-european.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/luxury-european.jpg",
-  "templates/transform/modern-luxury.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/modern-luxury.jpg"
+  "templates/transform/luxury-chinese.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/luxury-chinese.jpg?v=20260202",
+  "templates/transform/luxury-european.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/luxury-european.jpg?v=20260202",
+  "templates/transform/modern-luxury.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/modern-luxury.jpg?v=20260202",
+  "templates/puzzle/time-family.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/puzzle/time-family.jpg",
+  "templates/puzzle/years-song.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/puzzle/years-song.jpg",
+  "templates/puzzle/spring-reunion.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/puzzle/spring-reunion.jpg",
+  "templates/puzzle/mid-autumn.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/puzzle/mid-autumn.jpg",
+  "templates/puzzle/modern-simple.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/puzzle/modern-simple.jpg",
+  "templates/puzzle/vintage.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/puzzle/vintage.jpg",
+  "templates/transform/fugui-tuanyuan.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fugui-tuanyuan.jpg?v=20260202",
+  "templates/transform/haomen-shengyan.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/haomen-shengyan.jpg?v=20260202",
+  "templates/transform/yazhi-jusuo.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/yazhi-jusuo.jpg?v=20260202"
 };
 
 /**
