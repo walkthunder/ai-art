@@ -363,7 +363,106 @@ module.exports = {
   createUser,
   getUserById,
   getUserByOpenid,
+  getUserByUnionid,
+  updatePaymentStatus,
+  updateUserPaymentStatus: updatePaymentStatus,  // 别名
   processPaymentUpgrade,
   getOrCreateUser,
   generateInviteCode
 };
+
+/**
+ * 通过 unionid 获取用户
+ * @param {string} unionid - 微信 unionid
+ * @returns {Promise<Object|null>} 用户信息
+ */
+async function getUserByUnionid(unionid) {
+  try {
+    if (!unionid) return null;
+    
+    const sql = `
+      SELECT * FROM v_user_full_info WHERE unionid = ?
+    `;
+    
+    const rows = await query(sql, [unionid]);
+    
+    if (rows.length === 0) {
+      return null;
+    }
+    
+    return convertObjectTimesToCST(rows[0]);
+  } catch (error) {
+    console.error('根据unionid查询用户失败:', error);
+    throw new Error(`根据unionid查询用户失败: ${error.message}`);
+  }
+}
+
+/**
+ * 更新用户支付状态
+ * @param {string} userId - 用户ID
+ * @param {string} tier - 套餐类型 ('basic' | 'premium')
+ * @param {number} amount - 订单金额
+ * @returns {Promise<Object>} 更新结果
+ */
+async function updatePaymentStatus(userId, tier, amount) {
+  const pool = require('../db/connection').pool;
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    // 获取当前付费信息
+    const [paymentRows] = await connection.execute(
+      'SELECT has_ever_paid, first_payment_at FROM user_payments WHERE user_id = ? FOR UPDATE',
+      [userId]
+    );
+    
+    const isFirstPayment = !paymentRows[0]?.has_ever_paid;
+    
+    // 更新 user_payments 表
+    if (isFirstPayment) {
+      await connection.execute(
+        `UPDATE user_payments 
+         SET has_ever_paid = TRUE,
+             first_payment_at = NOW(),
+             last_payment_at = NOW(),
+             current_tier = ?,
+             payment_count = payment_count + 1,
+             total_paid_amount = total_paid_amount + ?,
+             updated_at = NOW()
+         WHERE user_id = ?`,
+        [tier, amount, userId]
+      );
+    } else {
+      await connection.execute(
+        `UPDATE user_payments 
+         SET last_payment_at = NOW(),
+             current_tier = ?,
+             payment_count = payment_count + 1,
+             total_paid_amount = total_paid_amount + ?,
+             updated_at = NOW()
+         WHERE user_id = ?`,
+        [tier, amount, userId]
+      );
+    }
+    
+    // 更新 users 表的 payment_status（冗余字段，用于快速查询）
+    await connection.execute(
+      'UPDATE users SET payment_status = ?, updated_at = NOW() WHERE id = ?',
+      [tier, userId]
+    );
+    
+    await connection.commit();
+    
+    return {
+      success: true,
+      is_first_payment: isFirstPayment
+    };
+  } catch (error) {
+    await connection.rollback();
+    console.error('更新支付状态失败:', error);
+    throw new Error(`更新支付状态失败: ${error.message}`);
+  } finally {
+    connection.release();
+  }
+}

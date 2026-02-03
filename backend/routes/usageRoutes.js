@@ -218,7 +218,7 @@ router.get('/history/:userId', async (req, res) => {
       });
     }
 
-    const result = await balanceService.getBalanceHistory(
+    const result = await balanceService.getUsageHistory(
       userId,
       parseInt(page),
       parseInt(pageSize)
@@ -275,7 +275,7 @@ router.get('/history/:userId', async (req, res) => {
       });
     }
 
-    const result = await balanceService.getBalanceHistory(
+    const result = await balanceService.getUsageHistory(
       userId,
       parseInt(page),
       parseInt(pageSize),
