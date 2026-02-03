@@ -67,7 +67,7 @@ router.post('/usage/set', checkDevMode, async (req, res) => {
 
     // 获取当前余额
     const oldBalances = await balanceService.getUserBalances(userId);
-    const oldCount = oldBalances[mode]?.balance || 0;
+    const oldCount = oldBalances[mode]?.free_count || oldBalances[mode]?.count || 0;
 
     // 设置新余额
     await balanceService.setBalance(userId, mode, count, 'dev_mode_set');

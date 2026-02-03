@@ -405,12 +405,83 @@ async function getUsageHistory(userId, page = 1, pageSize = 20) {
   }
 }
 
+/**
+ * 设置余额（开发模式专用）
+ * @param {string} userId - 用户ID
+ * @param {string} mode - 模式 ('puzzle' | 'transform' | 'paid')
+ * @param {number} amount - 新余额数量
+ * @param {string} reason - 原因
+ * @returns {Promise<Object>} { success, new_count }
+ */
+async function setBalance(userId, mode, amount, reason = 'admin_set') {
+  const pool = require('../db/connection').pool;
+  const connection = await pool.getConnection();
+  
+  try {
+    if (!userId || amount < 0) {
+      throw new Error('参数无效');
+    }
+    
+    // 确定余额类型
+    const balanceType = mode === 'puzzle' ? BALANCE_TYPES.PUZZLE_FREE :
+                        mode === 'transform' ? BALANCE_TYPES.TRANSFORM_FREE :
+                        BALANCE_TYPES.PAID;
+    
+    await connection.beginTransaction();
+    
+    // 获取当前余额
+    const [currentRows] = await connection.execute(
+      'SELECT amount FROM user_balances WHERE user_id = ? AND balance_type = ? FOR UPDATE',
+      [userId, balanceType]
+    );
+    
+    const currentAmount = currentRows[0]?.amount || 0;
+    const difference = amount - currentAmount;
+    
+    // 更新余额
+    const balanceId = `${userId}-${mode === 'paid' ? 'paid' : mode}`;
+    await connection.execute(
+      `INSERT INTO user_balances (id, user_id, balance_type, amount, created_at, updated_at)
+       VALUES (?, ?, ?, ?, NOW(), NOW())
+       ON DUPLICATE KEY UPDATE amount = ?, updated_at = NOW()`,
+      [balanceId, userId, balanceType, amount, amount]
+    );
+    
+    // 记录日志
+    const logId = uuidv4();
+    const actionType = difference > 0 ? 'increment' : difference < 0 ? 'decrement' : 'set';
+    
+    await connection.execute(
+      `INSERT INTO usage_logs (id, user_id, action_type, amount, remaining_count, reason, mode, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [logId, userId, actionType, difference, amount, reason, balanceType]
+    );
+    
+    await connection.commit();
+    
+    return {
+      success: true,
+      new_count: amount,
+      old_count: currentAmount,
+      difference
+    };
+  } catch (error) {
+    await connection.rollback();
+    console.error('设置余额失败:', error);
+    throw new Error(`设置余额失败: ${error.message}`);
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   BALANCE_TYPES,
   getBalanceType,
   checkBalance,
+  getUserBalances: checkBalance,  // 别名，向后兼容
   decrementBalance,
   restoreBalance,
   addBalance,
+  setBalance,
   getUsageHistory
 };
