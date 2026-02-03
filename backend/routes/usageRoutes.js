@@ -94,7 +94,7 @@ router.post('/decrement', async (req, res) => {
       });
     }
 
-    const result = await balanceService.decrementBalance(userId, mode, generationId);
+    const result = await balanceService.decrementBalance(userId, generationId, mode);
 
     res.json({
       success: true,
@@ -173,7 +173,7 @@ router.post('/restore', async (req, res) => {
       });
     }
 
-    const result = await balanceService.restoreBalance(userId, mode, generationId);
+    const result = await balanceService.restoreBalance(userId, generationId, mode);
 
     res.json({
       success: true,
