@@ -10,7 +10,7 @@ const { generateArtPhotoInternal, getTaskStatus } = require('../services/volceng
 const { getModeConfig, getModeModelParams } = require('../config/modes');
 const { getTemplateConfig, getDefaultTemplate } = require('../config/templates');
 const { validateRequest, validateGenerateArtPhotoParams } = require('../utils/validation');
-const userService = require('../services/userService');
+const userServiceV2 = require('../services/userServiceV2');
 const generationService = require('../services/generationService');
 const errorLogService = require('../services/errorLogService');
 
@@ -59,7 +59,7 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
     let paymentStatus = 'free';
     if (userId) {
       try {
-        const user = await userService.getUserById(userId);
+        const user = await userServiceV2.getUserById(userId);
         if (user) paymentStatus = user.payment_status;
       } catch (error) {
         console.error('获取用户付费状态失败:', error);

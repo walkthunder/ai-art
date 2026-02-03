@@ -5,7 +5,8 @@
 
 const express = require('express');
 const router = express.Router();
-const usageService = require('../services/usageService');
+const balanceService = require('../services/balanceService');
+const userServiceV2 = require('../services/userServiceV2');
 
 // 检查是否为开发环境
 const isDev = process.env.NODE_ENV === 'development' || process.env.DEV_MODE === 'true';
@@ -33,11 +34,11 @@ const checkDevMode = (req, res, next) => {
 /**
  * POST /api/dev/usage/set
  * 设置用户使用次数（开发者模式）
- * Body: { userId: string, count: number }
+ * Body: { userId: string, mode: string, count: number }
  */
 router.post('/usage/set', checkDevMode, async (req, res) => {
   try {
-    const { userId, count } = req.body;
+    const { userId, mode = 'paid', count } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -55,64 +56,37 @@ router.post('/usage/set', checkDevMode, async (req, res) => {
       });
     }
 
-    const pool = require('../db/connection').pool;
-    const connection = await pool.getConnection();
-
-    try {
-      await connection.beginTransaction();
-
-      // 获取当前使用次数
-      const [rows] = await connection.execute(
-        'SELECT usage_count FROM users WHERE id = ? FOR UPDATE',
-        [userId]
-      );
-
-      if (rows.length === 0) {
-        throw new Error('USER_NOT_FOUND');
-      }
-
-      const oldCount = rows[0].usage_count || 0;
-
-      // 设置新的使用次数
-      await connection.execute(
-        'UPDATE users SET usage_count = ? WHERE id = ?',
-        [count, userId]
-      );
-
-      // 记录日志
-      const { v4: uuidv4 } = require('uuid');
-      const logId = uuidv4();
-      const difference = count - oldCount;
-      const actionType = difference > 0 ? 'increment' : 'decrement';
-
-      await connection.execute(
-        `INSERT INTO usage_logs (id, user_id, action_type, amount, remaining_count, reason, reference_id, created_at)
-         VALUES (?, ?, ?, ?, ?, 'dev_mode', ?, NOW())`,
-        [logId, userId, actionType, Math.abs(difference), count, 'dev_set_' + Date.now()]
-      );
-
-      await connection.commit();
-
-      res.json({
-        success: true,
-        message: '使用次数已设置',
-        data: {
-          userId,
-          oldCount,
-          newCount: count,
-          difference
-        }
+    const validModes = ['puzzle', 'transform', 'paid'];
+    if (!validModes.includes(mode)) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_MODE',
+        message: `模式必须是: ${validModes.join(', ')}`
       });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
     }
+
+    // 获取当前余额
+    const oldBalances = await balanceService.getUserBalances(userId);
+    const oldCount = oldBalances[mode]?.balance || 0;
+
+    // 设置新余额
+    await balanceService.setBalance(userId, mode, count, 'dev_mode_set');
+
+    res.json({
+      success: true,
+      message: '使用次数已设置',
+      data: {
+        userId,
+        mode,
+        oldCount,
+        newCount: count,
+        difference: count - oldCount
+      }
+    });
   } catch (error) {
     console.error('设置使用次数失败:', error);
 
-    if (error.message === 'USER_NOT_FOUND') {
+    if (error.message.includes('不存在')) {
       return res.status(404).json({
         success: false,
         error: 'USER_NOT_FOUND',
@@ -132,11 +106,11 @@ router.post('/usage/set', checkDevMode, async (req, res) => {
 /**
  * POST /api/dev/usage/add
  * 增加用户使用次数（开发者模式）
- * Body: { userId: string, amount: number }
+ * Body: { userId: string, mode: string, amount: number }
  */
 router.post('/usage/add', checkDevMode, async (req, res) => {
   try {
-    const { userId, amount } = req.body;
+    const { userId, mode = 'paid', amount } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -154,11 +128,26 @@ router.post('/usage/add', checkDevMode, async (req, res) => {
       });
     }
 
-    const result = await usageService.addUsageCount(
+    const validModes = ['puzzle', 'transform', 'paid'];
+    if (!validModes.includes(mode)) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_MODE',
+        message: `模式必须是: ${validModes.join(', ')}`
+      });
+    }
+
+    // 将 mode 转换为 balance_type
+    const balanceType = mode === 'puzzle' ? balanceService.BALANCE_TYPES.PUZZLE_FREE :
+                        mode === 'transform' ? balanceService.BALANCE_TYPES.TRANSFORM_FREE :
+                        balanceService.BALANCE_TYPES.PAID;
+    
+    const result = await balanceService.addBalance(
       userId,
       Math.abs(amount),
       'admin_grant',
-      'dev_mode_' + Date.now()
+      'dev_mode_' + Date.now(),
+      balanceType
     );
 
     res.json({
@@ -166,8 +155,9 @@ router.post('/usage/add', checkDevMode, async (req, res) => {
       message: '使用次数已更新',
       data: {
         userId,
+        mode,
         amount,
-        newCount: result.new_count
+        newBalance: result.new_balance
       }
     });
   } catch (error) {
@@ -193,11 +183,11 @@ router.post('/usage/add', checkDevMode, async (req, res) => {
 /**
  * POST /api/dev/usage/switch-status
  * 切换用户状态（免费/VIP）
- * Body: { userId: string, status: 'free' | 'vip', usageCount: number }
+ * Body: { userId: string, status: 'free' | 'vip', puzzleCount: number, transformCount: number, paidCount: number }
  */
 router.post('/usage/switch-status', checkDevMode, async (req, res) => {
   try {
-    const { userId, status, usageCount } = req.body;
+    const { userId, status, puzzleCount, transformCount, paidCount } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -215,101 +205,44 @@ router.post('/usage/switch-status', checkDevMode, async (req, res) => {
       });
     }
 
-    const pool = require('../db/connection').pool;
-    const connection = await pool.getConnection();
+    // 获取旧数据
+    const oldBalances = await balanceService.getUserBalances(userId);
 
-    try {
-      await connection.beginTransaction();
-
-      // 检查用户是否存在
-      const [rows] = await connection.execute(
-        'SELECT id, has_ever_paid, usage_count, payment_status FROM users WHERE id = ? FOR UPDATE',
-        [userId]
-      );
-
-      if (rows.length === 0) {
-        throw new Error('USER_NOT_FOUND');
-      }
-
-      const oldData = rows[0];
-
-      // 根据状态设置不同的值
-      let hasEverPaid, paymentStatus, finalUsageCount;
-      
-      if (status === 'free') {
-        hasEverPaid = false;
-        paymentStatus = 'free';
-        finalUsageCount = usageCount || 3;
-      } else {
-        hasEverPaid = true;
-        paymentStatus = 'premium';
-        finalUsageCount = usageCount || 20;
-      }
-
-      // 更新用户状态
-      await connection.execute(
-        `UPDATE users 
-         SET has_ever_paid = ?, 
-             payment_status = ?, 
-             usage_count = ?,
-             first_payment_at = ?,
-             last_payment_at = ?,
-             updated_at = CURRENT_TIMESTAMP
-         WHERE id = ?`,
-        [
-          hasEverPaid, 
-          paymentStatus, 
-          finalUsageCount,
-          hasEverPaid ? new Date() : null,
-          hasEverPaid ? new Date() : null,
-          userId
-        ]
-      );
-
-      // 记录日志
-      const { v4: uuidv4 } = require('uuid');
-      const logId = uuidv4();
-      const difference = finalUsageCount - (oldData.usage_count || 0);
-      const actionType = difference > 0 ? 'increment' : (difference < 0 ? 'decrement' : 'no_change');
-
-      if (difference !== 0) {
-        await connection.execute(
-          `INSERT INTO usage_logs (id, user_id, action_type, amount, remaining_count, reason, reference_id, created_at)
-           VALUES (?, ?, ?, ?, ?, 'dev_mode_switch', ?, NOW())`,
-          [logId, userId, actionType, Math.abs(difference), finalUsageCount, `switch_to_${status}`]
-        );
-      }
-
-      await connection.commit();
-
-      res.json({
-        success: true,
-        message: `已切换为${status === 'free' ? '免费用户' : 'VIP用户'}`,
-        data: {
-          userId,
-          status,
-          oldData: {
-            has_ever_paid: oldData.has_ever_paid,
-            payment_status: oldData.payment_status,
-            usage_count: oldData.usage_count
-          },
-          newData: {
-            has_ever_paid: hasEverPaid,
-            payment_status: paymentStatus,
-            usage_count: finalUsageCount
-          }
-        }
-      });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
+    // 根据状态设置不同的值
+    let finalPuzzleCount, finalTransformCount, finalPaidCount;
+    
+    if (status === 'free') {
+      finalPuzzleCount = puzzleCount || 3;
+      finalTransformCount = transformCount || 3;
+      finalPaidCount = paidCount || 0;
+    } else {
+      finalPuzzleCount = puzzleCount || 3;
+      finalTransformCount = transformCount || 3;
+      finalPaidCount = paidCount || 20;
     }
+
+    // 设置余额
+    await balanceService.setBalance(userId, 'puzzle', finalPuzzleCount, 'dev_mode_switch');
+    await balanceService.setBalance(userId, 'transform', finalTransformCount, 'dev_mode_switch');
+    await balanceService.setBalance(userId, 'paid', finalPaidCount, 'dev_mode_switch');
+
+    // 获取新数据
+    const newBalances = await balanceService.getUserBalances(userId);
+
+    res.json({
+      success: true,
+      message: `已切换为${status === 'free' ? '免费用户' : 'VIP用户'}`,
+      data: {
+        userId,
+        status,
+        oldData: oldBalances,
+        newData: newBalances
+      }
+    });
   } catch (error) {
     console.error('切换用户状态失败:', error);
 
-    if (error.message === 'USER_NOT_FOUND') {
+    if (error.message.includes('不存在')) {
       return res.status(404).json({
         success: false,
         error: 'USER_NOT_FOUND',
@@ -342,26 +275,25 @@ router.post('/login', checkDevMode, async (req, res) => {
         message: '用户ID不能为空'
       });
     }
-
-    const userService = require('../services/userService');
     
     // 获取或创建用户
-    let user = await userService.getUserById(userId);
+    let user = await userServiceV2.getUserById(userId);
     
     if (!user) {
       // 创建新用户
-      user = await userService.createUser(userId);
+      user = await userServiceV2.createUser({ id: userId });
       console.log(`[DevMode] 创建新用户: ${userId}`);
     }
+
+    // 获取余额信息
+    const balances = await balanceService.getUserBalances(userId);
 
     res.json({
       success: true,
       message: '登录成功',
       data: {
         userId: user.id,
-        usageCount: user.usage_count || 3,
-        hasEverPaid: user.has_ever_paid || false,
-        paymentStatus: user.payment_status || 'free',
+        balances: balances,
         createdAt: user.created_at
       }
     });
@@ -393,7 +325,7 @@ router.get('/usage/check/:userId', checkDevMode, async (req, res) => {
       });
     }
 
-    const result = await usageService.checkUsageCount(userId);
+    const result = await balanceService.getUserBalances(userId);
 
     res.json({
       success: true,

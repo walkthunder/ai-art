@@ -1,21 +1,22 @@
 /**
- * 重置用户使用次数脚本
+ * 重置用户使用次数脚本（适配新架构 user_balances 表）
  * 用于开发调试时快速修改使用次数
  * 
  * 使用方法：
- * node backend/scripts/reset-usage-count.js [userId] [count]
+ * node backend/scripts/reset-usage-count.js [userId] [mode] [count]
  * node backend/scripts/reset-usage-count.js --list
  * node backend/scripts/reset-usage-count.js --interactive
  * 
  * 示例：
- * node backend/scripts/reset-usage-count.js user123 100
- * node backend/scripts/reset-usage-count.js all 50
+ * node backend/scripts/reset-usage-count.js user123 paid 100
+ * node backend/scripts/reset-usage-count.js all free_puzzle 50
  * node backend/scripts/reset-usage-count.js --list
  * node backend/scripts/reset-usage-count.js -i
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const db = require('../db/connection');
+const balanceService = require('../services/balanceService');
 const readline = require('readline');
 
 /**
@@ -38,63 +39,62 @@ function question(rl, query) {
 /**
  * 重置指定用户的使用次数
  * @param {string} userId - 用户ID，或 'all' 表示所有用户
+ * @param {string} mode - 模式 ('free_puzzle', 'free_transform', 'paid')
  * @param {number} count - 要设置的使用次数
  */
-async function resetUsageCount(userId, count) {
+async function resetUsageCount(userId, mode, count) {
   let connection;
   try {
     console.log('\n🔄 连接数据库...');
     connection = await db.pool.getConnection();
     
     if (userId === 'all') {
-      // 重置所有用户
+      // 重置所有用户的指定模式
       const [result] = await connection.query(
-        'UPDATE users SET usage_count = ? WHERE 1=1',
-        [count]
+        'UPDATE user_balances SET amount = ?, updated_at = NOW() WHERE balance_type = ?',
+        [count, mode]
       );
       
-      console.log(`\n✅ 成功重置所有用户的使用次数为 ${count}`);
+      console.log(`\n✅ 成功重置所有用户的 ${mode} 次数为 ${count}`);
       console.log(`   影响行数: ${result.affectedRows}`);
       
       // 显示统计
       const [stats] = await connection.query(
-        'SELECT COUNT(*) as total, SUM(usage_count) as total_count FROM users'
+        `SELECT 
+          COUNT(DISTINCT user_id) as total_users,
+          SUM(amount) as total_balance
+         FROM user_balances 
+         WHERE balance_type = ?`,
+        [mode]
       );
       console.log(`\n📊 当前统计:`);
-      console.log(`   总用户数: ${stats[0].total}`);
-      console.log(`   总使用次数: ${stats[0].total_count}`);
+      console.log(`   用户数: ${stats[0].total_users}`);
+      console.log(`   总${mode}次数: ${stats[0].total_balance}`);
       
     } else {
-      // 重置指定用户
-      const [result] = await connection.query(
-        'UPDATE users SET usage_count = ? WHERE id = ?',
-        [count, userId]
+      // 重置指定用户 - 使用 balanceService
+      // 先获取当前余额
+      const oldBalances = await balanceService.checkBalance(userId);
+      const oldCount = mode === 'paid' ? oldBalances.paid.count : 
+                      mode === 'free_puzzle' ? oldBalances.puzzle.free_count :
+                      oldBalances.transform.free_count;
+      
+      // 直接更新数据库
+      await connection.query(
+        'UPDATE user_balances SET amount = ?, updated_at = NOW() WHERE user_id = ? AND balance_type = ?',
+        [count, userId, mode]
       );
       
-      if (result.affectedRows === 0) {
-        console.log(`\n❌ 用户 ${userId} 不存在`);
-        console.log(`\n💡 提示: 使用 --list 查看所有用户`);
-        return false;
-      } else {
-        console.log(`\n✅ 成功重置用户的使用次数为 ${count}`);
-      }
+      console.log(`\n✅ 成功重置用户的 ${mode} 次数为 ${count}`);
       
       // 查询当前状态
-      const [users] = await connection.query(
-        'SELECT id, openid, nickname, usage_count, has_ever_paid, created_at FROM users WHERE id = ?',
-        [userId]
-      );
+      const balances = await balanceService.checkBalance(userId);
       
-      if (users.length > 0) {
-        const user = users[0];
-        console.log(`\n📋 用户信息:`);
-        console.log(`   用户ID: ${user.id}`);
-        console.log(`   OpenID: ${user.openid || '未设置'}`);
-        console.log(`   昵称: ${user.nickname || '未设置'}`);
-        console.log(`   剩余次数: ${user.usage_count}`);
-        console.log(`   付费状态: ${user.has_ever_paid ? '已付费' : '免费用户'}`);
-        console.log(`   创建时间: ${new Date(user.created_at).toLocaleString('zh-CN')}`);
-      }
+      console.log(`\n📋 用户余额信息:`);
+      console.log(`   用户ID: ${userId}`);
+      console.log(`   时空拼图: ${balances.puzzle.free_count}`);
+      console.log(`   富贵变身: ${balances.transform.free_count}`);
+      console.log(`   付费次数: ${balances.paid.count}`);
     }
     
     return true;
@@ -124,11 +124,20 @@ async function listUsers(limit = 20) {
     );
     const total = countResult[0].total;
     
-    // 获取用户列表
+    // 获取用户列表及其余额
     const [users] = await connection.query(
-      `SELECT id, openid, nickname, usage_count, has_ever_paid, created_at 
-       FROM users 
-       ORDER BY created_at DESC 
+      `SELECT 
+        u.id, 
+        u.openid, 
+        u.nickname,
+        u.created_at,
+        MAX(CASE WHEN ub.balance_type = 'free_puzzle' THEN ub.amount ELSE 0 END) as puzzle_balance,
+        MAX(CASE WHEN ub.balance_type = 'free_transform' THEN ub.amount ELSE 0 END) as transform_balance,
+        MAX(CASE WHEN ub.balance_type = 'paid' THEN ub.amount ELSE 0 END) as paid_balance
+       FROM users u
+       LEFT JOIN user_balances ub ON u.id = ub.user_id
+       GROUP BY u.id, u.openid, u.nickname, u.created_at
+       ORDER BY u.created_at DESC 
        LIMIT ?`,
       [limit]
     );
@@ -139,23 +148,25 @@ async function listUsers(limit = 20) {
     }
     
     console.log(`\n📋 用户列表 (显示最近 ${users.length} 个，共 ${total} 个):`);
-    console.log('═'.repeat(100));
+    console.log('═'.repeat(120));
     console.log(
       '序号'.padEnd(6) + 
       '用户ID'.padEnd(38) + 
       '昵称'.padEnd(15) + 
-      '次数'.padEnd(8) + 
-      '状态'.padEnd(10) + 
+      '拼图'.padEnd(8) + 
+      '变身'.padEnd(8) + 
+      '付费'.padEnd(8) + 
       '创建时间'
     );
-    console.log('═'.repeat(100));
+    console.log('═'.repeat(120));
     
     users.forEach((user, index) => {
       const num = String(index + 1).padEnd(6);
       const id = user.id.substring(0, 36).padEnd(38);
       const nickname = (user.nickname || '未设置').substring(0, 12).padEnd(15);
-      const count = String(user.usage_count || 0).padEnd(8);
-      const status = (user.has_ever_paid ? '已付费' : '免费').padEnd(10);
+      const puzzle = String(user.puzzle_balance || 0).padEnd(8);
+      const transform = String(user.transform_balance || 0).padEnd(8);
+      const paid = String(user.paid_balance || 0).padEnd(8);
       const date = new Date(user.created_at).toLocaleString('zh-CN', {
         year: 'numeric',
         month: '2-digit',
@@ -163,26 +174,27 @@ async function listUsers(limit = 20) {
         hour: '2-digit',
         minute: '2-digit'
       });
-      console.log(`${num}${id}${nickname}${count}${status}${date}`);
+      console.log(`${num}${id}${nickname}${puzzle}${transform}${paid}${date}`);
     });
     
-    console.log('═'.repeat(100));
+    console.log('═'.repeat(120));
     
     // 显示统计
     const [stats] = await connection.query(
       `SELECT 
-        COUNT(*) as total_users,
-        SUM(usage_count) as total_count,
-        AVG(usage_count) as avg_count,
-        SUM(CASE WHEN has_ever_paid = 1 THEN 1 ELSE 0 END) as paid_users
-       FROM users`
+        COUNT(DISTINCT u.id) as total_users,
+        SUM(CASE WHEN ub.balance_type = 'free_puzzle' THEN ub.amount ELSE 0 END) as total_puzzle,
+        SUM(CASE WHEN ub.balance_type = 'free_transform' THEN ub.amount ELSE 0 END) as total_transform,
+        SUM(CASE WHEN ub.balance_type = 'paid' THEN ub.amount ELSE 0 END) as total_paid
+       FROM users u
+       LEFT JOIN user_balances ub ON u.id = ub.user_id`
     );
     
     console.log(`\n📊 统计信息:`);
     console.log(`   总用户数: ${stats[0].total_users}`);
-    console.log(`   付费用户: ${stats[0].paid_users}`);
-    console.log(`   总使用次数: ${stats[0].total_count}`);
-    console.log(`   平均次数: ${parseFloat(stats[0].avg_count).toFixed(2)}`);
+    console.log(`   总拼图次数: ${stats[0].total_puzzle}`);
+    console.log(`   总变身次数: ${stats[0].total_transform}`);
+    console.log(`   总付费次数: ${stats[0].total_paid}`);
     
     return users;
     
@@ -245,6 +257,13 @@ async function interactiveMode() {
         return;
       }
       
+      const mode = await question(rl, '请输入模式 (free_puzzle/free_transform/paid): ');
+      if (!['free_puzzle', 'free_transform', 'paid'].includes(mode.trim())) {
+        console.log('\n❌ 模式必须是 free_puzzle, free_transform 或 paid');
+        rl.close();
+        return;
+      }
+      
       const count = await question(rl, '请输入新的使用次数: ');
       const countNum = parseInt(count);
       
@@ -254,10 +273,17 @@ async function interactiveMode() {
         return;
       }
       
-      await resetUsageCount(userId.trim(), countNum);
+      await resetUsageCount(userId.trim(), mode.trim(), countNum);
       
     } else if (choice === '2') {
-      const count = await question(rl, '\n请输入新的使用次数: ');
+      const mode = await question(rl, '\n请输入模式 (free_puzzle/free_transform/paid): ');
+      if (!['free_puzzle', 'free_transform', 'paid'].includes(mode.trim())) {
+        console.log('\n❌ 模式必须是 free_puzzle, free_transform 或 paid');
+        rl.close();
+        return;
+      }
+      
+      const count = await question(rl, '请输入新的使用次数: ');
       const countNum = parseInt(count);
       
       if (isNaN(countNum) || countNum < 0) {
@@ -266,10 +292,10 @@ async function interactiveMode() {
         return;
       }
       
-      const confirm = await question(rl, `\n⚠️  确认要将所有用户的使用次数设置为 ${countNum} 吗? (yes/no): `);
+      const confirm = await question(rl, `\n⚠️  确认要将所有用户的 ${mode} 次数设置为 ${countNum} 吗? (yes/no): `);
       
       if (confirm.toLowerCase() === 'yes' || confirm.toLowerCase() === 'y') {
-        await resetUsageCount('all', countNum);
+        await resetUsageCount('all', mode.trim(), countNum);
       } else {
         console.log('\n❌ 操作已取消');
       }
@@ -297,12 +323,13 @@ async function main() {
 ╚════════════════════════════════════════════════════════════╝
 
 用法:
-  node backend/scripts/reset-usage-count.js <userId> <count>
+  node backend/scripts/reset-usage-count.js <userId> <mode> <count>
   node backend/scripts/reset-usage-count.js --list [limit]
   node backend/scripts/reset-usage-count.js --interactive
 
 参数:
   userId    用户ID（从 --list 获取），或使用 'all' 修改所有用户
+  mode      模式 (free_puzzle/free_transform/paid)
   count     要设置的使用次数（必须是非负整数）
 
 选项:
@@ -320,11 +347,11 @@ async function main() {
   # 列出最近50个用户
   node backend/scripts/reset-usage-count.js --list 50
 
-  # 修改指定用户的使用次数为 100
-  node backend/scripts/reset-usage-count.js abc123-def456-ghi789 100
+  # 修改指定用户的付费次数为 100
+  node backend/scripts/reset-usage-count.js abc123-def456-ghi789 paid 100
 
-  # 修改所有用户的使用次数为 50
-  node backend/scripts/reset-usage-count.js all 50
+  # 修改所有用户的拼图次数为 50
+  node backend/scripts/reset-usage-count.js all free_puzzle 50
 
 提示:
   1. 先使用 --list 查看用户ID
@@ -349,7 +376,8 @@ async function main() {
   
   // 重置使用次数
   const userId = args[0];
-  const count = args[1] ? parseInt(args[1]) : null;
+  const mode = args[1];
+  const count = args[2] ? parseInt(args[2]) : null;
   
   if (!userId) {
     console.error('\n❌ 错误: 用户ID不能为空');
@@ -357,9 +385,14 @@ async function main() {
     process.exit(1);
   }
   
+  if (!mode || !['free_puzzle', 'free_transform', 'paid'].includes(mode)) {
+    console.error('\n❌ 错误: 模式必须是 free_puzzle, free_transform 或 paid');
+    process.exit(1);
+  }
+  
   if (count === null) {
     console.error('\n❌ 错误: 必须指定使用次数');
-    console.log('💡 提示: node backend/scripts/reset-usage-count.js <userId> <count>');
+    console.log('💡 提示: node backend/scripts/reset-usage-count.js <userId> <mode> <count>');
     process.exit(1);
   }
   
@@ -368,7 +401,7 @@ async function main() {
     process.exit(1);
   }
   
-  const success = await resetUsageCount(userId, count);
+  const success = await resetUsageCount(userId, mode, count);
   process.exit(success ? 0 : 1);
 }
 

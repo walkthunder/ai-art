@@ -3,7 +3,7 @@
   <view class="login-content">
     <!-- Logo -->
     <view class="logo">
-      <image src="/assets/logo.png" mode="aspectFit" />
+      <image src="/assets/logo/logo-header.png" mode="aspectFit" />
     </view>
     
     <!-- 标题 -->

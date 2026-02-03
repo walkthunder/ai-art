@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
-const userService = require('../services/userService');
+const userServiceV2 = require('../services/userServiceV2');
 const { generateVideo, getVideoTaskStatus } = require('../services/videoService');
 const { convertToLivePhoto } = require('../services/pythonBridge');
 const { uploadImageToOSS } = require('../services/ossService');
@@ -23,7 +23,7 @@ router.post('/generate-video', validateRequest(validateGenerateVideoParams), asy
     // 检查用户付费状态 - 只有尊享包用户可以使用
     if (userId) {
       try {
-        const user = await userService.getUserById(userId);
+        const user = await userServiceV2.getUserById(userId);
         if (!user) {
           return res.status(404).json({ error: '用户不存在', message: '未找到对应的用户' });
         }
@@ -90,7 +90,7 @@ router.post('/convert-to-live-photo', async (req, res) => {
     // 检查用户付费状态
     if (userId) {
       try {
-        const user = await userService.getUserById(userId);
+        const user = await userServiceV2.getUserById(userId);
         if (!user) {
           return res.status(404).json({ error: '用户不存在', message: '未找到对应的用户' });
         }

@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const userService = require('../services/userService');
+const userServiceV2 = require('../services/userServiceV2');
 const errorLogService = require('../services/errorLogService');
 
 // 创建或获取用户
@@ -19,7 +19,7 @@ router.post('/init', async (req, res) => {
       });
     }
     
-    const user = await userService.getOrCreateUser(userId);
+    const user = await userServiceV2.getOrCreateUser(userId);
     
     res.json({ success: true, data: user });
   } catch (error) {
@@ -47,7 +47,7 @@ router.get('/:userId', async (req, res) => {
       });
     }
     
-    const user = await userService.getUserById(userId);
+    const user = await userServiceV2.getUserById(userId);
     
     if (!user) {
       return res.status(404).json({ 
@@ -76,7 +76,7 @@ router.put('/:userId/payment-status', async (req, res) => {
       });
     }
     
-    const user = await userService.updateUserPaymentStatus(userId, paymentStatus);
+    const user = await userServiceV2.updateUserPaymentStatus(userId, paymentStatus);
     
     res.json({ success: true, data: user });
   } catch (error) {
@@ -98,7 +98,7 @@ router.post('/sync', async (req, res) => {
     }
     
     // 获取用户信息
-    let user = await userService.getUserById(userId);
+    let user = await userServiceV2.getUserById(userId);
     
     if (!user) {
       // 用户不存在，返回空数据（不自动创建，因为登录时已创建）

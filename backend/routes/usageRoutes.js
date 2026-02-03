@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const usageService = require('../services/usageService');
+const balanceService = require('../services/balanceService');
 
 /**
  * GET /api/usage/check/:userId
@@ -33,7 +33,7 @@ router.get('/check/:userId', async (req, res) => {
       });
     }
 
-    const result = await usageService.checkUsageCount(userId);
+    const result = await balanceService.getUserBalances(userId);
 
     res.json({
       success: true,
@@ -94,7 +94,7 @@ router.post('/decrement', async (req, res) => {
       });
     }
 
-    const result = await usageService.decrementUsageCount(userId, generationId, mode);
+    const result = await balanceService.decrementBalance(userId, mode, generationId);
 
     res.json({
       success: true,
@@ -173,7 +173,7 @@ router.post('/restore', async (req, res) => {
       });
     }
 
-    const result = await usageService.restoreUsageCount(userId, generationId, mode);
+    const result = await balanceService.restoreBalance(userId, mode, generationId);
 
     res.json({
       success: true,
@@ -218,7 +218,7 @@ router.get('/history/:userId', async (req, res) => {
       });
     }
 
-    const result = await usageService.getUsageHistory(
+    const result = await balanceService.getBalanceHistory(
       userId,
       parseInt(page),
       parseInt(pageSize)
@@ -275,11 +275,11 @@ router.get('/history/:userId', async (req, res) => {
       });
     }
 
-    const result = await usageService.getHistoryByMode(
+    const result = await balanceService.getBalanceHistory(
       userId,
-      mode,
       parseInt(page),
-      parseInt(pageSize)
+      parseInt(pageSize),
+      mode
     );
 
     res.json({

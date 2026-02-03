@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
-const userService = require('../services/userService');
+const userServiceV2 = require('../services/userServiceV2');
 const errorLogService = require('../services/errorLogService');
 
 // 微信小程序配置
@@ -90,7 +90,7 @@ router.post('/login', async (req, res) => {
     let user = null;
     
     if (unionid) {
-      user = await userService.getUserByUnionid(unionid);
+      user = await userServiceV2.getUserByUnionid(unionid);
       if (user) {
         console.log(`[WeChat Login] 通过 unionid 找到用户: ${user.id}`);
       }
@@ -98,7 +98,7 @@ router.post('/login', async (req, res) => {
     
     // 如果通过 unionid 没找到，再用 openid 查找
     if (!user) {
-      user = await userService.getUserByOpenid(openid);
+      user = await userServiceV2.getUserByOpenid(openid);
       if (user) {
         console.log(`[WeChat Login] 通过 openid 找到用户: ${user.id}`);
       }
@@ -107,7 +107,7 @@ router.post('/login', async (req, res) => {
     // 如果都没找到，创建新用户
     if (!user) {
       const userId = uuidv4();
-      user = await userService.createUserWithOpenid(userId, openid, unionid);
+      user = await userServiceV2.createUser({ id: userId, openid, unionid });
       console.log(`[WeChat Login] 创建新用户: ${userId}`);
     }
     

@@ -12,7 +12,7 @@ const os = require('os');
 const { uploadImageToOSS } = require('../services/ossService');
 const { extractFaces, addWatermark } = require('../services/pythonBridge');
 const { validateRequest, validateUploadImageParams, validateExtractFacesParams } = require('../utils/validation');
-const userService = require('../services/userService');
+const userServiceV2 = require('../services/userServiceV2');
 
 // 上传图片到OSS（Base64 方式）
 router.post('/upload-image', validateRequest(validateUploadImageParams), async (req, res) => {
@@ -143,7 +143,7 @@ router.post('/add-watermark', async (req, res) => {
     let shouldAddWatermark = true;
     if (userId) {
       try {
-        const user = await userService.getUserById(userId);
+        const user = await userServiceV2.getUserById(userId);
         if (user && user.payment_status !== 'free') {
           shouldAddWatermark = false;
         }
@@ -212,7 +212,7 @@ router.post('/unlock-watermark', async (req, res) => {
       return res.status(400).json({ error: '缺少必要参数', message: '需要提供 taskId 和 userId 参数' });
     }
     
-    const user = await userService.getUserById(userId);
+    const user = await userServiceV2.getUserById(userId);
     if (!user) {
       return res.status(404).json({ error: '用户不存在', message: '未找到对应的用户' });
     }

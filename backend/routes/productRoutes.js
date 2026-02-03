@@ -7,7 +7,7 @@ const router = express.Router();
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/connection');
-const userService = require('../services/userService');
+const userServiceV2 = require('../services/userServiceV2');
 const generationService = require('../services/generationService');
 const { exportOrdersExcel } = require('../services/pythonBridge');
 const { validateRequest, validateCreateProductOrderParams } = require('../utils/validation');
@@ -31,7 +31,7 @@ router.post('/create', validateRequest(validateCreateProductOrderParams), async 
       return res.status(400).json({ error: '无效的手机号', message: '请输入正确的11位手机号' });
     }
     
-    const user = await userService.getUserById(userId);
+    const user = await userServiceV2.getUserById(userId);
     if (!user) {
       return res.status(404).json({ error: '用户不存在', message: '未找到对应的用户' });
     }

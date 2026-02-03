@@ -6,7 +6,8 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/connection');
-const userService = require('../services/userService');
+const userServiceV2 = require('../services/userServiceV2');
+const balanceService = require('../services/balanceService');
 const priceConfigService = require('../services/priceConfigService');
 const { 
   isWechatPaymentAvailable, createJsapiPayment, createNativePayment,
@@ -52,7 +53,7 @@ router.post('/create', validateRequest(validateCreatePaymentParams), async (req,
       });
     }
     
-    const user = await userService.getUserById(userId);
+    const user = await userServiceV2.getUserById(userId);
     if (!user) {
       return res.status(404).json({ error: '用户不存在', message: '未找到对应的用户' });
     }
@@ -508,14 +509,18 @@ router.post('/callback', async (req, res) => {
           if (orderRows.length > 0) {
             const { user_id, package_type, amount } = orderRows[0];
             
-            // 使用 processPaymentUpgrade 处理付费升级
-            // 这会自动更新 usage_count, has_ever_paid, first_payment_at, last_payment_at
+            // 使用 balanceService 处理付费充值
             try {
-              await userService.processPaymentUpgrade(user_id, package_type, amount);
-              console.log(`用户 ${user_id} 付费升级成功: ${package_type}, 金额: ${amount}`);
+              // 根据套餐类型确定充值次数
+              const rechargeAmount = package_type === 'basic' ? 10 : 20;
+              await balanceService.addBalance(user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
+              
+              // 更新用户支付状态
+              await userServiceV2.updatePaymentStatus(user_id, package_type, amount);
+              
+              console.log(`用户 ${user_id} 付费充值成功: ${package_type}, 金额: ${amount}, 次数: ${rechargeAmount}`);
             } catch (upgradeError) {
-              console.error(`用户 ${user_id} 付费升级失败:`, upgradeError);
-              // 如果升级失败，回滚事务
+              console.error(`用户 ${user_id} 付费充值失败:`, upgradeError);
               throw upgradeError;
             }
           }
@@ -616,17 +621,24 @@ router.put('/order/:orderId/status', async (req, res) => {
       }
       
       if (status === 'paid' && order.status !== 'paid') {
-        // 使用 processPaymentUpgrade 处理付费升级
+        // 使用 balanceService 处理付费充值
         const [orderDetails] = await connection.execute(
-          'SELECT amount FROM payment_orders WHERE id = ?', [orderId]
+          'SELECT amount, package_type FROM payment_orders WHERE id = ?', [orderId]
         );
         const amount = orderDetails[0]?.amount || 0;
+        const packageType = orderDetails[0]?.package_type || 'basic';
         
         try {
-          await userService.processPaymentUpgrade(order.user_id, order.package_type, amount);
-          console.log(`用户 ${order.user_id} 付费升级成功: ${order.package_type}`);
+          // 根据套餐类型确定充值次数
+          const rechargeAmount = packageType === 'basic' ? 10 : 20;
+          await balanceService.addBalance(order.user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
+          
+          // 更新用户支付状态
+          await userServiceV2.updatePaymentStatus(order.user_id, packageType, amount);
+          
+          console.log(`用户 ${order.user_id} 付费充值成功: ${packageType}`);
         } catch (upgradeError) {
-          console.error(`用户 ${order.user_id} 付费升级失败:`, upgradeError);
+          console.error(`用户 ${order.user_id} 付费充值失败:`, upgradeError);
           throw upgradeError;
         }
       }

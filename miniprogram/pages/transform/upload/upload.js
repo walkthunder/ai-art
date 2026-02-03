@@ -266,9 +266,9 @@ Page({
     // 关闭支付弹窗
     this.setData({ showPaymentModal: false });
     
-    // 更新使用次数
+    // 强制刷新使用次数（跳过缓存）
     const app = getApp();
-    await app.updateUsageCount();
+    await app.updateUsageCount(true);
     
     // 显示成功提示
     wx.showToast({

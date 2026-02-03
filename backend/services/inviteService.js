@@ -6,6 +6,7 @@
 const { query } = require('../db/connection');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
+const balanceService = require('./balanceService');
 
 /**
  * 生成8位邀请码（使用数字和大写字母）
@@ -31,22 +32,25 @@ function generateRandomCode() {
  */
 async function generateInviteCode(userId) {
   try {
-    // 检查用户是否已有邀请码
+    // 检查用户是否已有邀请码（从 user_invites 表）
     const checkSql = `
       SELECT invite_code
-      FROM users
-      WHERE id = ?
+      FROM user_invites
+      WHERE user_id = ?
     `;
     
     const rows = await query(checkSql, [userId]);
     
-    if (rows.length === 0) {
-      throw new Error(`用户 ${userId} 不存在`);
+    // 如果已有邀请码，直接返回
+    if (rows.length > 0 && rows[0].invite_code) {
+      return rows[0].invite_code;
     }
     
-    // 如果已有邀请码，直接返回
-    if (rows[0].invite_code) {
-      return rows[0].invite_code;
+    // 验证用户是否存在
+    const userCheckSql = 'SELECT id FROM users WHERE id = ?';
+    const userRows = await query(userCheckSql, [userId]);
+    if (userRows.length === 0) {
+      throw new Error(`用户 ${userId} 不存在`);
     }
     
     // 生成新的邀请码，确保唯一性
@@ -58,10 +62,10 @@ async function generateInviteCode(userId) {
     while (!isUnique && attempts < maxAttempts) {
       inviteCode = generateRandomCode();
       
-      // 检查邀请码是否已存在
+      // 检查邀请码是否已存在（从 user_invites 表）
       const uniqueCheckSql = `
         SELECT COUNT(*) as count
-        FROM users
+        FROM user_invites
         WHERE invite_code = ?
       `;
       
@@ -74,14 +78,15 @@ async function generateInviteCode(userId) {
       throw new Error('生成唯一邀请码失败，请重试');
     }
     
-    // 更新用户的邀请码
-    const updateSql = `
-      UPDATE users
-      SET invite_code = ?
-      WHERE id = ?
+    // 插入或更新用户的邀请码（使用 INSERT ... ON DUPLICATE KEY UPDATE）
+    const inviteId = `${userId}-invite`;
+    const upsertSql = `
+      INSERT INTO user_invites (id, user_id, invite_code, created_at, updated_at)
+      VALUES (?, ?, ?, NOW(), NOW())
+      ON DUPLICATE KEY UPDATE invite_code = ?, updated_at = NOW()
     `;
     
-    await query(updateSql, [inviteCode, userId]);
+    await query(upsertSql, [inviteId, userId, inviteCode, inviteCode]);
     
     return inviteCode;
   } catch (error) {
@@ -116,11 +121,12 @@ async function validateInviteCode(inviteCode) {
       };
     }
     
-    // 查询邀请码对应的用户
+    // 查询邀请码对应的用户（从 user_invites 表）
     const sql = `
-      SELECT id, nickname
-      FROM users
-      WHERE invite_code = ?
+      SELECT ui.user_id as id, u.nickname
+      FROM user_invites ui
+      LEFT JOIN users u ON ui.user_id = u.id
+      WHERE ui.invite_code = ?
     `;
     
     const rows = await query(sql, [inviteCode]);
@@ -184,13 +190,43 @@ async function processInviteRegistration(inviteCode, newUserId, openid) {
       throw new Error('USER_ALREADY_EXISTS');
     }
     
-    // 创建新用户 - 生成邀请码
-    const newUserInviteCode = generateRandomCode();
+    // 创建新用户（不再在 users 表存储 invite_code）
+    await connection.execute(
+      `INSERT INTO users (id, openid, created_at, updated_at) 
+       VALUES (?, ?, NOW(), NOW())`,
+      [newUserId, openid]
+    );
+    
+    // 初始化新用户的余额（在 user_balances 表中）
+    const balanceIdPuzzle = `${newUserId}-puzzle`;
+    const balanceIdTransform = `${newUserId}-transform`;
+    const balanceIdPaid = `${newUserId}-paid`;
     
     await connection.execute(
-      `INSERT INTO users (id, openid, payment_status, regenerate_count, usage_count, usage_limit, has_ever_paid, invite_code)
-       VALUES (?, ?, 'free', 3, 3, 3, FALSE, ?)`,
-      [newUserId, openid, newUserInviteCode]
+      `INSERT INTO user_balances (id, user_id, balance_type, amount, created_at, updated_at)
+       VALUES 
+         (?, ?, 'free_puzzle', 3, NOW(), NOW()),
+         (?, ?, 'free_transform', 3, NOW(), NOW()),
+         (?, ?, 'paid', 0, NOW(), NOW())`,
+      [balanceIdPuzzle, newUserId, balanceIdTransform, newUserId, balanceIdPaid, newUserId]
+    );
+    
+    // 初始化新用户的付费信息
+    const paymentId = `${newUserId}-payment`;
+    await connection.execute(
+      `INSERT INTO user_payments (id, user_id, has_ever_paid, current_tier, created_at, updated_at)
+       VALUES (?, ?, FALSE, 'free', NOW(), NOW())`,
+      [paymentId, newUserId]
+    );
+    
+    // 生成并存储新用户的邀请码（在 user_invites 表中）
+    const newUserInviteCode = generateRandomCode();
+    const inviteIdNew = `${newUserId}-invite`;
+    
+    await connection.execute(
+      `INSERT INTO user_invites (id, user_id, invite_code, invited_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, NOW(), NOW())`,
+      [inviteIdNew, newUserId, newUserInviteCode, inviterId]
     );
     
     // 创建invite_records记录
@@ -201,26 +237,8 @@ async function processInviteRegistration(inviteCode, newUserId, openid) {
       [inviteRecordId, inviterId, newUserId, inviteCode]
     );
     
-    // 增加inviter的usage_count
-    await connection.execute(
-      'UPDATE users SET usage_count = usage_count + 1 WHERE id = ?',
-      [inviterId]
-    );
-    
-    // 获取inviter的新usage_count用于日志
-    const [inviterRows] = await connection.execute(
-      'SELECT usage_count FROM users WHERE id = ?',
-      [inviterId]
-    );
-    const newInviterCount = inviterRows[0]?.usage_count || 0;
-    
-    // 记录usage_logs
-    const logId = uuidv4();
-    await connection.execute(
-      `INSERT INTO usage_logs (id, user_id, action_type, amount, remaining_count, reason, reference_id, created_at)
-       VALUES (?, ?, 'increment', 1, ?, 'invite_reward', ?, NOW())`,
-      [logId, inviterId, newInviterCount, inviteRecordId]
-    );
+    // 增加inviter的付费次数（邀请奖励）- 使用 balanceService
+    await balanceService.addBalance(inviterId, 1, 'invite_reward', inviteRecordId, balanceService.BALANCE_TYPES.PAID);
     
     // 更新或创建invite_stats
     // 先检查是否存在
