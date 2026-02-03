@@ -48,10 +48,71 @@ async function checkBalance(userId, mode = null) {
       WHERE user_id = ?
     `;
     
-    const rows = await query(sql, [userId]);
+    let rows = await query(sql, [userId]);
     
+    // 如果用户没有余额记录，自动初始化
     if (rows.length === 0) {
-      throw new Error(`用户 ${userId} 余额记录不存在`);
+      console.log(`[BalanceService] 用户 ${userId} 没有余额记录，自动初始化...`);
+      
+      const pool = require('../db/connection').pool;
+      const connection = await pool.getConnection();
+      
+      try {
+        await connection.beginTransaction();
+        
+        // 检查用户是否存在，不存在则创建
+        const [userRows] = await connection.execute('SELECT id FROM users WHERE id = ?', [userId]);
+        
+        if (userRows.length === 0) {
+          console.log(`[BalanceService] 用户 ${userId} 不存在，自动创建...`);
+          await connection.execute(
+            'INSERT INTO users (id, created_at, updated_at) VALUES (?, NOW(), NOW())',
+            [userId]
+          );
+        }
+        
+        // 初始化余额记录
+        await connection.execute(`
+          INSERT INTO user_balances (id, user_id, balance_type, amount, created_at, updated_at)
+          VALUES 
+            (?, ?, 'free_puzzle', 3, NOW(), NOW()),
+            (?, ?, 'free_transform', 3, NOW(), NOW()),
+            (?, ?, 'paid', 0, NOW(), NOW())
+        `, [
+          `${userId}-puzzle`, userId,
+          `${userId}-transform`, userId,
+          `${userId}-paid`, userId
+        ]);
+        
+        // 初始化付费信息
+        await connection.execute(`
+          INSERT IGNORE INTO user_payments (id, user_id, has_ever_paid, current_tier, created_at, updated_at)
+          VALUES (?, ?, FALSE, 'free', NOW(), NOW())
+        `, [`${userId}-payment`, userId]);
+        
+        // 初始化邀请码
+        const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+        await connection.execute(`
+          INSERT IGNORE INTO user_invites (id, user_id, invite_code, created_at, updated_at)
+          VALUES (?, ?, ?, NOW(), NOW())
+        `, [`${userId}-invite`, userId, inviteCode]);
+        
+        await connection.commit();
+        connection.release();
+        
+        console.log(`[BalanceService] 用户 ${userId} 初始化完成`);
+        
+        // 重新查询
+        rows = await query(sql, [userId]);
+      } catch (error) {
+        await connection.rollback();
+        connection.release();
+        console.error(`[BalanceService] 初始化用户 ${userId} 失败:`, error);
+        
+        // 安全修复：初始化失败时抛出异常，而不是返回默认值
+        // 这样可以防止攻击者通过触发初始化失败来绕过余额限制
+        throw new Error(`用户初始化失败，请稍后重试: ${error.message}`);
+      }
     }
     
     // 构建余额对象
