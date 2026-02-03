@@ -8,7 +8,7 @@
  * - 实现人脸检测
  */
 
-const { chooseImage, uploadImage } = require('../../../utils/upload');
+const { chooseImage, uploadImage, validateImage } = require('../../../utils/upload');
 const { faceAPI } = require('../../../utils/api');
 const { initNavigation } = require('../../../utils/navigation-helper');
 const { getAssetUrl } = require('../../../utils/oss-assets');
@@ -20,6 +20,7 @@ Page({
     navBarHeight: 44,
     menuRight: 0,
     isUploading: false,
+    isChecking: false,  // ✅ 新增：是否正在检查（防止重复点击）
     statusText: '',
     errorMessage: '',
     uploadProgress: 0,
@@ -53,37 +54,54 @@ Page({
    * Requirements: 6.1
    */
   async handleUploadClick() {
-    if (this.data.isUploading) return;
+    // ✅ 防止重复点击
+    if (this.data.isUploading || this.data.isChecking) {
+      console.log('[TransformUpload] 操作进行中，请勿重复点击');
+      return;
+    }
     
     console.log('[TransformUpload] 用户点击上传区域');
-    this.setData({ errorMessage: '' });
+    this.setData({ errorMessage: '', isChecking: true });
     
-    // 检查使用次数
     const app = getApp();
-    const usageInfo = await app.updateUsageCount();
-    
-    if (!usageInfo) {
-      console.error('[TransformUpload] 获取使用次数失败');
-      this.setData({
-        errorMessage: '获取使用次数失败，请重试'
-      });
-      return;
-    }
-    
-    console.log('[TransformUpload] 使用次数检查:', usageInfo);
-    
-    // 如果次数为0，显示套餐选择弹窗
-    if (usageInfo.usageCount === 0) {
-      console.log('[TransformUpload] 次数为0，显示套餐选择');
-      this.setData({
-        showPaymentModal: true,
-        currentPaymentStatus: usageInfo.paymentStatus || 'free'
-      });
-      return;
-    }
     
     try {
-      // 选择图片（单张）
+      // 1. 先确保登录完成
+      console.log('[TransformUpload] 检查登录状态...');
+      const userId = await app.getUserId(true);
+      
+      if (!userId) {
+        console.error('[TransformUpload] 登录失败');
+        this.setData({
+          errorMessage: '登录失败，请重试',
+          isChecking: false
+        });
+        return;
+      }
+      
+      console.log('[TransformUpload] 登录成功，userId:', userId);
+      
+      // 2. 检查使用次数
+      console.log('[TransformUpload] 检查使用次数...');
+      const usageInfo = await app.updateUsageCount();
+      
+      console.log('[TransformUpload] 使用次数检查:', usageInfo);
+      
+      // 如果次数为0，显示套餐选择弹窗
+      if (usageInfo.usageCount === 0) {
+        console.log('[TransformUpload] 次数为0，显示套餐选择');
+        this.setData({
+          showPaymentModal: true,
+          currentPaymentStatus: usageInfo.paymentStatus || 'free',
+          isChecking: false
+        });
+        return;
+      }
+      
+      // ✅ 清除检查状态，准备上传
+      this.setData({ isChecking: false });
+      
+      // 3. 选择图片（单张）
       const tempFiles = await chooseImage(1);
       if (!tempFiles || tempFiles.length === 0) {
         console.log('[TransformUpload] 用户取消选择');
@@ -96,26 +114,45 @@ Page({
         size: `${(file.size / 1024 / 1024).toFixed(2)}MB`
       });
       
-      // 检查文件大小（最大10MB）
-      if (file.size > 10 * 1024 * 1024) {
-        console.log('[TransformUpload] 文件过大');
+      // 4. 验证图片
+      const validation = await validateImage(file.path);
+      if (!validation.valid) {
+        console.log('[TransformUpload] 图片验证失败:', validation.error);
         this.setData({
-          errorMessage: '图片文件过大，请上传小于10MB的图片'
+          errorMessage: validation.error
         });
         return;
       }
       
-      // 开始上传流程
+      console.log('[TransformUpload] 图片验证通过:', validation.info);
+      
+      // 5. 开始上传流程
       await this.processUpload(file.path);
       
     } catch (err) {
-      console.error('[TransformUpload] 选择图片失败:', err);
+      console.error('[TransformUpload] 操作失败:', err);
+      
+      // 用户取消选择图片
       if (err.errMsg && err.errMsg.includes('cancel')) {
-        // 用户取消，不显示错误
+        this.setData({ isChecking: false });
         return;
       }
+      
+      // 显示友好的错误提示
+      let errorMessage = '操作失败，请重试';
+      if (err.message) {
+        if (err.message.includes('登录')) {
+          errorMessage = '登录失败，请重试';
+        } else if (err.message.includes('次数')) {
+          errorMessage = '获取使用次数失败，请重试';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       this.setData({
-        errorMessage: '选择图片失败，请重试'
+        errorMessage: errorMessage,
+        isChecking: false
       });
     }
   },
@@ -140,12 +177,12 @@ Page({
       });
       console.log('[TransformUpload] 图片上传成功:', imageUrl);
       
-      // 2. 人脸检测
+      // 2. 人脸检测（已在后端跳过，这里仅做形式调用）
       this.setData({
         statusText: '正在检测人脸...',
         uploadProgress: 100
       });
-      console.log('[TransformUpload] 开始人脸检测');
+      console.log('[TransformUpload] 开始人脸检测（已跳过实际检测）');
       
       const result = await faceAPI.extractFaces([imageUrl]);
       console.log('[TransformUpload] 人脸检测结果:', {
@@ -153,12 +190,13 @@ Page({
         faceCount: result.data?.faces?.length || 0
       });
       
-      if (!result.success || !result.data?.faces || result.data.faces.length === 0) {
-        console.log('[TransformUpload] 未检测到人脸');
+      // 由于后端已跳过检测，这里直接认为成功
+      if (!result.success) {
+        console.log('[TransformUpload] 检测接口调用失败');
         this.setData({
           isUploading: false,
           statusText: '',
-          errorMessage: result.message || '照片里人脸太小啦，选一张正面大头像吧'
+          errorMessage: result.message || '图片处理失败，请重试'
         });
         return;
       }

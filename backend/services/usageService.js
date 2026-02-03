@@ -59,7 +59,8 @@ async function checkUsageCount(userId, mode = null) {
       usage_count: puzzleCount + transformCount + paidCount,
       usage_limit: user.usage_limit ?? 3,
       can_generate: puzzleCount > 0 || transformCount > 0 || paidCount > 0,
-      user_type: user.has_ever_paid ? 'paid' : 'free'
+      user_type: user.has_ever_paid ? 'paid' : 'free',
+      has_ever_paid: user.has_ever_paid || false  // ← 新增：明确返回 has_ever_paid
     };
     
     // 如果指定了 mode，检查该模式是否可以生成
@@ -120,8 +121,12 @@ async function getUsageHistory(userId, page = 1, pageSize = 20) {
     
     const logs = await query(logsSql, [userId, validPageSize, offset]);
     
+    // 转换时区为 CST (UTC+8)
+    const { convertArrayTimesToCST } = require('../utils/timezone');
+    const logsWithCST = convertArrayTimesToCST(logs || []);
+    
     return {
-      logs: logs || [],
+      logs: logsWithCST,
       total,
       page: validPage,
       pageSize: validPageSize
@@ -490,8 +495,12 @@ async function getHistoryByMode(userId, mode = null, page = 1, pageSize = 20) {
     itemsSql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     const items = await query(itemsSql, [...params, validPageSize, offset]);
     
+    // 转换时区为 CST (UTC+8)
+    const { convertArrayTimesToCST } = require('../utils/timezone');
+    const itemsWithCST = convertArrayTimesToCST(items || []);
+    
     return {
-      items: items || [],
+      items: itemsWithCST,
       total,
       page: validPage,
       pageSize: validPageSize

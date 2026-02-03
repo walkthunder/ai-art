@@ -69,7 +69,10 @@ function initMysqlPool() {
   // 优先使用 DATABASE_URL
   if (process.env.DATABASE_URL) {
     console.log('📡 使用 DATABASE_URL 连接数据库');
-    mysqlPool = mysql.createPool(process.env.DATABASE_URL);
+    mysqlPool = mysql.createPool({
+      uri: process.env.DATABASE_URL,
+      timezone: '+08:00' // 设置为中国标准时间
+    });
   } 
   // 其次使用远程数据库配置
   else if (useRemoteDatabase && process.env.REMOTE_DB_HOST) {
@@ -85,6 +88,7 @@ function initMysqlPool() {
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0,
+      timezone: '+08:00', // 设置为中国标准时间
       // 远程数据库连接超时设置
       connectTimeout: 10000,
       // SSL 配置（如果远程数据库需要）
@@ -106,7 +110,8 @@ function initMysqlPool() {
       connectionLimit: 10,
       queueLimit: 0,
       enableKeepAlive: true,
-      keepAliveInitialDelay: 0
+      keepAliveInitialDelay: 0,
+      timezone: '+08:00' // 设置为中国标准时间
     });
   }
   

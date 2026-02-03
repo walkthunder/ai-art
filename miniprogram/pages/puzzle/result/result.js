@@ -133,24 +133,8 @@ Page({
       const result = await app.updateUsageCount();
       
       if (result) {
-        // 从后端API获取用户的has_ever_paid状态
-        const cloudbaseRequest = require('../../../utils/cloudbase-request');
-        let hasEverPaid = wx.getStorageSync('hasEverPaid') || false; // 优先使用缓存
-        
-        try {
-          const userRes = await cloudbaseRequest.get(`/api/user/${app.globalData.userId}`);
-          if (userRes && userRes.success && userRes.data) {
-            hasEverPaid = userRes.data.has_ever_paid || false;
-            // 更新缓存
-            wx.setStorageSync('hasEverPaid', hasEverPaid);
-          }
-        } catch (err) {
-          console.warn('[PuzzleResult] 获取用户付费状态失败，使用缓存:', err);
-          // API调用失败时，使用缓存值
-          if (!wx.getStorageSync('hasEverPaid')) {
-            hasEverPaid = result.paymentStatus !== 'free';
-          }
-        }
+        // 直接从 usage check 接口获取 has_ever_paid（后端已返回）
+        const hasEverPaid = result.has_ever_paid || false;
         
         // 如果返回的是默认值 3，说明 API 调用失败
         // 此时应该使用全局状态中的值，而不是默认值
@@ -208,15 +192,26 @@ Page({
       // 调用后端API获取分享的作品
       const cloudbaseRequest = require('../../../utils/cloudbase-request');
       
-      // 尝试从历史记录中获取
+      // 从历史记录中获取
       const historyRes = await cloudbaseRequest.get(`/api/history/${shareId}`);
       
       wx.hideLoading();
       
       if (historyRes && historyRes.success && historyRes.data) {
         const result = historyRes.data;
+        
+        // 优先使用 selectedImageUrl，如果没有则使用 generatedImageUrls 的第一张
+        let imageUrl = result.selectedImageUrl;
+        if (!imageUrl && result.generatedImageUrls && result.generatedImageUrls.length > 0) {
+          imageUrl = result.generatedImageUrls[0];
+        }
+        
+        if (!imageUrl) {
+          throw new Error('未找到图片');
+        }
+        
         this.setData({
-          selectedImage: result.result_image_url || result.image_url,
+          selectedImage: imageUrl,
           generationId: shareId,
           isSharedView: true // 标记为分享视图
         });
@@ -357,7 +352,10 @@ Page({
       return;
     }
     
-    const userId = wx.getStorageSync('userId');
+    // 获取 userId
+    const app = getApp();
+    const userId = await app.getUserId(true);
+    
     if (!userId) {
       wx.showToast({ title: '请先登录', icon: 'none' });
       return;
@@ -485,7 +483,16 @@ Page({
   },
 
   async convertToLivePhoto(videoUrl) {
-    const userId = wx.getStorageSync('userId');
+    const app = getApp();
+    const userId = await app.getUserId(true);
+    
+    if (!userId) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      });
+      return;
+    }
     
     try {
       const result = await videoAPI.convertToLivePhoto(videoUrl, userId);
@@ -750,6 +757,25 @@ Page({
 
   goHome() {
     wx.redirectTo({ url: '/pages/launch/launch' });
+  },
+
+  /**
+   * 制作同款（分享视图专用）
+   * 引导新用户开始使用产品
+   */
+  handleMakeSame() {
+    console.log('[PuzzleResult] 点击制作同款');
+    
+    // 跳转到时空拼图的启动页
+    wx.redirectTo({
+      url: '/pages/puzzle/launch/launch',
+      fail: () => {
+        // 如果失败，跳转到主启动页
+        wx.redirectTo({
+          url: '/pages/launch/launch'
+        });
+      }
+    });
   },
 
   onShareAppMessage() {

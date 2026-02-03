@@ -23,6 +23,13 @@ import {
   EditOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// 配置 dayjs 时区
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Shanghai');
 import type { ColumnsType } from 'antd/es/table';
 import {
   getUserList,
@@ -209,7 +216,7 @@ const UsersPage: React.FC = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss')
+      render: (date: string) => dayjs.utc(date).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')
     },
     {
       title: '操作',
@@ -315,7 +322,7 @@ const UsersPage: React.FC = () => {
                 {selectedUser.user.order_count}
               </Descriptions.Item>
               <Descriptions.Item label="注册时间" span={2}>
-                {dayjs(selectedUser.user.created_at).format('YYYY-MM-DD HH:mm:ss')}
+                {dayjs.utc(selectedUser.user.created_at).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}
               </Descriptions.Item>
             </Descriptions>
 
@@ -327,7 +334,7 @@ const UsersPage: React.FC = () => {
                     <div>
                       <div>模式: {gen.mode} | 状态: {gen.status}</div>
                       <div style={{ fontSize: 12, color: '#999' }}>
-                        {dayjs(gen.created_at).format('YYYY-MM-DD HH:mm:ss')}
+                        {dayjs.utc(gen.created_at).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}
                       </div>
                     </div>
                   )
@@ -345,7 +352,7 @@ const UsersPage: React.FC = () => {
                         {order.package_type} | ¥{order.amount} | {order.status}
                       </div>
                       <div style={{ fontSize: 12, color: '#999' }}>
-                        {dayjs(order.created_at).format('YYYY-MM-DD HH:mm:ss')}
+                        {dayjs.utc(order.created_at).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}
                       </div>
                     </div>
                   )

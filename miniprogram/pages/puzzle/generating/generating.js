@@ -34,6 +34,7 @@ Page({
   data: {
     isElderMode: false,
     taskId: '',
+    recordId: '', // 历史记录ID，用于分享
     progress: 0,
     currentStage: '任务已创建',
     blessing: '福气满满',
@@ -53,7 +54,8 @@ Page({
     const app = getApp();
     this.setData({
       isElderMode: app.globalData.isElderMode,
-      taskId: options.taskId || ''
+      taskId: options.taskId || '',
+      recordId: options.recordId || '' // 接收历史记录ID
     });
     
     if (!options.taskId) {
@@ -61,7 +63,7 @@ Page({
       return;
     }
     
-    console.log('[PuzzleGenerating] 页面加载，任务ID:', options.taskId);
+    console.log('[PuzzleGenerating] 页面加载，任务ID:', options.taskId, '历史记录ID:', options.recordId);
     this.startPolling();
   },
 
@@ -159,8 +161,11 @@ Page({
     
     // 保存到历史记录（仅在生成完成时保存一次）
     const { saveHistory } = require('../../../utils/storage');
+    const { recordId, taskId } = this.data;
     const historyItem = {
-      id: this.data.taskId,
+      id: recordId || taskId, // 优先使用 recordId 作为 ID
+      taskId: taskId, // 保留 taskId 用于兼容
+      recordId: recordId, // 保存 recordId 用于分享
       originalImages: puzzleData.uploadedImages || [],
       generatedImage: generatedImages[0] || '',
       generatedImages: generatedImages,
@@ -169,13 +174,16 @@ Page({
       mode: 'puzzle'
     };
     saveHistory(historyItem);
-    console.log('[PuzzleGenerating] 已保存到历史记录:', this.data.taskId);
+    console.log('[PuzzleGenerating] 已保存到历史记录, recordId:', recordId, 'taskId:', taskId);
     
     app.globalData.puzzleData = { ...puzzleData, generatedImages, taskId: this.data.taskId };
     
     setTimeout(() => {
+      const { recordId } = this.data;
+      const generationId = recordId || this.data.taskId; // 优先使用 recordId，否则使用 taskId
+      
       if (generatedImages.length === 1) {
-        wx.redirectTo({ url: `/pages/puzzle/result/result?image=${encodeURIComponent(generatedImages[0])}&generationId=${this.data.taskId}` });
+        wx.redirectTo({ url: `/pages/puzzle/result/result?image=${encodeURIComponent(generatedImages[0])}&generationId=${generationId}` });
       } else {
         wx.redirectTo({ url: '/pages/puzzle/result-selector/result-selector' });
       }

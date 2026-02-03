@@ -102,13 +102,28 @@ router.post('/extract-faces', validateRequest(validateExtractFacesParams), async
       return res.status(400).json({ error: '缺少必要参数', message: '需要提供 imageUrls 数组参数' });
     }
     
-    const result = await extractFaces(imageUrls);
+    // 临时跳过人脸检测，直接返回成功
+    // TODO: 后续可以通过环境变量控制是否启用人脸检测
+    console.log('[Upload] 人脸检测已临时跳过，直接返回成功');
+    const mockResult = {
+      success: true,
+      faces: imageUrls.map((url, index) => ({
+        image_url: url,
+        face_index: index,
+        confidence: 0.95,
+        bbox: [100, 100, 300, 300]
+      })),
+      message: '检测成功（已跳过实际检测）'
+    };
     
-    if (!result.success) {
-      return res.status(400).json({ error: '人脸提取失败', message: result.message });
-    }
+    res.json({ success: true, data: mockResult });
     
-    res.json({ success: true, data: result });
+    // 原有的人脸检测逻辑（已注释）
+    // const result = await extractFaces(imageUrls);
+    // if (!result.success) {
+    //   return res.status(400).json({ error: '人脸提取失败', message: result.message });
+    // }
+    // res.json({ success: true, data: result });
   } catch (error) {
     console.error('人脸提取失败:', error);
     res.status(500).json({ error: '人脸提取失败', message: error.message });

@@ -8,7 +8,7 @@
  * - 实现人脸检测
  */
 
-const { chooseImage, uploadImage } = require('../../../utils/upload');
+const { chooseImage, uploadImage, validateImage } = require('../../../utils/upload');
 const { faceAPI } = require('../../../utils/api');
 const pageMixin = require('../../../utils/page-mixin');
 const { initNavigation } = require('../../../utils/navigation-helper');
@@ -23,6 +23,7 @@ Page({
     selectedImages: [null, null, null, null, null], // 5个图片框
     uploadedCount: 0,
     isProcessing: false,
+    isChecking: false,  // ✅ 新增：是否正在检查（防止重复点击）
     statusText: '',
     errorMessage: '',
     uploadProgress: 0,
@@ -54,41 +55,62 @@ Page({
    * Requirements: 6.1
    */
   async handleUploadClick(e) {
-    if (this.data.isProcessing) return;
+    // ✅ 防止重复点击
+    if (this.data.isProcessing || this.data.isChecking) {
+      console.log('[PuzzleUpload] 操作进行中，请勿重复点击');
+      return;
+    }
     
     const index = e.currentTarget.dataset.index;
     console.log('[PuzzleUpload] 点击上传框:', index);
     
     this.setData({ errorMessage: '' });
     
-    // 检查使用次数（仅在第一次上传时检查）
-    if (this.data.uploadedCount === 0) {
-      const app = getApp();
-      const usageInfo = await app.updateUsageCount();
-      
-      if (!usageInfo) {
-        console.error('[PuzzleUpload] 获取使用次数失败');
-        this.setData({
-          errorMessage: '获取使用次数失败，请重试'
-        });
-        return;
-      }
-      
-      console.log('[PuzzleUpload] 使用次数检查:', usageInfo);
-      
-      // 如果次数为0，显示套餐选择弹窗
-      if (usageInfo.usageCount === 0) {
-        console.log('[PuzzleUpload] 次数为0，显示套餐选择');
-        this.setData({
-          showPaymentModal: true,
-          currentPaymentStatus: usageInfo.paymentStatus || 'free'
-        });
-        return;
-      }
-    }
+    const app = getApp();
     
     try {
-      // 选择单张图片
+      // 检查使用次数（仅在第一次上传时检查）
+      if (this.data.uploadedCount === 0) {
+        // ✅ 设置检查状态
+        this.setData({ isChecking: true });
+        
+        // 1. 先确保登录完成
+        console.log('[PuzzleUpload] 检查登录状态...');
+        const userId = await app.getUserId(true);
+        
+        if (!userId) {
+          console.error('[PuzzleUpload] 登录失败');
+          this.setData({
+            errorMessage: '登录失败，请重试',
+            isChecking: false
+          });
+          return;
+        }
+        
+        console.log('[PuzzleUpload] 登录成功，userId:', userId);
+        
+        // 2. 检查使用次数
+        console.log('[PuzzleUpload] 检查使用次数...');
+        const usageInfo = await app.updateUsageCount();
+        
+        console.log('[PuzzleUpload] 使用次数检查:', usageInfo);
+        
+        // 如果次数为0，显示套餐选择弹窗
+        if (usageInfo.usageCount === 0) {
+          console.log('[PuzzleUpload] 次数为0，显示套餐选择');
+          this.setData({
+            showPaymentModal: true,
+            currentPaymentStatus: usageInfo.paymentStatus || 'free',
+            isChecking: false
+          });
+          return;
+        }
+        
+        // ✅ 清除检查状态
+        this.setData({ isChecking: false });
+      }
+      
+      // 3. 选择单张图片
       const tempFiles = await chooseImage(1);
       if (!tempFiles || tempFiles.length === 0) {
         console.log('[PuzzleUpload] 用户取消选择');
@@ -98,15 +120,19 @@ Page({
       const file = tempFiles[0];
       console.log('[PuzzleUpload] 选择的文件:', file);
       
-      // 检查文件大小
-      if (file.size > 10 * 1024 * 1024) {
+      // 4. 验证图片
+      const validation = await validateImage(file.path);
+      if (!validation.valid) {
+        console.log('[PuzzleUpload] 图片验证失败:', validation.error);
         this.setData({
-          errorMessage: '图片文件过大，请上传小于10MB的图片'
+          errorMessage: validation.error
         });
         return;
       }
       
-      // 显示临时图片
+      console.log('[PuzzleUpload] 图片验证通过:', validation.info);
+      
+      // 5. 显示临时图片
       const selectedImages = [...this.data.selectedImages];
       selectedImages[index] = file.path;
       
@@ -119,12 +145,29 @@ Page({
       });
       
     } catch (err) {
-      console.error('[PuzzleUpload] 选择图片失败:', err);
+      console.error('[PuzzleUpload] 操作失败:', err);
+      
+      // 用户取消选择图片
       if (err.errMsg && err.errMsg.includes('cancel')) {
+        this.setData({ isChecking: false });
         return;
       }
+      
+      // 显示友好的错误提示
+      let errorMessage = '操作失败，请重试';
+      if (err.message) {
+        if (err.message.includes('登录')) {
+          errorMessage = '登录失败，请重试';
+        } else if (err.message.includes('次数')) {
+          errorMessage = '获取使用次数失败，请重试';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       this.setData({
-        errorMessage: '选择图片失败，请重试'
+        errorMessage: errorMessage,
+        isChecking: false
       });
     }
   },
@@ -192,7 +235,7 @@ Page({
       
       console.log('[PuzzleUpload] 所有图片上传成功:', uploadedUrls.length);
       
-      // 2. 人脸检测
+      // 2. 人脸检测（已在后端跳过，这里仅做形式调用）
       this.setData({
         statusText: '正在检测人脸...',
         uploadProgress: 75

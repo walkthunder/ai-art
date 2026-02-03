@@ -84,12 +84,15 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
     console.log('🆔 任务ID:', task.id);
     
     // 保存生成历史
+    let recordId = null;
     if (userId && task.id) {
       try {
-        await generationService.saveGenerationHistory({
+        const historyRecord = await generationService.saveGenerationHistory({
           userId, taskIds: [task.id], originalImageUrls: imageUrls,
           templateUrl: templateConfig.imageUrl, mode, status: 'pending'
         });
+        recordId = historyRecord.id;
+        console.log('📝 历史记录ID:', recordId);
       } catch (saveError) {
         console.error('保存生成历史记录失败:', saveError);
       }
@@ -98,8 +101,12 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
     res.json({ 
       success: true, 
       data: { 
-        taskId: task.id, mode, templateId: templateConfig.id,
-        status: task.status, message: task.message
+        taskId: task.id, 
+        recordId: recordId, // 返回历史记录ID用于分享
+        mode, 
+        templateId: templateConfig.id,
+        status: task.status, 
+        message: task.message
       } 
     });
     

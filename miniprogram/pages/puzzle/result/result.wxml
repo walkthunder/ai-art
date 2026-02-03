@@ -91,8 +91,22 @@
     
     <!-- 功能按钮区 -->
     <view class="action-section">
-      <!-- 保存图片 -->
+      <!-- 分享视图：制作同款按钮（主CTA） -->
       <view 
+        wx:if="{{isSharedView}}"
+        class="action-btn make-same-btn"
+        bindtap="handleMakeSame"
+      >
+        <view class="btn-inner gold primary">
+          <text class="btn-icon">✨</text>
+          <text class="btn-text">制作同款</text>
+        </view>
+        <view class="btn-shine"></view>
+      </view>
+      
+      <!-- 自己的作品：保存图片 -->
+      <view 
+        wx:if="{{!isSharedView}}"
         class="action-btn save-btn {{isSaving ? 'loading' : ''}}"
         bindtap="handleSaveImage"
       >
@@ -105,7 +119,7 @@
       
       <!-- 生成微动态 / 保存微动态 (暂时隐藏，后续版本放开) -->
       <view 
-        wx:if="{{false}}"
+        wx:if="{{false && !isSharedView}}"
         class="action-btn live-btn {{isGeneratingVideo ? 'loading' : ''}}"
         bindtap="{{hasLivePhoto ? 'handleSaveLivePhoto' : 'handleGenerateLivePhoto'}}"
       >
@@ -117,7 +131,7 @@
       </view>
       
       <!-- 生成贺卡 (暂时隐藏，后续版本放开) -->
-      <view wx:if="{{false}}" class="action-btn card-btn" bindtap="handleGenerateCard">
+      <view wx:if="{{false && !isSharedView}}" class="action-btn card-btn" bindtap="handleGenerateCard">
         <view class="btn-inner red">
           <text class="btn-icon">💌</text>
           <text class="btn-text">生成拜年贺卡</text>
@@ -125,7 +139,7 @@
       </view>
       
       <!-- 定制产品 (暂时隐藏，后续版本放开) -->
-      <view wx:if="{{false}}" class="action-btn product-btn" bindtap="handleOrderProduct">
+      <view wx:if="{{false && !isSharedView}}" class="action-btn product-btn" bindtap="handleOrderProduct">
         <view class="btn-inner purple">
           <text class="btn-icon">🖼️</text>
           <text class="btn-text">定制晶瓷画</text>
@@ -143,14 +157,14 @@
         </view>
       </button>
       
-      <!-- 返回首页 -->
+      <!-- 返回首页（分享视图时显示为"了解更多"） -->
       <view 
         class="action-btn home-btn"
         bindtap="goHome"
       >
         <view class="btn-inner blue">
-          <text class="btn-icon">🏠</text>
-          <text class="btn-text">返回首页</text>
+          <text class="btn-icon">{{isSharedView ? '🎨' : '🏠'}}</text>
+          <text class="btn-text">{{isSharedView ? '了解更多' : '返回首页'}}</text>
         </view>
       </view>
     </view>

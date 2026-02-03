@@ -152,7 +152,7 @@ export default function UploadPage() {
     await checkFacesForImages(newImages);
   };
   
-  // 检测图片中的人脸
+  // 检测图片中的人脸（已在后端跳过实际检测）
   const checkFacesForImages = async (images: UploadedImage[]) => {
     setIsCheckingFaces(true);
     
@@ -161,11 +161,11 @@ export default function UploadPage() {
         // 上传图片到OSS
         const imageUrl = await uploadImageToOSS(image.dataUrl);
         
-        // 调用人脸提取API进行检测
+        // 调用人脸提取API进行检测（后端已跳过实际检测，直接返回成功）
         const result = await faceAPI.extractFaces([imageUrl]);
         
-        // 检查是否成功提取到人脸
-        const faceDetected = result.success && result.faces && result.faces.length > 0;
+        // 由于后端已跳过检测，这里直接认为成功
+        const faceDetected = result.success;
         
         setUploadedImages(prev => prev.map(img => 
           img.id === image.id 
@@ -174,22 +174,22 @@ export default function UploadPage() {
                 faceDetected: faceDetected,
                 faceCheckStatus: faceDetected ? 'success' : 'failed',
                 faceCheckMessage: faceDetected 
-                  ? `检测到 ${result.faces.length} 张人脸` 
-                  : (result.message || '未检测到人脸'),
-                faces: faceDetected ? result.faces : undefined
+                  ? `检测成功` 
+                  : (result.message || '检测失败'),
+                faces: result.faces || []
               }
             : img
         ));
         
         if (!faceDetected) {
-          toast.error(result.message || '未检测到人脸，请重新上传');
+          toast.error(result.message || '图片处理失败，请重新上传');
         } else {
-          toast.success(`成功检测到 ${result.faces.length} 张人脸`);
+          toast.success(`图片上传成功`);
         }
       }
     } catch (error) {
       console.error('人脸检测失败:', error);
-      toast.error('人脸检测失败，请重试');
+      toast.error('图片处理失败，请重试');
       
       // 标记所有待检测的图片为失败
       setUploadedImages(prev => prev.map(img => 

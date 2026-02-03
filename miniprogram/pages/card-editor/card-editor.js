@@ -421,7 +421,7 @@ Page({
       // 保存到后端（可选）
       try {
         const app = getApp();
-        const userId = app.globalData.userId;
+        const userId = await app.getUserId(false); // 不强制登录
         
         if (userId) {
           await greetingCardAPI.createCard({

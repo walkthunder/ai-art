@@ -12,6 +12,13 @@ import {
 import ReactECharts from 'echarts-for-react';
 import { getDashboardData, getTrendData, type DashboardData, type TrendData } from '../../services/stats';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// 配置 dayjs 时区
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Shanghai');
 
 const { Option } = Select;
 
@@ -71,7 +78,7 @@ const Dashboard: React.FC = () => {
       tooltip: { trigger: 'axis' },
       xAxis: {
         type: 'category',
-        data: trendData.users.map(item => dayjs(item.date).format('MM-DD'))
+        data: trendData.users.map(item => dayjs.utc(item.date).tz('Asia/Shanghai').format('MM-DD'))
       },
       yAxis: { type: 'value' },
       series: [{
@@ -98,7 +105,7 @@ const Dashboard: React.FC = () => {
       },
       xAxis: {
         type: 'category',
-        data: trendData.revenue.map(item => dayjs(item.date).format('MM-DD'))
+        data: trendData.revenue.map(item => dayjs.utc(item.date).tz('Asia/Shanghai').format('MM-DD'))
       },
       yAxis: { type: 'value' },
       series: [{

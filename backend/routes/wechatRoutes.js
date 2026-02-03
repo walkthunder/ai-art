@@ -57,7 +57,7 @@ router.post('/login', async (req, res) => {
       }
     });
     
-    const { openid, session_key, errcode, errmsg } = wxResponse.data;
+    const { openid, session_key, unionid, errcode, errmsg } = wxResponse.data;
     
     // 检查微信接口返回错误
     if (errcode) {
@@ -82,18 +82,33 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    console.log(`[WeChat Login] 获取到 openid: ${openid.substring(0, 8)}...`);
+    const unionidLog = unionid ? `, unionid: ${unionid.substring(0, 8)}...` : '';
+    console.log(`[WeChat Login] 获取到 openid: ${openid.substring(0, 8)}...${unionidLog}`);
     
     // 查找或创建用户
-    let user = await userService.getUserByOpenid(openid);
+    // 优先使用 unionid 查找（跨应用统一用户）
+    let user = null;
     
+    if (unionid) {
+      user = await userService.getUserByUnionid(unionid);
+      if (user) {
+        console.log(`[WeChat Login] 通过 unionid 找到用户: ${user.id}`);
+      }
+    }
+    
+    // 如果通过 unionid 没找到，再用 openid 查找
     if (!user) {
-      // 创建新用户
+      user = await userService.getUserByOpenid(openid);
+      if (user) {
+        console.log(`[WeChat Login] 通过 openid 找到用户: ${user.id}`);
+      }
+    }
+    
+    // 如果都没找到，创建新用户
+    if (!user) {
       const userId = uuidv4();
-      user = await userService.createUserWithOpenid(userId, openid);
+      user = await userService.createUserWithOpenid(userId, openid, unionid);
       console.log(`[WeChat Login] 创建新用户: ${userId}`);
-    } else {
-      console.log(`[WeChat Login] 用户已存在: ${user.id}`);
     }
     
     // 生成简化版 token (base64 编码的 JSON)

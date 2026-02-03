@@ -29,6 +29,13 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// 配置 dayjs 时区
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Shanghai');
 import {
   getOrderList,
   getOrderDetail,
@@ -240,7 +247,7 @@ const Orders: React.FC = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss')
+      render: (date: string) => dayjs.utc(date).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')
     },
     {
       title: '操作',
@@ -340,7 +347,7 @@ const Orders: React.FC = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss')
+      render: (date: string) => dayjs.utc(date).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')
     },
     {
       title: '操作',
@@ -413,7 +420,7 @@ const Orders: React.FC = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss')
+      render: (date: string) => dayjs.utc(date).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')
     },
     {
       title: '操作',
@@ -649,10 +656,10 @@ const Orders: React.FC = () => {
             )}
             
             <Descriptions.Item label="创建时间">
-              {dayjs(selectedOrder.created_at).format('YYYY-MM-DD HH:mm:ss')}
+              {dayjs.utc(selectedOrder.created_at).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
             <Descriptions.Item label="更新时间">
-              {dayjs(selectedOrder.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+              {dayjs.utc(selectedOrder.updated_at).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
           </Descriptions>
         )}

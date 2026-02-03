@@ -179,6 +179,11 @@
   margin: 0 auto;
 }
 
+.action-btn.make-same-btn {
+  width: 500rpx;
+  margin: 0 auto;
+}
+
 .action-btn.loading { opacity: 0.7; pointer-events: none; }
 
 .btn-inner {
@@ -197,6 +202,25 @@
 .btn-inner.gold {
   background: linear-gradient(135deg, var(--color-festival-gold), #D4AF37);
   border: 2rpx solid rgba(255, 215, 0, 0.3);
+}
+
+/* 制作同款按钮 - 主CTA样式 */
+.btn-inner.gold.primary {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border: 4rpx solid #FF6B6B;
+  box-shadow: 0 8rpx 24rpx rgba(255, 215, 0, 0.4);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 8rpx 24rpx rgba(255, 215, 0, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 12rpx 32rpx rgba(255, 215, 0, 0.6);
+    transform: scale(1.02);
+  }
 }
 
 .btn-inner.red {

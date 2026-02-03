@@ -115,7 +115,15 @@ router.get('/:recordId', async (req, res) => {
       return res.status(400).json({ error: '缺少必要参数', message: '需要提供 recordId 参数' });
     }
     
-    const record = await generationService.getGenerationHistoryById(recordId);
+    // 先尝试通过 recordId 查询
+    let record = await generationService.getGenerationHistoryById(recordId);
+    
+    // 如果找不到，尝试通过 taskId 查询（兼容旧的分享链接）
+    if (!record) {
+      console.log(`[History] 通过 recordId 未找到记录，尝试通过 taskId 查询: ${recordId}`);
+      record = await generationService.getGenerationHistoryByTaskId(recordId);
+    }
+    
     if (!record) {
       return res.status(404).json({ error: '未找到记录', message: '未找到对应的历史记录' });
     }

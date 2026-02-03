@@ -8,6 +8,7 @@ const router = express.Router();
 const { authenticate, authorize } = require('../middleware/adminAuth');
 const { logOperation } = require('../middleware/adminLogger');
 const db = require('../db/connection');
+const { convertArrayTimesToCST, convertObjectTimesToCST } = require('../utils/timezone');
 
 /**
  * 获取用户列表（支持分页、筛选）
@@ -83,10 +84,13 @@ router.get('/', authenticate, authorize('super_admin', 'admin'), async (req, res
         user.order_count = orderCount[0].count;
       }
       
+      // 转换时区为 CST (UTC+8)
+      const usersWithCST = convertArrayTimesToCST(users);
+      
       res.json({
         success: true,
         data: {
-          users,
+          users: usersWithCST,
           pagination: {
             page: parseInt(page),
             pageSize: limit,
@@ -128,7 +132,7 @@ router.get('/:id', authenticate, authorize('super_admin', 'admin'), async (req, 
       
       // 获取用户生成历史
       const [generations] = await connection.execute(
-        `SELECT id, mode, template_id, status, result_url, created_at 
+        `SELECT id, mode, template_url, status, selected_image_url, created_at 
          FROM generation_history 
          WHERE user_id = ? 
          ORDER BY created_at DESC 
@@ -146,12 +150,17 @@ router.get('/:id', authenticate, authorize('super_admin', 'admin'), async (req, 
         [id]
       );
       
+      // 转换时区为 CST (UTC+8)
+      const userWithCST = convertObjectTimesToCST(user);
+      const generationsWithCST = convertArrayTimesToCST(generations);
+      const ordersWithCST = convertArrayTimesToCST(orders);
+      
       res.json({
         success: true,
         data: {
-          user,
-          generations,
-          orders
+          user: userWithCST,
+          generations: generationsWithCST,
+          orders: ordersWithCST
         }
       });
     } finally {

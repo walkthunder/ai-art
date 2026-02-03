@@ -15,11 +15,21 @@ router.get('/check/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    if (!userId) {
+    // 验证 userId 格式
+    if (!userId || userId === 'undefined' || userId === 'null' || userId.trim() === '') {
       return res.status(400).json({
         success: false,
-        error: 'USER_ID_REQUIRED',
-        message: '用户ID不能为空'
+        error: 'INVALID_USER_ID',
+        message: '无效的用户ID'
+      });
+    }
+
+    // 验证 userId 长度（防止异常长的字符串）
+    if (userId.length > 100) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_USER_ID',
+        message: '用户ID格式错误'
       });
     }
 
@@ -58,12 +68,12 @@ router.post('/decrement', async (req, res) => {
   try {
     const { userId, generationId, mode = 'puzzle' } = req.body;
 
-    // 验证参数
-    if (!userId) {
+    // 验证 userId
+    if (!userId || userId === 'undefined' || userId === 'null' || userId.trim() === '') {
       return res.status(400).json({
         success: false,
-        error: 'USER_ID_REQUIRED',
-        message: '用户ID不能为空'
+        error: 'INVALID_USER_ID',
+        message: '无效的用户ID'
       });
     }
 
@@ -146,12 +156,12 @@ router.post('/restore', async (req, res) => {
   try {
     const { userId, generationId, mode = 'puzzle' } = req.body;
 
-    // 验证参数
-    if (!userId) {
+    // 验证 userId
+    if (!userId || userId === 'undefined' || userId === 'null' || userId.trim() === '') {
       return res.status(400).json({
         success: false,
-        error: 'USER_ID_REQUIRED',
-        message: '用户ID不能为空'
+        error: 'INVALID_USER_ID',
+        message: '无效的用户ID'
       });
     }
 

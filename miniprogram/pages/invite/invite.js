@@ -63,7 +63,12 @@ Page({
   async loadInviteCode() {
     try {
       const app = getApp();
-      const userId = app.globalData.userId;
+      const userId = await app.getUserId(true);
+      
+      if (!userId) {
+        console.warn('[Invite] 用户未登录');
+        return;
+      }
       
       const cloudbaseRequest = require('../../utils/cloudbase-request');
       const res = await cloudbaseRequest.request({
@@ -91,7 +96,12 @@ Page({
   async loadInviteStats() {
     try {
       const app = getApp();
-      const userId = app.globalData.userId;
+      const userId = await app.getUserId(true);
+      
+      if (!userId) {
+        console.warn('[Invite] 用户未登录');
+        return;
+      }
       
       const cloudbaseRequest = require('../../utils/cloudbase-request');
       const res = await cloudbaseRequest.request({
@@ -129,7 +139,14 @@ Page({
     
     try {
       const app = getApp();
-      const userId = app.globalData.userId;
+      const userId = await app.getUserId(true);
+      
+      if (!userId) {
+        console.warn('[Invite] 用户未登录');
+        this.setData({ loading: false });
+        return;
+      }
+      
       const { page, pageSize } = this.data;
       
       const cloudbaseRequest = require('../../utils/cloudbase-request');

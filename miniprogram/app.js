@@ -32,7 +32,15 @@ App({
     // 导航栏相关
     statusBarHeight: 0,  // 状态栏高度
     navBarHeight: 0,     // 导航栏高度
-    menuButtonInfo: null // 胶囊按钮信息
+    menuButtonInfo: null, // 胶囊按钮信息
+    // 登录状态管理
+    isLoginReady: false, // 登录流程是否完成（无论成功失败）
+    loginPromise: null,  // 登录 Promise，用于等待登录完成
+    isLoggingIn: false,  // 是否正在登录（防止并发）
+    currentLoginPromise: null, // 当前登录 Promise
+    // 使用次数缓存
+    usageCacheTime: 0,   // 缓存时间戳
+    usageCacheData: null // 缓存数据
   },
 
   /**
@@ -52,7 +60,8 @@ App({
     this.initDevMode();
     
     // 初始化云开发并自动登录（顺序执行）
-    this.initAndLogin();
+    // 保存 Promise 供页面等待
+    this.globalData.loginPromise = this.initAndLogin();
   },
 
   /**
@@ -108,6 +117,10 @@ App({
       }
     } catch (err) {
       console.error('[App] 初始化或登录失败:', err);
+    } finally {
+      // 标记登录流程完成（无论成功失败）
+      this.globalData.isLoginReady = true;
+      console.log('[App] 登录流程完成，isLoginReady = true');
     }
   },
 
@@ -305,6 +318,118 @@ App({
   },
 
   /**
+   * 确保登录流程已完成
+   * 等待 onLaunch 中的登录流程完成
+   * @returns {Promise<void>}
+   */
+  async ensureLoginReady() {
+    if (this.globalData.isLoginReady) {
+      return;
+    }
+    
+    console.log('[App] 等待登录流程完成...');
+    if (this.globalData.loginPromise) {
+      await this.globalData.loginPromise;
+    }
+    
+    // 双重检查
+    if (!this.globalData.isLoginReady) {
+      this.globalData.isLoginReady = true;
+    }
+  },
+
+  /**
+   * 获取当前用户 ID（确保已登录）
+   * @param {boolean} [autoLogin=true] 如果未登录是否自动登录
+   * @returns {Promise<string|null>} 用户ID
+   */
+  async getUserId(autoLogin = true) {
+    // 1. 先等待登录流程完成
+    await this.ensureLoginReady();
+    
+    // 2. 检查开发者模式
+    const devMode = this.globalData.devModeUtil;
+    if (devMode && devMode.isDevModeActive && devMode.isDevModeActive()) {
+      // 开发者模式下使用特殊 userId
+      const devUserId = wx.getStorageSync('dev_userId') || 'dev_user_001';
+      console.log('[App] 开发者模式，使用测试 userId:', devUserId);
+      this.globalData.userId = devUserId;
+      return devUserId;
+    }
+    
+    // 3. 检查本地调试模式
+    const cloudbaseRequest = require('./utils/cloudbase-request');
+    if (cloudbaseRequest && cloudbaseRequest.isLocalMode && cloudbaseRequest.isLocalMode()) {
+      // 本地调试模式下使用测试 userId
+      const localUserId = wx.getStorageSync('local_userId') || 'local_test_user';
+      console.log('[App] 本地调试模式，使用测试 userId:', localUserId);
+      this.globalData.userId = localUserId;
+      return localUserId;
+    }
+    
+    // 4. 检查 globalData
+    if (this.globalData.userId) {
+      return this.globalData.userId;
+    }
+    
+    // 5. 尝试从 storage 恢复
+    const cloudbaseAuth = require('./utils/cloudbase-auth');
+    const loginState = cloudbaseAuth.getLoginState();
+    if (loginState && loginState.userId) {
+      // 检查是否过期
+      const isValid = await cloudbaseAuth.checkLoginState();
+      if (isValid) {
+        this.globalData.userId = loginState.userId;
+        this.globalData.openid = loginState.openid || '';
+        console.log('[App] 从 storage 恢复 userId:', loginState.userId);
+        return loginState.userId;
+      } else {
+        console.log('[App] storage 中的登录状态已过期');
+      }
+    }
+    
+    // 6. 如果需要，自动登录（带并发控制）
+    if (autoLogin) {
+      // ✅ 检查是否正在登录
+      if (this.globalData.isLoggingIn && this.globalData.currentLoginPromise) {
+        console.log('[App] 登录进行中，等待完成...');
+        try {
+          await this.globalData.currentLoginPromise;
+          return this.globalData.userId;
+        } catch (err) {
+          console.error('[App] 等待登录失败:', err);
+          return null;
+        }
+      }
+      
+      // ✅ 标记正在登录
+      this.globalData.isLoggingIn = true;
+      this.globalData.currentLoginPromise = (async () => {
+        try {
+          console.log('[App] 开始自动登录...');
+          const userInfo = await this.ensureLogin();
+          return userInfo.userId;
+        } catch (err) {
+          console.error('[App] 自动登录失败:', err);
+          throw err;
+        } finally {
+          // ✅ 清除登录标记
+          this.globalData.isLoggingIn = false;
+          this.globalData.currentLoginPromise = null;
+        }
+      })();
+      
+      try {
+        return await this.globalData.currentLoginPromise;
+      } catch (err) {
+        return null;
+      }
+    }
+    
+    return null;
+  },
+
+  /**
    * 确保已登录
    * 如果未登录则自动执行登录
    * @returns {Promise<Object>} 用户信息
@@ -433,27 +558,33 @@ App({
   /**
    * 更新使用次数
    * 从服务器获取最新的使用次数并更新全局状态
+   * @param {boolean} [forceRefresh=false] 是否强制刷新（跳过缓存）
    * @returns {Promise<Object>} { usageCount, userType, paymentStatus, canGenerate, modeData }
    */
-  async updateUsageCount() {
+  async updateUsageCount(forceRefresh = false) {
     try {
-      const userId = this.globalData.userId;
+      // 强制获取 userId，确保已登录
+      const userId = await this.getUserId(true);
+      
       if (!userId) {
-        console.warn('[App] 用户未登录，无法更新使用次数');
-        // 返回默认值
-        return {
-          usageCount: 3,
-          userType: 'free',
-          paymentStatus: 'free',
-          canGenerate: true,
-          modeData: {
-            puzzle: { free_count: 3, remaining: 3 },
-            transform: { free_count: 3, remaining: 3 },
-            paid: { count: 0, remaining: 0 }
-          }
-        };
+        // 登录失败，抛出错误而不是返回默认值
+        throw new Error('用户未登录，请先登录');
       }
 
+      // ✅ 检查缓存（30秒内有效）
+      const now = Date.now();
+      const CACHE_DURATION = 30 * 1000; // 30秒缓存
+      
+      if (!forceRefresh && 
+          this.globalData.usageCacheData && 
+          this.globalData.usageCacheTime &&
+          (now - this.globalData.usageCacheTime) < CACHE_DURATION) {
+        console.log('[App] 使用缓存的次数数据，缓存剩余:', 
+          Math.round((CACHE_DURATION - (now - this.globalData.usageCacheTime)) / 1000), '秒');
+        return this.globalData.usageCacheData;
+      }
+
+      console.log('[App] 从服务器获取使用次数...');
       const cloudbaseRequest = require('./utils/cloudbase-request');
       const res = await cloudbaseRequest.get(`/api/usage/check/${userId}`);
 
@@ -494,39 +625,21 @@ App({
           }
         };
         
+        // ✅ 更新缓存
+        this.globalData.usageCacheTime = now;
+        this.globalData.usageCacheData = result;
+        
         // 通知所有页面更新
         this.notifyPagesUsageUpdate(result);
         
         return result;
       } else {
-        console.error('[App] 更新使用次数失败:', res);
-        // 返回默认值
-        return {
-          usageCount: 3,
-          userType: 'free',
-          paymentStatus: 'free',
-          canGenerate: true,
-          modeData: {
-            puzzle: { free_count: 3, remaining: 3 },
-            transform: { free_count: 3, remaining: 3 },
-            paid: { count: 0, remaining: 0 }
-          }
-        };
+        throw new Error(res.message || '获取使用次数失败');
       }
     } catch (err) {
       console.error('[App] 更新使用次数异常:', err);
-      // 返回默认值
-      return {
-        usageCount: 3,
-        userType: 'free',
-        paymentStatus: 'free',
-        canGenerate: true,
-        modeData: {
-          puzzle: { free_count: 3, remaining: 3 },
-          transform: { free_count: 3, remaining: 3 },
-          paid: { count: 0, remaining: 0 }
-        }
-      };
+      // 不返回默认值，让调用方处理错误
+      throw err;
     }
   },
 
@@ -555,7 +668,8 @@ App({
    */
   async decrementUsageCount(generationId, mode = 'puzzle') {
     try {
-      const userId = this.globalData.userId;
+      // 强制获取 userId
+      const userId = await this.getUserId(true);
       if (!userId) {
         throw new Error('用户未登录');
       }
@@ -577,6 +691,10 @@ App({
         
         // 更新全局状态
         this.globalData.usageCount = usageCount;
+        
+        // ✅ 清除缓存，强制下次重新获取
+        this.globalData.usageCacheTime = 0;
+        this.globalData.usageCacheData = null;
         
         console.log('[App] 使用次数已扣减，剩余:', remaining);
         
@@ -617,7 +735,8 @@ App({
    */
   async restoreUsageCount(generationId, mode = 'puzzle') {
     try {
-      const userId = this.globalData.userId;
+      // 强制获取 userId
+      const userId = await this.getUserId(true);
       if (!userId) {
         throw new Error('用户未登录');
       }
@@ -639,6 +758,10 @@ App({
         
         // 更新全局状态
         this.globalData.usageCount = usageCount;
+        
+        // ✅ 清除缓存，强制下次重新获取
+        this.globalData.usageCacheTime = 0;
+        this.globalData.usageCacheData = null;
         
         console.log('[App] 使用次数已恢复，剩余:', remaining);
         

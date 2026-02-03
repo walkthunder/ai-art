@@ -87,24 +87,8 @@ Page({
       const result = await app.updateUsageCount();
       
       if (result) {
-        // 从后端API获取用户的has_ever_paid状态
-        const cloudbaseRequest = require('../../../utils/cloudbase-request');
-        let hasEverPaid = wx.getStorageSync('hasEverPaid') || false; // 优先使用缓存
-        
-        try {
-          const userRes = await cloudbaseRequest.get(`/api/user/${app.globalData.userId}`);
-          if (userRes && userRes.success && userRes.data) {
-            hasEverPaid = userRes.data.has_ever_paid || false;
-            // 更新缓存
-            wx.setStorageSync('hasEverPaid', hasEverPaid);
-          }
-        } catch (err) {
-          console.warn('[PuzzleLaunch] 获取用户付费状态失败，使用缓存:', err);
-          // API调用失败时，使用缓存值，如果缓存也没有，则根据paymentStatus判断
-          if (!wx.getStorageSync('hasEverPaid')) {
-            hasEverPaid = result.paymentStatus !== 'free';
-          }
-        }
+        // 直接从 usage check 接口获取 has_ever_paid（后端已返回）
+        const hasEverPaid = result.has_ever_paid || false;
         
         this.setData({
           usageCount: result.usageCount,

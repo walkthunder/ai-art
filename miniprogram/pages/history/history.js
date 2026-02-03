@@ -82,13 +82,15 @@ Page({
     try {
       this.setData({ loading: true });
 
-      const userId = app.globalData.userId;
+      const userId = await app.getUserId(true);
+      
       if (!userId) {
         console.warn('[History] 用户未登录');
         wx.showToast({
           title: '请先登录',
           icon: 'none'
         });
+        this.setData({ loading: false });
         return;
       }
 

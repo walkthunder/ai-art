@@ -285,7 +285,18 @@ const checkLoginState = async () => {
     
     // 检查是否过期
     if (loginState.expireTime && Date.now() > loginState.expireTime) {
-      log('INFO', '登录状态已过期');
+      log('INFO', '登录状态已过期，清除本地数据');
+      // 清除过期的登录状态
+      clearLoginState();
+      
+      // 清除全局状态中的 userId
+      const app = getApp();
+      if (app) {
+        app.globalData.userId = '';
+        app.globalData.openid = '';
+        app.globalData.userInfo = null;
+      }
+      
       return false;
     }
     

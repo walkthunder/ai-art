@@ -21,6 +21,17 @@ const COMPRESS_CONFIG = {
 };
 
 /**
+ * 图片大小限制配置
+ */
+const IMAGE_SIZE_LIMITS = {
+  maxFileSize: 10 * 1024 * 1024,  // 最大文件大小 10MB
+  maxWidth: 4096,                  // 最大宽度
+  maxHeight: 4096,                 // 最大高度
+  minWidth: 200,                   // 最小宽度
+  minHeight: 200                   // 最小高度
+};
+
+/**
  * 文件大小限制
  * 由于云托管 callContainer 请求体限制，直接使用云存储上传更稳定
  * 这个阈值设置得很低，确保大部分情况都走云存储
@@ -88,6 +99,55 @@ const chooseOneImage = async (options = {}) => {
  */
 const chooseMultipleImages = (maxCount = 5) => {
   return chooseImage({ count: maxCount });
+};
+
+/**
+ * 验证图片尺寸和大小
+ * @param {string} filePath 图片路径
+ * @returns {Promise<Object>} { valid: boolean, error?: string, info: Object }
+ */
+const validateImage = async (filePath) => {
+  try {
+    // 获取图片信息
+    const info = await getImageInfo(filePath);
+    const fileSize = await getFileSize(filePath);
+    
+    // 检查文件大小
+    if (fileSize > IMAGE_SIZE_LIMITS.maxFileSize) {
+      const sizeMB = (fileSize / (1024 * 1024)).toFixed(1);
+      return {
+        valid: false,
+        error: `图片太大了（${sizeMB}MB），请选择小于10MB的图片`,
+        info
+      };
+    }
+    
+    // 检查图片尺寸
+    if (info.width > IMAGE_SIZE_LIMITS.maxWidth || info.height > IMAGE_SIZE_LIMITS.maxHeight) {
+      return {
+        valid: false,
+        error: `图片尺寸过大（${info.width}x${info.height}），请选择小于4096x4096的图片`,
+        info
+      };
+    }
+    
+    if (info.width < IMAGE_SIZE_LIMITS.minWidth || info.height < IMAGE_SIZE_LIMITS.minHeight) {
+      return {
+        valid: false,
+        error: `图片尺寸太小（${info.width}x${info.height}），请选择大于200x200的图片`,
+        info
+      };
+    }
+    
+    return { valid: true, info };
+  } catch (err) {
+    console.error('[Upload] 验证图片失败:', err);
+    return {
+      valid: false,
+      error: '无法读取图片信息，请重新选择',
+      info: null
+    };
+  }
 };
 
 /**
@@ -250,16 +310,29 @@ const getTempFileURL = (fileID) => {
  * 优先使用云存储上传，更稳定可靠
  * @param {string} filePath 图片路径
  * @param {Function} [onProgress] 进度回调
+ * @param {Object} [options] 配置选项
+ * @param {boolean} [options.skipValidation=false] 是否跳过验证
  * @returns {Promise<string>} 上传后的图片 URL
  */
-const uploadImage = async (filePath, onProgress) => {
+const uploadImage = async (filePath, onProgress, options = {}) => {
   try {
+    // 验证图片（除非明确跳过）
+    if (!options.skipValidation) {
+      if (onProgress) onProgress(5);
+      const validation = await validateImage(filePath);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
+      console.log('[Upload] 图片验证通过:', validation.info);
+    }
+    
     // 先压缩图片
     if (onProgress) onProgress(10);
     const compressedPath = await compressImage(filePath);
 
     // 获取压缩后的文件大小
     const fileSize = await getFileSize(compressedPath);
+    console.log('[Upload] 压缩后文件大小:', (fileSize / 1024).toFixed(2), 'KB');
     
     // 直接使用云存储上传，更稳定可靠
     // 云托管 callContainer 有请求体大小限制，云存储没有这个问题
@@ -522,10 +595,12 @@ const requestAlbumPermission = () => {
 
 module.exports = {
   COMPRESS_CONFIG,
+  IMAGE_SIZE_LIMITS,
   MAX_BASE64_SIZE,
   chooseImage,
   chooseOneImage,
   chooseMultipleImages,
+  validateImage,
   compressImage,
   getImageInfo,
   getFileSize,

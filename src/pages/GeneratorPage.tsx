@@ -631,19 +631,19 @@ export default function GeneratorPage() {
         imageUrls.push(imageUrl);
       }
       
-      // 调用人脸提取API
+      // 调用人脸提取API（后端已跳过实际检测）
       const result = await faceAPI.extractFaces(imageUrls);
       
-      if (!result.success || result.faces.length === 0) {
-        showFriendlyError(result.message || '未检测到人脸');
+      if (!result.success) {
+        showFriendlyError(result.message || '图片处理失败');
         return;
       }
       
-      setExtractedFaces(result.faces);
+      setExtractedFaces(result.faces || []);
       setShowCanvasPositioning(true);
-      toast(`成功提取 ${result.faces.length} 张人脸`);
+      toast(`图片处理成功`);
     } catch (error) {
-      showFriendlyError(error instanceof Error ? error : '人脸提取失败');
+      showFriendlyError(error instanceof Error ? error : '图片处理失败');
     }
   };
   

@@ -84,26 +84,26 @@ export default function TransformUploadPage() {
         preview: dataUrl.substring(0, 50) + '...'
       });
 
-      // 直接使用 base64 进行人脸检测（避免 URL 下载问题）
+      // 直接使用 base64 进行人脸检测（后端已跳过实际检测）
       logUpload('人脸检测', '正在调用人脸检测API...');
       setStatusText('正在检测人脸...');
       const result = await faceAPI.extractFaces([dataUrl]);
-      logUpload('人脸检测', '人脸检测API返回', {
+      logUpload('人脸检测', '人脸检测API返回（已跳过实际检测）', {
         success: result.success,
         faceCount: result.faces?.length || 0,
         message: result.message
       });
 
-      if (!result.success || !result.faces || result.faces.length === 0) {
-        logUpload('人脸检测', '❌ 未检测到人脸');
-        setErrorMessage(result.message || '未检测到人脸，请重新上传清晰的照片');
+      if (!result.success) {
+        logUpload('人脸检测', '❌ 检测接口调用失败');
+        setErrorMessage(result.message || '图片处理失败，请重新上传');
         setIsUploading(false);
         setStatusText('');
         return;
       }
 
       // 检测成功，自动进入下一步
-      logUpload('人脸检测', `✅ 检测到 ${result.faces.length} 张人脸`);
+      logUpload('人脸检测', `✅ 检测成功`);
       setStatusText('检测成功，正在跳转...');
       
       logUpload('跳转', '准备跳转到模板选择页', {

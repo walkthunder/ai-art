@@ -60,7 +60,9 @@ Page({
       const localRecords = getHistory('puzzle');
       console.log('[PuzzleHistory] 本地记录:', localRecords.length);
       
-      const userId = wx.getStorageSync('userId');
+      const app = getApp();
+      const userId = await app.getUserId(false); // 不强制登录，允许查看本地记录
+      
       if (userId) {
         try {
           const result = await cloudRequest({
@@ -127,15 +129,17 @@ Page({
       app.globalData.puzzleData = {
         generatedImages: record.generatedImages,
         uploadedImages: record.originalImages,
-        taskId: record.id
+        taskId: record.taskId || record.id,
+        recordId: record.recordId || record.id // 传递 recordId
       };
       
       wx.navigateTo({
         url: '/pages/puzzle/result-selector/result-selector'
       });
     } else if (record.generatedImage) {
+      const generationId = record.recordId || record.id; // 优先使用 recordId
       wx.navigateTo({
-        url: `/pages/puzzle/result/result?image=${encodeURIComponent(record.generatedImage)}`
+        url: `/pages/puzzle/result/result?image=${encodeURIComponent(record.generatedImage)}&generationId=${generationId}`
       });
     } else {
       wx.showToast({
@@ -166,7 +170,8 @@ Page({
     this.setData({ isDeleting: true });
     
     const record = this.data.records.find(r => r.id === id);
-    const userId = wx.getStorageSync('userId');
+    const app = getApp();
+    const userId = await app.getUserId(false); // 不强制登录
     
     try {
       if (record && record.isServerRecord && userId) {
@@ -230,7 +235,8 @@ Page({
     
     this.setData({ isDeleting: true });
     
-    const userId = wx.getStorageSync('userId');
+    const app = getApp();
+    const userId = await app.getUserId(false); // 不强制登录
     
     try {
       if (userId) {

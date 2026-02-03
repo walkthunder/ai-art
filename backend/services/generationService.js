@@ -5,6 +5,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/connection');
+const { convertToCST } = require('../utils/timezone');
 
 /**
  * 保存生成历史记录
@@ -233,8 +234,8 @@ async function getGenerationHistoryByTaskId(taskId) {
       generatedImageUrls: parseJsonField(record.generated_image_urls),
       selectedImageUrl: record.selected_image_url,
       status: record.status,
-      createdAt: record.created_at,
-      updatedAt: record.updated_at
+      createdAt: convertToCST(record.created_at),
+      updatedAt: convertToCST(record.updated_at)
     };
   } finally {
     connection.release();
@@ -283,8 +284,8 @@ async function getGenerationHistoryByUserId(userId, limit = 10) {
       generatedImageUrls: parseJsonField(record.generated_image_urls),
       selectedImageUrl: record.selected_image_url,
       status: record.status,
-      createdAt: record.created_at,
-      updatedAt: record.updated_at
+      createdAt: convertToCST(record.created_at),
+      updatedAt: convertToCST(record.updated_at)
     }));
   } finally {
     connection.release();

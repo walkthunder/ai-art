@@ -82,9 +82,14 @@ Page({
     const { url } = e.detail;
     console.log('[TransformResultSelector] 确认选择:', url);
     
+    // 从 globalData 获取 recordId
+    const app = getApp();
+    const transformData = app.globalData.transformData || {};
+    const generationId = transformData.recordId || transformData.taskId || '';
+    
     // 跳转到结果详情页
     wx.redirectTo({
-      url: `/pages/transform/result/result?image=${encodeURIComponent(url)}`,
+      url: `/pages/transform/result/result?image=${encodeURIComponent(url)}&generationId=${generationId}`,
       fail: (err) => {
         console.error('[TransformResultSelector] 跳转失败:', err);
         wx.showToast({

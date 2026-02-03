@@ -6,6 +6,7 @@
 const { query, transaction } = require('../db/connection');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
+const { convertObjectTimesToCST } = require('../utils/timezone');
 
 /**
  * 生成8位邀请码（使用数字和大写字母）
@@ -62,9 +63,10 @@ async function createUser(userId = null) {
  * 创建带有微信openid的新用户
  * @param {string} userId 用户ID
  * @param {string} openid 微信openid
+ * @param {string} unionid 微信unionid (可选)
  * @returns {Promise<Object>} 创建的用户对象
  */
-async function createUserWithOpenid(userId, openid) {
+async function createUserWithOpenid(userId, openid, unionid = null) {
   try {
     // 检查用户是否已存在
     const existingUser = await getUserById(userId);
@@ -73,22 +75,45 @@ async function createUserWithOpenid(userId, openid) {
       return existingUser;
     }
     
+    // 如果有 unionid，优先检查 unionid 是否已被使用
+    if (unionid) {
+      const existingUnionidUser = await getUserByUnionid(unionid);
+      if (existingUnionidUser) {
+        console.log(`unionid ${unionid.substring(0, 8)}... 已存在,更新 openid 并返回现有用户`);
+        // 更新现有用户的 openid（用户可能在不同小程序登录）
+        await query(
+          'UPDATE users SET openid = ?, updated_at = NOW() WHERE id = ?',
+          [openid, existingUnionidUser.id]
+        );
+        return await getUserById(existingUnionidUser.id);
+      }
+    }
+    
     // 检查openid是否已被使用
     const existingOpenidUser = await getUserByOpenid(openid);
     if (existingOpenidUser) {
-      console.log(`openid ${openid} 已存在,返回现有用户`);
-      return existingOpenidUser;
+      console.log(`openid ${openid.substring(0, 8)}... 已存在,返回现有用户`);
+      // 如果有 unionid 但现有用户没有，更新它
+      if (unionid && !existingOpenidUser.unionid) {
+        await query(
+          'UPDATE users SET unionid = ?, updated_at = NOW() WHERE id = ?',
+          [unionid, existingOpenidUser.id]
+        );
+        console.log(`更新用户 ${existingOpenidUser.id} 的 unionid`);
+      }
+      return await getUserById(existingOpenidUser.id);
     }
     
     // 插入新用户
     const sql = `
-      INSERT INTO users (id, openid, payment_status, regenerate_count)
-      VALUES (?, ?, 'free', 3)
+      INSERT INTO users (id, openid, unionid, payment_status, regenerate_count)
+      VALUES (?, ?, ?, 'free', 3)
     `;
     
-    await query(sql, [userId, openid]);
+    await query(sql, [userId, openid, unionid]);
     
-    console.log(`用户 ${userId} (openid: ${openid.substring(0, 8)}...) 创建成功`);
+    const unionidLog = unionid ? `, unionid: ${unionid.substring(0, 8)}...` : '';
+    console.log(`用户 ${userId} (openid: ${openid.substring(0, 8)}...${unionidLog}) 创建成功`);
     
     // 返回创建的用户
     return await getUserById(userId);
@@ -106,7 +131,7 @@ async function createUserWithOpenid(userId, openid) {
 async function getUserByOpenid(openid) {
   try {
     const sql = `
-      SELECT id, openid, nickname, avatar_url,
+      SELECT id, openid, unionid, nickname, avatar_url,
              created_at, updated_at, payment_status, regenerate_count
       FROM users
       WHERE openid = ?
@@ -118,7 +143,7 @@ async function getUserByOpenid(openid) {
       return null;
     }
     
-    return rows[0];
+    return convertObjectTimesToCST(rows[0]);
   } catch (error) {
     console.error('根据openid查询用户失败:', error);
     throw new Error(`根据openid查询用户失败: ${error.message}`);
@@ -132,9 +157,24 @@ async function getUserByOpenid(openid) {
  */
 async function getUserByUnionid(unionid) {
   try {
-    // unionid 字段暂未在数据库中实现，返回 null
-    console.warn('getUserByUnionid: unionid 字段未在数据库中实现');
-    return null;
+    if (!unionid) {
+      return null;
+    }
+    
+    const sql = `
+      SELECT id, openid, unionid, nickname, avatar_url,
+             created_at, updated_at, payment_status, regenerate_count
+      FROM users
+      WHERE unionid = ?
+    `;
+    
+    const rows = await query(sql, [unionid]);
+    
+    if (rows.length === 0) {
+      return null;
+    }
+    
+    return convertObjectTimesToCST(rows[0]);
   } catch (error) {
     console.error('根据unionid查询用户失败:', error);
     throw new Error(`根据unionid查询用户失败: ${error.message}`);
@@ -149,7 +189,7 @@ async function getUserByUnionid(unionid) {
 async function getUserById(userId) {
   try {
     const sql = `
-      SELECT id, openid, nickname, avatar_url,
+      SELECT id, openid, unionid, nickname, avatar_url,
              created_at, updated_at, payment_status, regenerate_count,
              usage_count, usage_limit, invite_code, has_ever_paid, first_payment_at, last_payment_at
       FROM users
@@ -162,7 +202,7 @@ async function getUserById(userId) {
       return null;
     }
     
-    return rows[0];
+    return convertObjectTimesToCST(rows[0]);
   } catch (error) {
     console.error('查询用户失败:', error);
     throw new Error(`查询用户失败: ${error.message}`);

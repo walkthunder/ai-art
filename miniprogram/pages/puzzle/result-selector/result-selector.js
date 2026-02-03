@@ -81,8 +81,13 @@ Page({
     const { url } = e.detail;
     console.log('[PuzzleResultSelector] 确认选择:', url);
     
+    // 从 globalData 获取 recordId
+    const app = getApp();
+    const puzzleData = app.globalData.puzzleData || {};
+    const generationId = puzzleData.recordId || puzzleData.taskId || '';
+    
     wx.redirectTo({
-      url: `/pages/puzzle/result/result?image=${encodeURIComponent(url)}`,
+      url: `/pages/puzzle/result/result?image=${encodeURIComponent(url)}&generationId=${generationId}`,
       fail: (err) => {
         console.error('[PuzzleResultSelector] 跳转失败:', err);
         wx.showToast({

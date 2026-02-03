@@ -242,7 +242,12 @@ Page({
     });
     
     try {
-      const userId = wx.getStorageSync('userId') || '';
+      // 确保获取到有效的 userId
+      const userId = await app.getUserId(true);
+      
+      if (!userId) {
+        throw new Error('用户未登录，请先登录');
+      }
       
       console.log('[TransformTemplate] 开始生成请求:', {
         mode: 'transform',
@@ -268,6 +273,7 @@ Page({
       }
       
       const taskId = result.data.taskId;
+      const recordId = result.data.recordId; // 获取历史记录ID用于分享
       
       // 扣减使用次数
       try {
@@ -301,6 +307,7 @@ Page({
       app.globalData.transformData = {
         ...transformData,
         taskId,
+        recordId, // 保存历史记录ID
         selectedTemplate: selectedTemplate.url
       };
       
@@ -308,7 +315,7 @@ Page({
       
       // 跳转到生成等待页
       wx.navigateTo({
-        url: `/pages/transform/generating/generating?taskId=${taskId}`,
+        url: `/pages/transform/generating/generating?taskId=${taskId}&recordId=${recordId || ''}`,
         fail: (err) => {
           console.error('[TransformTemplate] 跳转失败:', err);
           wx.showToast({

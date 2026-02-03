@@ -6,6 +6,13 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, Select, message, Space, Tag, Card, Statistic, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, HistoryOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// 配置 dayjs 时区
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Shanghai');
 import type { ColumnsType } from 'antd/es/table';
 import { 
   getAllPrices, 
@@ -205,7 +212,7 @@ const PricesPage: React.FC = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss')
+      render: (date: string) => dayjs.utc(date).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')
     },
     {
       title: '操作',
