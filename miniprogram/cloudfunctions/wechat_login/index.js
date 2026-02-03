@@ -123,13 +123,6 @@ exports.main = async (event) => {
         phone: null,
         status: 'active',
         payment_status: 'free',
-        regenerate_count: 3,
-        business_level: 'free',
-        daily_limit: 10,
-        used_today: 0,
-        total_deployments: 0,
-        total_quota: 100,
-        used_quota: 0,
         last_login_at: formatMySQLDateTime(),
         last_login_ip: clientIp || null,
         last_login_source: source,
@@ -142,6 +135,27 @@ exports.main = async (event) => {
       if (insertResult.skipped || insertResult.error) {
         console.error('[wechat_login] 创建用户失败');
         return { code: -1, msg: '注册失败，请稍后重试' };
+      }
+      
+      // 通知后端初始化用户余额等信息
+      try {
+        const apiBaseUrl = process.env.API_BASE_URL;
+        if (apiBaseUrl) {
+          const axios = require('axios');
+          await axios.post(`${apiBaseUrl}/api/users/initialize`, {
+            userId: userId
+          }, {
+            timeout: 5000,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Internal-Secret': process.env.INTERNAL_API_SECRET || ''
+            }
+          });
+          console.log('[wechat_login] 用户初始化成功');
+        }
+      } catch (error) {
+        console.error('[wechat_login] 用户初始化失败:', error.message);
+        // 不影响主流程，后续访问时会自动初始化
       }
       
       user = newUser;
@@ -215,13 +229,6 @@ exports.main = async (event) => {
           phone: user.phone,
           status: user.status,
           payment_status: user.payment_status,
-          business_level: user.business_level,
-          regenerate_count: user.regenerate_count,
-          daily_limit: user.daily_limit,
-          used_today: user.used_today,
-          total_quota: user.total_quota,
-          used_quota: user.used_quota,
-          total_deployments: user.total_deployments,
           created_at: user.created_at
         }
       }

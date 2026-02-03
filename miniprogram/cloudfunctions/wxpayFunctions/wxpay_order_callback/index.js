@@ -163,11 +163,31 @@ exports.main = async (event, context) => {
             await safeDb.insert('users', {
               id: userId,
               openid: payerOpenid,
-              payment_status: 'free',
-              regenerate_count: 3
+              payment_status: 'free'
               // last_login_at, created_at, updated_at 由数据库自动生成
             });
             console.log('[wxpay_order_callback] 创建新用户:', userId);
+            
+            // 通知后端初始化用户余额等信息
+            try {
+              const apiBaseUrl = process.env.API_BASE_URL;
+              if (apiBaseUrl) {
+                const axios = require('axios');
+                await axios.post(`${apiBaseUrl}/api/users/initialize`, {
+                  userId: userId
+                }, {
+                  timeout: 5000,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Secret': process.env.INTERNAL_API_SECRET || ''
+                  }
+                });
+                console.log('[wxpay_order_callback] 用户初始化成功');
+              }
+            } catch (error) {
+              console.error('[wxpay_order_callback] 用户初始化失败:', error.message);
+              // 不影响主流程
+            }
           }
         } else {
           // 没有 openid，生成临时用户 ID

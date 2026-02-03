@@ -508,14 +508,36 @@ exports.main = async (event, context) => {
             id: effectiveUserId,
             openid: effectiveOpenid || null,
             unionid: wxContext.UNIONID || null,
-            payment_status: 'free',
-            regenerate_count: 3
+            payment_status: 'free'
             // last_login_at 和 created_at, updated_at 由数据库自动生成
           });
           
           if (userInsertResult.error && !userInsertResult.skipped) {
             console.error('[wxpay_order] ❌ 创建用户失败:', userInsertResult.error);
             throw new Error(`用户创建失败: ${userInsertResult.error}`);
+          }
+          
+          // 通知后端初始化用户余额等信息
+          if (!userInsertResult.error && !userInsertResult.skipped) {
+            try {
+              const apiBaseUrl = process.env.API_BASE_URL;
+              if (apiBaseUrl) {
+                const axios = require('axios');
+                await axios.post(`${apiBaseUrl}/api/users/initialize`, {
+                  userId: effectiveUserId
+                }, {
+                  timeout: 5000,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Secret': process.env.INTERNAL_API_SECRET || ''
+                  }
+                });
+                console.log('[wxpay_order] 用户初始化成功');
+              }
+            } catch (error) {
+              console.error('[wxpay_order] 用户初始化失败:', error.message);
+              // 不影响主流程
+            }
           }
         }
       } catch (userError) {
@@ -537,13 +559,33 @@ exports.main = async (event, context) => {
             id: effectiveUserId,
             openid: effectiveOpenid,
             unionid: wxContext.UNIONID || null,
-            payment_status: 'free',
-            regenerate_count: 3
+            payment_status: 'free'
             // last_login_at, created_at, updated_at 由数据库自动生成
           });
           
           if (!userInsertResult.error && !userInsertResult.skipped) {
             console.log('[wxpay_order] ✅ 创建新用户成功:', effectiveUserId);
+            
+            // 通知后端初始化用户余额等信息
+            try {
+              const apiBaseUrl = process.env.API_BASE_URL;
+              if (apiBaseUrl) {
+                const axios = require('axios');
+                await axios.post(`${apiBaseUrl}/api/users/initialize`, {
+                  userId: effectiveUserId
+                }, {
+                  timeout: 5000,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Secret': process.env.INTERNAL_API_SECRET || ''
+                  }
+                });
+                console.log('[wxpay_order] ✅ 用户初始化成功');
+              }
+            } catch (error) {
+              console.error('[wxpay_order] ⚠️ 用户初始化失败:', error.message);
+              // 不影响主流程
+            }
           } else {
             console.error('[wxpay_order] ❌ 创建用户失败:', userInsertResult.error);
             throw new Error(`用户创建失败: ${userInsertResult.error || '数据库不可用'}`);

@@ -135,13 +135,6 @@ exports.main = async (event) => {
           phone: user.phone,
           status: user.status,
           payment_status: user.payment_status,
-          business_level: user.business_level,
-          regenerate_count: user.regenerate_count,
-          daily_limit: user.daily_limit,
-          used_today: user.used_today,
-          total_deployments: user.total_deployments,
-          total_quota: user.total_quota,
-          used_quota: user.used_quota,
           last_login_at: user.last_login_at,
           created_at: user.created_at
         }

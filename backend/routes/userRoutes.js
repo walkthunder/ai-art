@@ -85,6 +85,49 @@ router.put('/:userId/payment-status', async (req, res) => {
   }
 });
 
+// 初始化用户余额和付费信息（云函数创建用户后调用）
+router.post('/initialize', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        success: false,
+        message: '缺少 userId 参数' 
+      });
+    }
+    
+    const balanceService = require('../services/balanceService');
+    
+    // 检查用户是否存在
+    const user = await userServiceV2.getUserById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+    
+    // 检查余额是否已初始化（通过 checkBalance 会自动初始化）
+    const balances = await balanceService.checkBalance(userId);
+    
+    console.log(`[UserRoutes] 用户 ${userId} 初始化完成，余额:`, balances);
+    
+    res.json({
+      success: true,
+      message: '用户初始化成功',
+      data: balances
+    });
+  } catch (error) {
+    console.error('用户初始化失败:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // 同步用户信息（小程序登录后调用）
 router.post('/sync', async (req, res) => {
   try {
