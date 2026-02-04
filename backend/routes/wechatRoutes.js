@@ -109,6 +109,16 @@ router.post('/login', async (req, res) => {
       const userId = uuidv4();
       user = await userServiceV2.createUser(userId, openid);
       console.log(`[WeChat Login] 创建新用户: ${userId}`);
+    } else {
+      // 更新最后登录时间
+      try {
+        const { query } = require('../db/connection');
+        await query('UPDATE users SET last_login_at = NOW(), updated_at = NOW() WHERE id = ?', [user.id]);
+        console.log(`[WeChat Login] 更新用户 ${user.id} 最后登录时间`);
+      } catch (error) {
+        console.error(`[WeChat Login] 更新最后登录时间失败:`, error.message);
+        // 不影响登录流程，继续执行
+      }
     }
     
     // 生成简化版 token (base64 编码的 JSON)
