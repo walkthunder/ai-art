@@ -295,7 +295,26 @@ async function restoreBalance(userId, generationId, mode = 'puzzle') {
   try {
     await connection.beginTransaction();
     
-    // 查询最后一条该 generationId 的 decrement 日志
+    // 🔒 安全检查1：检查是否已经恢复过
+    const restoreCheckSql = `
+      SELECT id FROM usage_logs
+      WHERE user_id = ? AND reference_id = ? AND action_type = 'restore'
+      LIMIT 1
+    `;
+    
+    const [restoreRows] = await connection.execute(restoreCheckSql, [userId, generationId]);
+    
+    if (restoreRows.length > 0) {
+      console.warn(`[RestoreBalance] 该任务已经恢复过，拒绝重复恢复: userId=${userId}, generationId=${generationId}`);
+      await connection.rollback();
+      return {
+        success: false,
+        error: 'ALREADY_RESTORED',
+        message: '该任务已经恢复过次数，不能重复恢复'
+      };
+    }
+    
+    // 🔒 安全检查2：查询最后一条该 generationId 的 decrement 日志
     const logSql = `
       SELECT mode FROM usage_logs
       WHERE user_id = ? AND reference_id = ? AND action_type = 'decrement'
@@ -304,13 +323,17 @@ async function restoreBalance(userId, generationId, mode = 'puzzle') {
     
     const [logRows] = await connection.execute(logSql, [userId, generationId]);
     
-    let usedBalanceType;
-    if (logRows.length > 0) {
-      usedBalanceType = logRows[0].mode;
-    } else {
-      console.warn(`[RestoreBalance] 未找到 generationId=${generationId} 的扣减日志，使用默认 mode=${mode}`);
-      usedBalanceType = getBalanceType(mode, false);
+    if (logRows.length === 0) {
+      console.warn(`[RestoreBalance] 未找到扣减记录，拒绝恢复: userId=${userId}, generationId=${generationId}`);
+      await connection.rollback();
+      return {
+        success: false,
+        error: 'NO_DECREMENT_FOUND',
+        message: '未找到对应的扣减记录，无法恢复'
+      };
     }
+    
+    const usedBalanceType = logRows[0].mode;
     
     // 恢复余额（增加1）
     await connection.execute(
@@ -340,6 +363,8 @@ async function restoreBalance(userId, generationId, mode = 'puzzle') {
     );
     
     await connection.commit();
+    
+    console.log(`[RestoreBalance] 恢复成功: userId=${userId}, generationId=${generationId}, balanceType=${usedBalanceType}`);
     
     return {
       success: true,

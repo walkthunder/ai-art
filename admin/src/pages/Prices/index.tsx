@@ -88,6 +88,7 @@ const PricesPage: React.FC = () => {
       code: record.code,
       name: record.name,
       price: record.price,
+      rechargeAmount: record.recharge_amount,
       description: record.description,
       effectiveDate: dayjs(record.effective_date)
     });
@@ -129,6 +130,7 @@ const PricesPage: React.FC = () => {
         code: values.code,
         name: values.name,
         price: values.price,
+        rechargeAmount: values.rechargeAmount,
         description: values.description,
         effectiveDate: values.effectiveDate?.format('YYYY-MM-DD HH:mm:ss')
       };
@@ -136,6 +138,7 @@ const PricesPage: React.FC = () => {
       if (editingPrice) {
         await updatePrice(editingPrice.id, {
           price: data.price,
+          rechargeAmount: data.rechargeAmount,
           description: data.description,
           effectiveDate: data.effectiveDate
         });
@@ -182,6 +185,14 @@ const PricesPage: React.FC = () => {
       key: 'price',
       width: 100,
       render: (price: number) => `¥${Number(price).toFixed(2)}`
+    },
+    {
+      title: '充值次数',
+      dataIndex: 'recharge_amount',
+      key: 'recharge_amount',
+      width: 100,
+      render: (amount: number, record) => 
+        record.category === 'package' ? `${amount || 0}次` : '-'
     },
     {
       title: '描述',
@@ -386,6 +397,30 @@ const PricesPage: React.FC = () => {
               precision={2}
               style={{ width: '100%' }}
             />
+          </Form.Item>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => prevValues.category !== currentValues.category}
+          >
+            {({ getFieldValue }) =>
+              getFieldValue('category') === 'package' ? (
+                <Form.Item
+                  name="rechargeAmount"
+                  label="充值次数"
+                  rules={[
+                    { required: true, message: '请输入充值次数' },
+                    { type: 'number', min: 1, message: '充值次数至少为1' }
+                  ]}
+                >
+                  <InputNumber 
+                    placeholder="请输入充值次数" 
+                    min={1}
+                    style={{ width: '100%' }}
+                  />
+                </Form.Item>
+              ) : null
+            }
           </Form.Item>
 
           <Form.Item

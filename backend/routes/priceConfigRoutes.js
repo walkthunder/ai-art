@@ -47,7 +47,7 @@ router.post('/',
   logOperation,
   async (req, res) => {
     try {
-      const { category, code, name, price, description, effectiveDate } = req.body;
+      const { category, code, name, price, rechargeAmount, description, effectiveDate } = req.body;
       
       if (!category || !code || !name || price === undefined) {
         return res.status(400).json({ 
@@ -73,6 +73,7 @@ router.post('/',
         code,
         name,
         price,
+        rechargeAmount,
         description,
         effectiveDate: effectiveDate || new Date().toISOString().slice(0, 19).replace('T', ' '),
         createdBy: req.admin.id  // 使用 ID 而不是 username
@@ -97,7 +98,7 @@ router.put('/:id',
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { price, effectiveDate, status, description } = req.body;
+      const { price, rechargeAmount, effectiveDate, status, description } = req.body;
       
       if (!id) {
         return res.status(400).json({ error: '缺少价格配置ID' });
@@ -109,6 +110,9 @@ router.put('/:id',
           return res.status(400).json({ error: '价格不能为负数' });
         }
         updateData.price = price;
+      }
+      if (rechargeAmount !== undefined) {
+        updateData.rechargeAmount = rechargeAmount;
       }
       if (effectiveDate !== undefined) {
         updateData.effectiveDate = effectiveDate;

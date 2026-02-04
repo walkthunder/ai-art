@@ -50,6 +50,8 @@ Page({
 
   // 视频轮询定时器
   videoPollingTimer: null,
+  // 标记是否是首次显示
+  isFirstShow: true,
 
   onLoad(options) {
     const app = getApp();
@@ -123,16 +125,21 @@ Page({
       paymentStatus: paymentStatus
     });
     
-    // 在 onShow 中刷新使用次数（用户可能从其他页面返回）
-    const usageData = await this.loadUsageCount();
-    
-    console.log('[TransformResult] onShow - 使用次数已刷新:', {
-      usageCount: this.data.usageCount,
-      paymentStatus: this.data.paymentStatus
-    });
-    
-    // 检查并显示使用次数提醒模态框（使用已加载的数据）
-    this.checkUsageModal(usageData);
+    // 只在非首次显示时刷新使用次数（首次显示已在onLoad中加载）
+    let usageData = null;
+    if (!this.isFirstShow) {
+      console.log('[TransformResult] 从其他页面返回，刷新使用次数');
+      usageData = await this.loadUsageCount();
+      console.log('[TransformResult] onShow - 使用次数已刷新:', {
+        usageCount: this.data.usageCount,
+        paymentStatus: this.data.paymentStatus
+      });
+      // 检查并显示使用次数提醒模态框（使用已加载的数据）
+      this.checkUsageModal(usageData);
+    } else {
+      this.isFirstShow = false;
+      console.log('[TransformResult] 首次显示，跳过刷新（已在onLoad中加载）');
+    }
   },
 
   /**

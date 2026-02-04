@@ -13,6 +13,7 @@ const { validateRequest, validateGenerateArtPhotoParams } = require('../utils/va
 const userServiceV2 = require('../services/userServiceV2');
 const generationService = require('../services/generationService');
 const errorLogService = require('../services/errorLogService');
+const balanceService = require('../services/balanceService');
 
 // 生成艺术照端点 (异步任务模式)
 router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParams), async (req, res) => {
@@ -23,6 +24,41 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
       return res.status(400).json({ 
         error: '缺少必要参数', 
         message: '需要提供 imageUrls 参数（用户照片）' 
+      });
+    }
+    
+    // ✅ 1. 检查使用次数
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'USER_ID_REQUIRED',
+        message: '用户ID不能为空'
+      });
+    }
+    
+    try {
+      const balance = await balanceService.checkBalance(userId, mode);
+      console.log(`[生成任务] 用户 ${userId} 余额检查:`, balance);
+      
+      if (!balance.can_generate) {
+        return res.status(403).json({
+          success: false,
+          error: 'INSUFFICIENT_USAGE',
+          message: '使用次数不足，请购买套餐或邀请好友获取次数',
+          data: {
+            puzzle: balance.puzzle,
+            transform: balance.transform,
+            paid: balance.paid,
+            usage_count: balance.usage_count
+          }
+        });
+      }
+    } catch (balanceError) {
+      console.error('[生成任务] 检查余额失败:', balanceError);
+      return res.status(500).json({
+        success: false,
+        error: 'BALANCE_CHECK_FAILED',
+        message: '检查使用次数失败，请稍后重试'
       });
     }
     
@@ -86,6 +122,28 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
     });
     
     console.log('🆔 任务ID:', task.id);
+    
+    // ✅ 2. 扣减使用次数
+    try {
+      await balanceService.decrementBalance(userId, task.id, mode);
+      console.log(`[生成任务] 使用次数已扣减，任务ID: ${task.id}`);
+    } catch (decrementError) {
+      console.error('[生成任务] 扣减使用次数失败:', decrementError);
+      
+      // 扣减失败，取消任务
+      try {
+        await cancelTask(task.id);
+        console.log(`[生成任务] 任务已取消: ${task.id}`);
+      } catch (cancelError) {
+        console.error('[生成任务] 取消任务失败:', cancelError);
+      }
+      
+      return res.status(403).json({
+        success: false,
+        error: 'DECREMENT_FAILED',
+        message: decrementError.message || '扣减使用次数失败'
+      });
+    }
     
     // 保存生成历史
     let recordId = null;

@@ -46,6 +46,9 @@ Page({
     showDevPanel: false
   },
 
+  // 标记是否是首次显示
+  isFirstShow: true,
+
   async onLoad() {
     const app = getApp();
     
@@ -61,16 +64,22 @@ Page({
 
   async onShow() {
     console.log('[PuzzleLaunch] onShow 触发');
-    // 页面显示时更新老年模式状态和使用次数
     const app = getApp();
+    
+    // 更新老年模式状态
     this.setData({
       isElderMode: app.globalData.isElderMode
     });
     
-    // 刷新使用次数
-    console.log('[PuzzleLaunch] 开始刷新使用次数');
-    await this.loadUsageCount();
-    console.log('[PuzzleLaunch] 使用次数刷新完成，当前:', this.data.usageCount);
+    // 只在非首次显示时刷新使用次数（首次显示已在onLoad中加载）
+    if (!this.isFirstShow) {
+      console.log('[PuzzleLaunch] 从其他页面返回，刷新使用次数');
+      await this.loadUsageCount();
+      console.log('[PuzzleLaunch] 使用次数刷新完成，当前:', this.data.usageCount);
+    } else {
+      this.isFirstShow = false;
+      console.log('[PuzzleLaunch] 首次显示，跳过刷新（已在onLoad中加载）');
+    }
   },
 
   /**

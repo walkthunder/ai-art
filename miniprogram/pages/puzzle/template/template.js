@@ -308,38 +308,43 @@ Page({
       console.log('[PuzzleTemplate] 生成API响应:', result);
       
       if (!result.success || !result.data?.taskId) {
+        // 检查是否是次数不足错误
+        if (result.error === 'INSUFFICIENT_USAGE') {
+          wx.hideLoading();
+          wx.showModal({
+            title: '使用次数不足',
+            content: result.message || '您的使用次数已用完，请购买套餐或邀请好友获取次数',
+            confirmText: '去购买',
+            cancelText: '取消',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                // 显示支付弹窗
+                this.setData({ showPaymentModal: true });
+              } else {
+                // 返回上一页
+                wx.navigateBack({
+                  fail: () => {
+                    wx.redirectTo({ url: '/pages/puzzle/launch/launch' });
+                  }
+                });
+              }
+            }
+          });
+          return;
+        }
+        
         throw new Error(result.message || '未获取到任务ID');
       }
       
       const taskId = result.data.taskId;
       const recordId = result.data.recordId; // 获取历史记录ID用于分享
       
-      // 扣减使用次数
+      // ✅ 后端已经扣减次数，前端只需刷新显示
       try {
-        await app.decrementUsageCount(taskId, 'puzzle');
-        console.log('[PuzzleTemplate] 使用次数已扣减');
+        await app.updateUsageCount(true); // 强制刷新
+        console.log('[PuzzleTemplate] 使用次数已刷新');
       } catch (err) {
-        console.error('[PuzzleTemplate] 扣减使用次数失败:', err);
-        
-        // 显示错误提示
-        wx.hideLoading();
-        wx.showModal({
-          title: '使用次数不足',
-          content: err.message || '您的使用次数已用完，请购买套餐后继续使用',
-          showCancel: false,
-          confirmText: '我知道了',
-          success: () => {
-            // 返回上一页
-            wx.navigateBack({
-              fail: () => {
-                wx.redirectTo({
-                  url: '/pages/puzzle/launch/launch'
-                });
-              }
-            });
-          }
-        });
-        return; // 阻止继续执行
+        console.error('[PuzzleTemplate] 刷新使用次数失败:', err);
       }
       
       // 存储任务信息

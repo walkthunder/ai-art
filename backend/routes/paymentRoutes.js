@@ -511,8 +511,9 @@ router.post('/callback', async (req, res) => {
             
             // 使用 balanceService 处理付费充值
             try {
-              // 根据套餐类型确定充值次数
-              const rechargeAmount = package_type === 'basic' ? 10 : 20;
+              // ✅ 从 priceConfigService 读取充值次数配置
+              const rechargeAmount = await priceConfigService.getRechargeAmount(package_type, connection);
+              
               await balanceService.addBalance(user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
               
               // 更新用户支付状态
@@ -629,8 +630,9 @@ router.put('/order/:orderId/status', async (req, res) => {
         const packageType = orderDetails[0]?.package_type || 'basic';
         
         try {
-          // 根据套餐类型确定充值次数
-          const rechargeAmount = packageType === 'basic' ? 10 : 20;
+          // ✅ 从 priceConfigService 读取充值次数配置
+          const rechargeAmount = await priceConfigService.getRechargeAmount(packageType, connection);
+          
           await balanceService.addBalance(order.user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
           
           // 更新用户支付状态

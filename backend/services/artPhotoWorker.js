@@ -274,6 +274,25 @@ async function executeArtPhotoTask(taskId, generateFn) {
         completedAt: new Date().toISOString()
       });
       
+      // ✅ 恢复使用次数（最终失败时）
+      try {
+        const balanceService = require('./balanceService');
+        const task = await getTask(taskId);
+        if (task && task.params && task.params.userId) {
+          const userId = task.params.userId;
+          const mode = task.params.modelParams?.mode || 'puzzle';
+          const result = await balanceService.restoreBalance(userId, taskId, mode);
+          
+          if (result.success) {
+            logWorker(taskId, '错误处理', `✅ 使用次数已恢复`);
+          } else {
+            logWorker(taskId, '错误处理', `⚠️ 使用次数恢复被拒绝: ${result.error} - ${result.message}`);
+          }
+        }
+      } catch (restoreError) {
+        logWorker(taskId, '错误处理', `⚠️ 恢复使用次数失败: ${restoreError.message}`);
+      }
+      
       // 同步更新数据库中的生成历史记录为失败状态
       try {
         const historyRecord = await generationService.getGenerationHistoryByTaskId(taskId);

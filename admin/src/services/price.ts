@@ -10,6 +10,7 @@ export interface PriceConfig {
   code: string;
   name: string;
   price: number;
+  recharge_amount?: number;
   description: string;
   effective_date: string;
   status: string;
@@ -33,12 +34,14 @@ export interface CreatePriceData {
   code: string;
   name: string;
   price: number;
+  rechargeAmount?: number;
   description?: string;
   effectiveDate?: string;
 }
 
 export interface UpdatePriceData {
   price?: number;
+  rechargeAmount?: number;
   effectiveDate?: string;
   status?: string;
   description?: string;

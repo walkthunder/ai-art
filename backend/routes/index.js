@@ -22,6 +22,7 @@ const priceConfigRoutes = require('./priceConfigRoutes');
 const adminUserRoutes = require('./adminUserRoutes');
 const adminOrderRoutes = require('./adminOrderRoutes');
 const adminStatsRoutes = require('./adminStatsRoutes');
+const adminTemplateRoutes = require('./adminTemplateRoutes');
 
 /**
  * 注册所有路由
@@ -84,6 +85,9 @@ function registerRoutes(app) {
   // 价格查询接口（公开API）
   app.use('/api/prices', priceConfigRoutes);
   
+  // 模板管理接口（管理后台）
+  app.use('/admin-api/templates', adminTemplateRoutes);
+  
   // 用户管理接口（管理后台）
   app.use('/admin-api/users', adminUserRoutes);
   
@@ -114,5 +118,6 @@ module.exports = {
   priceConfigRoutes,
   adminUserRoutes,
   adminOrderRoutes,
-  adminStatsRoutes
+  adminStatsRoutes,
+  adminTemplateRoutes
 };

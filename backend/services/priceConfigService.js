@@ -13,7 +13,7 @@ async function getAllPriceConfigs() {
   const connection = await db.pool.getConnection();
   try {
     const [rows] = await connection.execute(
-      `SELECT id, category, code, name, price, description, effective_date, status, 
+      `SELECT id, category, code, name, price, recharge_amount, description, effective_date, status, 
               created_by, created_at, updated_at 
        FROM price_configs 
        ORDER BY category, code, effective_date DESC`
@@ -70,7 +70,7 @@ async function getCurrentPrices(useCache = true) {
  * 创建价格配置
  */
 async function createPriceConfig(data) {
-  const { category, code, name, price, description, effectiveDate, createdBy } = data;
+  const { category, code, name, price, rechargeAmount, description, effectiveDate, createdBy } = data;
   
   const connection = await db.pool.getConnection();
   try {
@@ -81,9 +81,9 @@ async function createPriceConfig(data) {
     // 插入新价格配置
     await connection.execute(
       `INSERT INTO price_configs 
-       (id, category, code, name, price, description, effective_date, status, created_by, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW(), NOW())`,
-      [newId, category, code, name, price, description || null, effectiveDate, createdBy]
+       (id, category, code, name, price, recharge_amount, description, effective_date, status, created_by, created_at, updated_at) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW(), NOW())`,
+      [newId, category, code, name, price, rechargeAmount || 0, description || null, effectiveDate, createdBy]
     );
     
     // 记录价格历史
@@ -100,7 +100,7 @@ async function createPriceConfig(data) {
     // 清除缓存
     clearPriceCache();
     
-    return { id: newId, category, code, name, price, effectiveDate, status: 'active' };
+    return { id: newId, category, code, name, price, rechargeAmount, effectiveDate, status: 'active' };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -113,7 +113,7 @@ async function createPriceConfig(data) {
  * 更新价格配置
  */
 async function updatePriceConfig(id, data, updatedBy) {
-  const { price, effectiveDate, status, description } = data;
+  const { price, rechargeAmount, effectiveDate, status, description } = data;
   
   const connection = await db.pool.getConnection();
   try {
@@ -139,6 +139,10 @@ async function updatePriceConfig(id, data, updatedBy) {
     if (price !== undefined) {
       updates.push('price = ?');
       values.push(price);
+    }
+    if (rechargeAmount !== undefined) {
+      updates.push('recharge_amount = ?');
+      values.push(rechargeAmount);
     }
     if (effectiveDate !== undefined) {
       updates.push('effective_date = ?');
@@ -247,6 +251,50 @@ async function deactivatePriceConfig(id, deactivatedBy) {
 }
 
 /**
+ * 获取充值次数配置
+ * @param {string} packageType - 套餐类型 (basic/premium)
+ * @param {Object} connection - 数据库连接（可选，用于事务）
+ * @returns {Promise<number>} 充值次数
+ */
+async function getRechargeAmount(packageType, connection = null) {
+  const shouldReleaseConnection = !connection;
+  
+  try {
+    if (!connection) {
+      const pool = require('../db/connection').pool;
+      connection = await pool.getConnection();
+    }
+    
+    const [priceRows] = await connection.execute(
+      `SELECT recharge_amount FROM price_configs 
+       WHERE code = ? AND category = 'package' AND status = 'active'
+       ORDER BY effective_date DESC LIMIT 1`,
+      [`${packageType}_package`]
+    );
+    
+    if (priceRows.length > 0 && priceRows[0].recharge_amount) {
+      const amount = priceRows[0].recharge_amount;
+      console.log(`[PriceConfig] 从数据库读取充值次数: ${packageType} → ${amount}次`);
+      return amount;
+    }
+    
+    // 降级方案：使用默认值
+    const defaultAmounts = { basic: 10, premium: 35 };
+    const defaultAmount = defaultAmounts[packageType] || 10;
+    console.warn(`[PriceConfig] 未找到套餐 ${packageType} 的充值次数配置，使用默认值: ${defaultAmount}`);
+    return defaultAmount;
+  } catch (error) {
+    console.error('[PriceConfig] 读取充值次数配置失败，使用默认值:', error);
+    const defaultAmounts = { basic: 10, premium: 35 };
+    return defaultAmounts[packageType] || 10;
+  } finally {
+    if (shouldReleaseConnection && connection) {
+      connection.release();
+    }
+  }
+}
+
+/**
  * 清除价格缓存
  */
 function clearPriceCache() {
@@ -268,5 +316,6 @@ module.exports = {
   getPriceHistory,
   getPriceHistoryByCode,
   deactivatePriceConfig,
-  clearPriceCache
+  clearPriceCache,
+  getRechargeAmount
 };

@@ -86,6 +86,51 @@ async function runMigration(connection, migrationFile) {
 }
 
 /**
+ * 解析数据库连接字符串
+ */
+function parseConnectionString(connectionString) {
+  // 格式: mysql://user:password@host:port/database
+  const match = connectionString.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+  if (!match) {
+    throw new Error('Invalid connection string format');
+  }
+  
+  return {
+    user: match[1],
+    password: match[2],
+    host: match[3],
+    port: parseInt(match[4]),
+    database: match[5]
+  };
+}
+
+/**
+ * 获取数据库配置
+ */
+function getDatabaseConfig() {
+  // 优先使用 REMOTE_DB_HOST（生产环境）
+  if (process.env.REMOTE_DB_HOST) {
+    console.log('📡 使用远程数据库连接...');
+    const config = parseConnectionString(process.env.REMOTE_DB_HOST);
+    return {
+      ...config,
+      multipleStatements: true
+    };
+  }
+  
+  // 使用独立环境变量（本地开发）
+  console.log('📡 使用本地数据库连接...');
+  return {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'ai_family_photo',
+    multipleStatements: true
+  };
+}
+
+/**
  * 执行所有待执行的迁移
  */
 async function migrate() {
@@ -95,15 +140,12 @@ async function migrate() {
   
   try {
     // 连接数据库
-    console.log('📡 连接数据库...');
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'ai_family_photo',
-      multipleStatements: true
-    });
+    const dbConfig = getDatabaseConfig();
+    console.log(`   数据库: ${dbConfig.database}`);
+    console.log(`   主机: ${dbConfig.host}:${dbConfig.port}`);
+    console.log(`   用户: ${dbConfig.user}\n`);
+    
+    connection = await mysql.createConnection(dbConfig);
     console.log('✅ 数据库连接成功\n');
     
     // 创建迁移记录表
@@ -166,13 +208,8 @@ async function status() {
   let connection;
   
   try {
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'ai_family_photo'
-    });
+    const dbConfig = getDatabaseConfig();
+    connection = await mysql.createConnection(dbConfig);
     
     await createMigrationsTable(connection);
     
