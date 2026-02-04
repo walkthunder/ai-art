@@ -14,7 +14,7 @@ const OSS_ASSETS = {
   "preview-after.jpg": "https://wms.webinfra.cloud/miniprogram-assets/preview-after.jpg",
   "preview-before.jpg": "https://wms.webinfra.cloud/miniprogram-assets/preview-before.jpg",
   "wealth-icon.png": "https://wms.webinfra.cloud/miniprogram-assets/wealth-icon.png",
-  "camera-upload.png": "https://wms.webinfra.cloud/miniprogram-assets/camera-upload.png",
+  "camera-upload.png": "https://wms.webinfra.cloud/miniprogram-assets/camera-upload.png?v=1738713600",
   "templates/transform/classical-palace.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/classical-palace.jpg?v=20260202",
   "templates/transform/fHPym5Te7.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fHPym5Te7.jpg",
   "templates/transform/fHPyN0b67.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fHPyN0b67.jpg",
