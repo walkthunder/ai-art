@@ -15,16 +15,23 @@ function initNavigation(page) {
   const systemInfo = wx.getSystemInfoSync();
   const menuRight = systemInfo.windowWidth - menuButtonInfo.right;
   
+  // 计算底部安全区域高度
+  const safeAreaBottom = systemInfo.safeArea 
+    ? systemInfo.screenHeight - systemInfo.safeArea.bottom 
+    : 0;
+  
   page.setData({
     statusBarHeight: statusBarHeight,
     navBarHeight: navBarHeight,
-    menuRight: menuRight
+    menuRight: menuRight,
+    safeAreaBottom: safeAreaBottom
   });
   
   console.log('[NavigationHelper] 导航栏初始化:', {
     statusBarHeight,
     navBarHeight,
-    menuRight
+    menuRight,
+    safeAreaBottom
   });
 }
 
