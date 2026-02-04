@@ -219,7 +219,7 @@ async function handleSelect(db, sql, getParam) {
   
   let query = db.from(tableName).select();
   
-  // 解析 WHERE 条件
+  // 解析 WHERE 条件（支持单个条件）
   const whereMatch = sql.match(/where\s+(\w+)\s*=\s*\?/i);
   if (whereMatch) {
     const field = whereMatch[1];
@@ -227,46 +227,230 @@ async function handleSelect(db, sql, getParam) {
     query = query.eq(field, value);
   }
   
-  const { data, error } = await query;
+  const result = await query;
   
-  if (error) {
-    console.error('[CloudBase RDB] SELECT error:', error);
-    throw new Error(error.message || 'SELECT 查询失败');
+  // CloudBase RDB 返回格式：{ data: [...], error: {...} }
+  if (result.error) {
+    console.error('[CloudBase RDB] SELECT error:', result.error);
+    throw new Error(result.error.message || 'SELECT 查询失败');
   }
   
-  console.log('[CloudBase RDB] SELECT result count:', data ? data.length : 0);
-  return data || [];
+  console.log('[CloudBase RDB] SELECT result count:', result.data ? result.data.length : 0);
+  return result.data || [];
 }
 
 /**
  * 处理 INSERT 操作
+ * 支持单行和多行 INSERT、INSERT IGNORE、ON DUPLICATE KEY UPDATE
+ * 支持混合占位符和字面值的 VALUES
  */
 async function handleInsert(db, sql, getParam) {
   const tableMatch = sql.match(/into\s+(\w+)/i);
   if (!tableMatch) throw new Error('无法解析表名');
   const tableName = tableMatch[1];
   
-  // 解析字段
+  // 检查是否是 INSERT IGNORE
+  const isInsertIgnore = /insert\s+ignore/i.test(sql);
+  
+  // 检查是否有 ON DUPLICATE KEY UPDATE
+  const hasDuplicateKeyUpdate = /on\s+duplicate\s+key\s+update/i.test(sql);
+  
+  // 解析字段列表
   const fieldsMatch = sql.match(/\(([^)]+)\)\s*values/i);
   if (!fieldsMatch) throw new Error('无法解析字段');
   const fields = fieldsMatch[1].split(',').map(f => f.trim());
   
-  const insertData = {};
-  fields.forEach(field => {
-    insertData[field] = getParam();
-  });
-  
-  console.log('[CloudBase RDB] INSERT:', tableName, JSON.stringify(insertData).substring(0, 200));
-  
-  const { data, error } = await db.from(tableName).insert(insertData);
-  
-  if (error) {
-    console.error('[CloudBase RDB] INSERT error:', error);
-    throw new Error(error.message || 'INSERT 操作失败');
+  // 提取 VALUES 部分（不包括 ON DUPLICATE KEY UPDATE）
+  let valuesSection = sql.substring(sql.toLowerCase().indexOf('values') + 6);
+  if (hasDuplicateKeyUpdate) {
+    const updateIndex = valuesSection.toLowerCase().indexOf('on duplicate key update');
+    if (updateIndex > 0) {
+      valuesSection = valuesSection.substring(0, updateIndex);
+    }
   }
   
-  console.log('[CloudBase RDB] INSERT result:', JSON.stringify(data).substring(0, 200));
-  return data;
+  // 解析每一行的值（包括占位符、字面值、函数）
+  // 手动提取所有 (...) 组，支持嵌套括号（如 NOW()）
+  const valueGroupsMatch = [];
+  let depth = 0;
+  let currentGroup = '';
+  let inString = false;
+  let stringChar = '';
+  
+  for (let i = 0; i < valuesSection.length; i++) {
+    const char = valuesSection[i];
+    
+    // 处理字符串
+    if ((char === "'" || char === '"') && (i === 0 || valuesSection[i-1] !== '\\')) {
+      if (!inString) {
+        inString = true;
+        stringChar = char;
+      } else if (char === stringChar) {
+        inString = false;
+      }
+      if (depth > 0) currentGroup += char;
+    }
+    // 处理括号
+    else if (char === '(' && !inString) {
+      depth++;
+      if (depth === 1) {
+        currentGroup = '';
+      } else {
+        currentGroup += char;
+      }
+    }
+    else if (char === ')' && !inString) {
+      depth--;
+      if (depth === 0) {
+        valueGroupsMatch.push('(' + currentGroup + ')');
+        currentGroup = '';
+      } else {
+        currentGroup += char;
+      }
+    }
+    else if (depth > 0) {
+      currentGroup += char;
+    }
+  }
+  
+  if (!valueGroupsMatch || valueGroupsMatch.length === 0) throw new Error('无法解析 VALUES');
+  
+  const rowCount = valueGroupsMatch.length;
+  
+  console.log('[CloudBase RDB] INSERT:', tableName, '字段数:', fields.length, '行数:', rowCount, 'IGNORE:', isInsertIgnore, 'ON DUPLICATE:', hasDuplicateKeyUpdate);
+  
+  // 解析每一行的值
+  const rows = [];
+  for (const valueGroup of valueGroupsMatch) {
+    // 移除括号
+    const valueStr = valueGroup.substring(1, valueGroup.length - 1);
+    
+    // 分割值（注意：字符串中的逗号和函数调用中的逗号不应分割）
+    const values = [];
+    let current = '';
+    let inString = false;
+    let stringChar = '';
+    let parenDepth = 0; // 括号深度，用于处理函数调用
+    
+    for (let i = 0; i < valueStr.length; i++) {
+      const char = valueStr[i];
+      
+      // 处理字符串
+      if ((char === "'" || char === '"') && (i === 0 || valueStr[i-1] !== '\\')) {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+        }
+        current += char;
+      }
+      // 处理括号（函数调用）
+      else if (char === '(' && !inString) {
+        parenDepth++;
+        current += char;
+      }
+      else if (char === ')' && !inString) {
+        parenDepth--;
+        current += char;
+      }
+      // 处理逗号分隔符
+      else if (char === ',' && !inString && parenDepth === 0) {
+        values.push(current.trim());
+        current = '';
+      }
+      else {
+        current += char;
+      }
+    }
+    if (current) {
+      values.push(current.trim());
+    }
+    
+    rows.push(values);
+  }
+  
+  console.log('[CloudBase RDB] 解析到', rows.length, '行数据');
+  
+  // 处理每一行
+  const results = [];
+  for (let i = 0; i < rows.length; i++) {
+    const values = rows[i];
+    const insertData = {};
+    
+    for (let j = 0; j < fields.length; j++) {
+      const field = fields[j];
+      const value = values[j];
+      
+      if (!value) continue;
+      
+      // 处理占位符
+      if (value === '?') {
+        insertData[field] = getParam();
+      }
+      // 跳过 SQL 函数
+      else if (value.toUpperCase() === 'NOW()' || value.toUpperCase() === 'CURRENT_TIMESTAMP' || value.toUpperCase() === 'CURRENT_TIMESTAMP()') {
+        // 跳过，CloudBase RDB 会自动处理时间戳
+        continue;
+      }
+      // 处理字符串字面值
+      else if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith('"') && value.endsWith('"'))) {
+        insertData[field] = value.substring(1, value.length - 1);
+      }
+      // 处理布尔值
+      else if (value.toUpperCase() === 'TRUE' || value.toUpperCase() === 'FALSE') {
+        insertData[field] = value.toUpperCase() === 'TRUE';
+      }
+      // 处理数字
+      else if (/^-?\d+(\.\d+)?$/.test(value)) {
+        insertData[field] = parseFloat(value);
+      }
+      // 其他情况直接使用
+      else {
+        insertData[field] = value;
+      }
+    }
+    
+    console.log(`[CloudBase RDB] INSERT 第 ${i + 1} 行:`, JSON.stringify(insertData).substring(0, 150));
+    
+    // INSERT IGNORE：如果插入失败则跳过
+    if (isInsertIgnore) {
+      try {
+        const result = await db.from(tableName).insert(insertData);
+        if (result.error) {
+          console.warn(`[CloudBase RDB] INSERT IGNORE 第 ${i + 1} 行失败（已忽略）:`, result.error.message);
+          continue;
+        }
+        results.push(result.data);
+      } catch (err) {
+        console.warn(`[CloudBase RDB] INSERT IGNORE 第 ${i + 1} 行异常（已忽略）:`, err.message);
+        continue;
+      }
+    } else {
+      const result = await db.from(tableName).insert(insertData);
+      
+      if (result.error) {
+        console.error('[CloudBase RDB] INSERT error:', result.error);
+        throw new Error(result.error.message || 'INSERT 操作失败');
+      }
+      
+      results.push(result.data);
+    }
+  }
+  
+  console.log('[CloudBase RDB] INSERT 完成，共插入', results.length, '行');
+  
+  // 处理 ON DUPLICATE KEY UPDATE（消费剩余参数）
+  if (hasDuplicateKeyUpdate) {
+    const updateSection = sql.substring(sql.toLowerCase().indexOf('on duplicate key update'));
+    const updatePlaceholders = (updateSection.match(/\?/g) || []).length;
+    for (let i = 0; i < updatePlaceholders; i++) {
+      getParam();
+    }
+    console.log('[CloudBase RDB] ON DUPLICATE KEY UPDATE 已跳过（CloudBase RDB 不支持）');
+  }
+  
+  return results.length > 0 ? results : {};
 }
 
 /**
@@ -391,15 +575,15 @@ async function handleUpdate(db, sql, getParam) {
   }
   
   // 执行更新
-  const { data, error } = await db.from(tableName).update(updateData).eq(whereField, whereValue);
+  const result = await db.from(tableName).update(updateData).eq(whereField, whereValue);
   
-  if (error) {
-    console.error('[CloudBase RDB] UPDATE error:', error);
-    throw new Error(error.message || 'UPDATE 操作失败');
+  if (result.error) {
+    console.error('[CloudBase RDB] UPDATE error:', result.error);
+    throw new Error(result.error.message || 'UPDATE 操作失败');
   }
   
-  console.log('[CloudBase RDB] UPDATE result:', JSON.stringify(data).substring(0, 200));
-  return data;
+  console.log('[CloudBase RDB] UPDATE result:', JSON.stringify(result.data).substring(0, 200));
+  return result.data;
 }
 
 /**
