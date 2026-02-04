@@ -11,6 +11,7 @@
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs').promises;
 const path = require('path');
+const db = require('../db/connection');
 
 // 任务状态枚举
 const TaskStatus = {
@@ -172,8 +173,21 @@ async function getTask(taskId) {
     return task;
   }
   
-  // 如果内存中没有，尝试从文件加载
-  logQueue(taskId, '查询', '内存中未找到，尝试从文件加载...');
+  // 如果内存中没有，尝试从数据库加载
+  logQueue(taskId, '查询', '内存中未找到，尝试从数据库加载...');
+  task = await loadTaskFromDatabase(taskId);
+  
+  if (task) {
+    taskQueue.set(taskId, task);
+    logQueue(taskId, '查询', '✅ 从数据库加载成功', {
+      status: task.status,
+      progress: task.progress
+    });
+    return task;
+  }
+  
+  // 如果数据库中也没有，尝试从文件加载
+  logQueue(taskId, '查询', '数据库中未找到，尝试从文件加载...');
   task = await loadTask(taskId);
   if (task) {
     taskQueue.set(taskId, task);
@@ -189,13 +203,63 @@ async function getTask(taskId) {
 }
 
 /**
- * 持久化任务到文件（带写入锁和原子写入，防止并发写入导致文件损坏）
+ * 从数据库加载任务
+ * @param {string} taskId 任务ID
+ * @returns {Object|null} 任务对象
+ */
+async function loadTaskFromDatabase(taskId) {
+  let connection;
+  try {
+    connection = await db.pool.getConnection();
+    const [rows] = await connection.execute(
+      'SELECT * FROM tasks WHERE id = ?',
+      [taskId]
+    );
+    
+    if (rows.length === 0) {
+      return null;
+    }
+    
+    const row = rows[0];
+    
+    // 转换数据库记录为任务对象
+    return {
+      id: row.id,
+      status: row.status,
+      progress: row.progress,
+      message: row.message,
+      params: JSON.parse(row.params),
+      result: row.result ? JSON.parse(row.result) : null,
+      error: row.error,
+      retryCount: row.retry_count,
+      maxRetries: row.max_retries,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      startedAt: row.started_at,
+      completedAt: row.completed_at,
+      meta: {
+        mode: row.mode,
+        userId: row.user_id,
+        templateId: JSON.parse(row.params).templateId || '',
+        imageCount: JSON.parse(row.params).imageUrls?.length || 0
+      }
+    };
+  } catch (error) {
+    logQueue(taskId, '数据库加载', `⚠️ 从数据库加载失败: ${error.message}`);
+    return null;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+}
+
+/**
+ * 持久化任务到数据库和文件
  * @param {Object} task 任务对象
  */
 async function persistTask(task) {
   const taskId = task.id;
-  const filePath = path.join(TASK_STORAGE_DIR, `${taskId}.json`);
-  const tempFilePath = path.join(TASK_STORAGE_DIR, `${taskId}.json.tmp`);
   
   // 等待之前的写入完成
   const existingLock = writeLocks.get(taskId);
@@ -206,17 +270,13 @@ async function persistTask(task) {
   // 创建新的写入锁
   const writePromise = (async () => {
     try {
-      const jsonStr = JSON.stringify(task, null, 2);
-      // 原子写入：先写入临时文件，再重命名
-      await fs.writeFile(tempFilePath, jsonStr, 'utf-8');
-      await fs.rename(tempFilePath, filePath);
+      // 1. 持久化到数据库（优先）
+      await persistTaskToDatabase(task);
+      
+      // 2. 持久化到文件（备份）
+      await persistTaskToFile(task);
     } catch (error) {
-      // 清理临时文件
-      try {
-        await fs.unlink(tempFilePath);
-      } catch (e) {
-        // 忽略清理错误
-      }
+      logQueue(taskId, '持久化', `❌ 持久化失败: ${error.message}`);
       throw error;
     } finally {
       writeLocks.delete(taskId);
@@ -225,6 +285,84 @@ async function persistTask(task) {
   
   writeLocks.set(taskId, writePromise);
   await writePromise;
+}
+
+/**
+ * 持久化任务到数据库
+ * @param {Object} task 任务对象
+ */
+async function persistTaskToDatabase(task) {
+  let connection;
+  try {
+    connection = await db.pool.getConnection();
+    
+    // 使用 INSERT ... ON DUPLICATE KEY UPDATE 实现 upsert
+    await connection.execute(
+      `INSERT INTO tasks 
+       (id, user_id, mode, status, progress, message, params, result, error, 
+        retry_count, max_retries, created_at, updated_at, started_at, completed_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         status = VALUES(status),
+         progress = VALUES(progress),
+         message = VALUES(message),
+         result = VALUES(result),
+         error = VALUES(error),
+         retry_count = VALUES(retry_count),
+         updated_at = VALUES(updated_at),
+         started_at = VALUES(started_at),
+         completed_at = VALUES(completed_at)`,
+      [
+        task.id,
+        task.meta?.userId || '',
+        task.meta?.mode || 'unknown',
+        task.status,
+        task.progress,
+        task.message,
+        JSON.stringify(task.params),
+        task.result ? JSON.stringify(task.result) : null,
+        task.error,
+        task.retryCount,
+        task.maxRetries,
+        task.createdAt,
+        task.updatedAt,
+        task.startedAt,
+        task.completedAt
+      ]
+    );
+  } catch (error) {
+    logQueue(task.id, '数据库持久化', `⚠️ 数据库持久化失败: ${error.message}`);
+    // 数据库失败不抛出异常，继续使用文件存储
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+}
+
+/**
+ * 持久化任务到文件（备份）
+ * @param {Object} task 任务对象
+ */
+async function persistTaskToFile(task) {
+  const taskId = task.id;
+  const filePath = path.join(TASK_STORAGE_DIR, `${taskId}.json`);
+  const tempFilePath = path.join(TASK_STORAGE_DIR, `${taskId}.json.tmp`);
+  
+  try {
+    const jsonStr = JSON.stringify(task, null, 2);
+    // 原子写入：先写入临时文件，再重命名
+    await fs.writeFile(tempFilePath, jsonStr, 'utf-8');
+    await fs.rename(tempFilePath, filePath);
+  } catch (error) {
+    // 清理临时文件
+    try {
+      await fs.unlink(tempFilePath);
+    } catch (e) {
+      // 忽略清理错误
+    }
+    throw error;
+  }
 }
 
 /**
@@ -291,14 +429,32 @@ async function loadTask(taskId) {
  */
 async function deleteTask(taskId) {
   logQueue(taskId, '删除', '正在删除任务...');
+  
+  // 从内存删除
   taskQueue.delete(taskId);
+  
+  // 从数据库删除
+  let connection;
+  try {
+    connection = await db.pool.getConnection();
+    await connection.execute('DELETE FROM tasks WHERE id = ?', [taskId]);
+    logQueue(taskId, '删除', '✅ 从数据库删除成功');
+  } catch (error) {
+    logQueue(taskId, '删除', `⚠️ 从数据库删除失败: ${error.message}`);
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+  
+  // 从文件删除
   try {
     const filePath = path.join(TASK_STORAGE_DIR, `${taskId}.json`);
     await fs.unlink(filePath);
-    logQueue(taskId, '删除', '✅ 任务已删除');
+    logQueue(taskId, '删除', '✅ 从文件删除成功');
   } catch (error) {
     if (error.code !== 'ENOENT') {
-      logQueue(taskId, '删除', `❌ 删除任务文件失败: ${error.message}`);
+      logQueue(taskId, '删除', `⚠️ 从文件删除失败: ${error.message}`);
     }
   }
 }

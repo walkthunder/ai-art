@@ -38,10 +38,10 @@ router.post('/create', validateRequest(validateCreatePaymentParams), async (req,
   try {
     const { userId, generationId, packageType } = req.body;
     
-    if (!userId || !generationId || !packageType) {
+    if (!userId || !packageType) {
       return res.status(400).json({ 
         error: '缺少必要参数', 
-        message: '需要提供 userId, generationId 和 packageType 参数' 
+        message: '需要提供 userId 和 packageType 参数' 
       });
     }
     
@@ -64,20 +64,23 @@ router.post('/create', validateRequest(validateCreatePaymentParams), async (req,
     const packagePrices = await getPackagePrices();
     const amount = packagePrices[packageType];
     
+    // 判断订单类型：有 generationId 是生成订单，否则是充值订单
+    const orderType = generationId ? 'generation' : 'recharge';
+    
     const connection = await db.pool.getConnection();
     try {
       await connection.execute(
         `INSERT INTO payment_orders 
-        (id, user_id, generation_id, amount, package_type, payment_method, status, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-        [orderId, userId, generationId, amount, packageType, 'wechat', 'pending']
+        (id, user_id, generation_id, amount, package_type, order_type, payment_method, status, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [orderId, userId, generationId || null, amount, packageType, orderType, 'wechat', 'pending']
       );
       
-      console.log(`创建支付订单成功: ${orderId}, 用户: ${userId}, 金额: ${amount}`);
+      console.log(`创建${orderType === 'recharge' ? '充值' : '生成'}订单成功: ${orderId}, 用户: ${userId}, 金额: ${amount}`);
       
       res.json({ 
         success: true, 
-        data: { orderId, amount, packageType, status: 'pending' }
+        data: { orderId, amount, packageType, orderType, status: 'pending' }
       });
     } finally {
       connection.release();
@@ -192,20 +195,24 @@ router.post('/wechat/native', async (req, res) => {
         const packagePrices = await getPackagePrices();
         const orderAmount = amount || packagePrices[packageType];
         
+        // 判断订单类型
+        const orderType = generationId ? 'generation' : 'recharge';
+        
         await connection.execute(
           `INSERT INTO payment_orders 
-          (id, user_id, generation_id, amount, package_type, payment_method, trade_type, status, created_at, updated_at) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-          [finalOrderId, userId || null, generationId || null, orderAmount, packageType, 'wechat', 'NATIVE', 'pending']
+          (id, user_id, generation_id, amount, package_type, order_type, payment_method, trade_type, status, created_at, updated_at) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          [finalOrderId, userId || null, generationId || null, orderAmount, packageType, orderType, 'wechat', 'NATIVE', 'pending']
         );
         
         order = {
           id: finalOrderId,
           amount: orderAmount,
-          package_type: packageType
+          package_type: packageType,
+          order_type: orderType
         };
         
-        console.log(`创建 Native 支付订单: ${finalOrderId}`);
+        console.log(`创建 Native ${orderType === 'recharge' ? '充值' : '生成'}订单: ${finalOrderId}`);
       }
       
       const params = {
@@ -232,7 +239,8 @@ router.post('/wechat/native', async (req, res) => {
           orderId: finalOrderId,
           codeUrl: result.code_url,
           amount: order.amount,
-          packageType: order.package_type
+          packageType: order.package_type,
+          orderType: order.order_type || 'recharge'
         }
       });
     } finally {
@@ -326,24 +334,28 @@ router.post('/internal/order-created', async (req, res) => {
       
       // 2. 备份订单（使用 INSERT IGNORE 避免重复）
       if (effectiveUserId) {
+        // 判断订单类型
+        const orderType = generationId ? 'generation' : 'recharge';
+        
         await connection.execute(
           `INSERT IGNORE INTO payment_orders 
-           (id, user_id, generation_id, out_trade_no, amount, package_type, 
+           (id, user_id, generation_id, out_trade_no, amount, package_type, order_type,
             payment_method, trade_type, status, _openid, created_at, updated_at) 
-           VALUES (?, ?, ?, ?, ?, ?, 'wechat', ?, ?, ?, NOW(), NOW())`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'wechat', ?, ?, ?, NOW(), NOW())`,
           [
             orderId || `order-${outTradeNo}`,
             effectiveUserId,
-            effectiveUserId,  // generation_id 使用 user_id 作为默认值
+            generationId || null,  // 充值订单可以为 NULL
             outTradeNo,
             (amount / 100).toFixed(2),  // 转换为元
             packageType || 'basic',
+            orderType,
             tradeType || 'JSAPI',
             status || 'pending',
             openid || ''
           ]
         );
-        console.log(`订单已备份: ${outTradeNo}`);
+        console.log(`订单已备份: ${outTradeNo}, 类型: ${orderType}`);
       }
       
       // 3. 记录错误日志
