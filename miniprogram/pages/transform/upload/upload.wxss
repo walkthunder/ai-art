@@ -84,11 +84,6 @@
   padding-bottom: 100%;
 }
 
-.upload-area-hover {
-  transform: scale(0.98);
-  border-style: solid;
-}
-
 /* 上传提示容器 */
 .upload-prompt {
   display: flex;

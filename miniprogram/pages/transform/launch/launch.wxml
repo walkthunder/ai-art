@@ -8,7 +8,6 @@
   
   <!-- 金色渐变背景 -->
   <image class="launch-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
-  <view class="launch-bg"></view>
   
   <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
   <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
@@ -36,53 +35,38 @@
       hasEverPaid="{{hasEverPaid}}"
     />
     
-    <!-- 标题区域 -->
-    <view class="title-section animate-fade-in">
-      <text class="slogan-text">这个春节，让爱没有距离</text>
-    </view>
-    
-    <!-- 模式图标和名称 -->
-    <view class="mode-section animate-scale-in">
-      <view class="mode-icon-wrapper">
-        <image class="mode-icon-image" src="{{wealthIconUrl}}" mode="aspectFill" />
-      </view>
-      <text class="mode-name">{{modeConfig.name}}</text>
-      <text class="mode-slogan">{{modeConfig.slogan}}</text>
-    </view>
-    
-    <!-- 预览区域 -->
-    <view class="preview-section animate-fade-in">
-      <view class="preview-card">
-        <view class="preview-before">
-          <view class="preview-placeholder">
-            <image class="preview-image" src="{{previewBeforeUrl}}" mode="aspectFill" />
+    <!-- 立即制作按钮 -->
+    <view class="action-section">
+      <!-- 预览区域 -->
+      <view class="preview-section animate-fade-in">
+        <view class="preview-card">
+          <view class="preview-before">
+            <view class="preview-placeholder">
+              <image class="preview-image" src="{{previewBeforeUrl}}" mode="aspectFill" />
+            </view>
             <text class="preview-label">普通背景</text>
           </view>
-        </view>
-        <view class="preview-arrow">
-          <text class="arrow-text">→</text>
-        </view>
-        <view class="preview-after">
-          <view class="preview-placeholder gold">
-            <image class="preview-image" src="{{previewAfterUrl}}" mode="aspectFill" />
+          <view class="preview-arrow">
+            <text class="arrow-text">→</text>
+          </view>
+          <view class="preview-after">
+            <view class="preview-placeholder gold">
+              <image class="preview-image" src="{{previewAfterUrl}}" mode="aspectFill" />
+            </view>
             <text class="preview-label">豪门背景</text>
           </view>
         </view>
       </view>
-    </view>
-    
-    <!-- 功能说明 -->
-    <view class="description-section animate-fade-in">
-      <view class="description-card">
-        <text class="description-text">{{modeConfig.description}}</text>
+      
+      <!-- 功能说明 -->
+      <view class="description-section animate-fade-in">
+        <view class="description-card">
+          <text class="description-text">{{modeConfig.description}}</text>
+        </view>
+        <view class="guide-card">
+          <text class="guide-text">{{modeConfig.uploadGuide}}</text>
+        </view>
       </view>
-      <view class="guide-card">
-        <text class="guide-text">{{modeConfig.uploadGuide}}</text>
-      </view>
-    </view>
-    
-    <!-- 立即制作按钮 -->
-    <view class="action-section">
       <view class="start-btn {{buttonDisabled ? 'disabled' : ''}}" bindtap="handleStart" hover-class="{{buttonDisabled ? '' : 'start-btn-hover'}}">
         <view class="btn-inner">
           <text class="btn-text">{{buttonText}}</text>
