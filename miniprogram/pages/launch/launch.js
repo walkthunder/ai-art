@@ -28,11 +28,17 @@ Page({
     const systemInfo = wx.getSystemInfoSync();
     const menuRight = systemInfo.windowWidth - menuButtonInfo.right;
     
+    // 计算底部安全区域高度
+    const safeAreaBottom = systemInfo.safeArea 
+      ? systemInfo.screenHeight - systemInfo.safeArea.bottom 
+      : 0;
+    
     this.setData({
       isElderMode: app.globalData.isElderMode,
       statusBarHeight: app.globalData.statusBarHeight || 0,
       navBarHeight: app.globalData.navBarHeight || 44,
-      menuRight: menuRight
+      menuRight: menuRight,
+      safeAreaBottom: safeAreaBottom
     });
     
     // 获取统计数据（可从后端获取）
