@@ -29,21 +29,6 @@
   /* top 由 JS 动态设置 */
 }
 
-.upload-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(180deg, 
-    rgba(212, 48, 43, 0.03) 0%, 
-    rgba(255, 248, 240, 0.9) 30%,
-    rgba(255, 240, 240, 1) 100%
-  );
-  z-index: 0;
-  pointer-events: none;
-}
-
 /* 主内容区 */
 .upload-content {
   position: absolute;
