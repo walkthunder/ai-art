@@ -756,7 +756,7 @@ Page({
   },
 
   goHome() {
-    wx.redirectTo({ url: '/pages/launch/launch' });
+    wx.redirectTo({ url: '/pages/puzzle/launch/launch' });
   },
 
   /**

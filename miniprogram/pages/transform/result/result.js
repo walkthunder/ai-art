@@ -909,7 +909,7 @@ Page({
    */
   goHome() {
     wx.redirectTo({
-      url: '/pages/launch/launch'
+      url: '/pages/transform/launch/launch'
     });
   },
 
