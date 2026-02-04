@@ -7,7 +7,7 @@
   <corner-background />
   
   <!-- 背景渐变 -->
-  <image class="launch-bg-image" src="{{commonBgUrl}}" mode="aspectFill" />
+  <image class="launch-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
   <view class="launch-bg"></view>
   
   <!-- 背景装饰灯笼 -->

@@ -7,7 +7,7 @@
   <corner-background />
   
   <!-- 背景 -->
-  <image class="upload-bg-image" src="{{commonBgUrl}}" mode="aspectFill" />
+  <image class="upload-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
   <view class="upload-bg"></view>
   
   <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
@@ -27,21 +27,7 @@
   </view>
   
   <!-- 主内容区 -->
-  <view class="upload-content" style="padding-top: {{statusBarHeight + navBarHeight + 32}}px;">
-    <!-- 标题说明 -->
-    <view class="title-section">
-      <text class="title-text">上传一张全家福</text>
-      <text class="subtitle-text">AI将为您更换高端背景</text>
-    </view>
-    
-    <!-- 错误提示 -->
-    <view class="error-toast" wx:if="{{errorMessage && !isUploading}}">
-      <text class="error-icon">⚠️</text>
-      <text class="error-text">{{errorMessage}}</text>
-      <view class="error-close" bindtap="clearError">
-        <text class="close-icon">✕</text>
-      </view>
-    </view>
+  <view class="upload-content" style="top: {{statusBarHeight + navBarHeight}}px; margin-top: {{260 - statusBarHeight - navBarHeight}}px;">
     
     <!-- 上传区域 -->
     <view 
@@ -58,8 +44,7 @@
     
     <!-- 文本部分 - 在框外下方 -->
     <view class="upload-text-section" wx:if="{{!isUploading}}">
-      <text class="upload-text">点击上传照片</text>
-      <text class="upload-hint">支持 JPG、PNG 格式，最大 10MB</text>
+      <text class="upload-hint">支持 JPG/PNG，最大 10MB</text>
       
       <!-- 示例提示 -->
       <view class="example-tips">

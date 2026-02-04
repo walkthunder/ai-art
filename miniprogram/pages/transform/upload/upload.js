@@ -26,7 +26,7 @@ Page({
     uploadProgress: 0,
     // OSS 资源
     cameraUploadUrl: getAssetUrl('camera-upload.png'),
-    commonBgUrl: getAssetUrl('common-bg.jpg'),
+    commonBgUrl: getAssetUrl('bg/upload-bg.png'),
     // 支付弹窗
     showPaymentModal: false,
     currentPaymentStatus: 'free'

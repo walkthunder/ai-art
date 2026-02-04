@@ -1,9 +1,7 @@
 /**
  * 小程序静态资源 OSS URL 映射
  * 自动生成，请勿手动修改
- * 生成时间: 2026-02-02T07:17:53.503Z
- * 
- * 注意：Transform模板添加了版本参数以绕过CDN缓存
+ * 生成时间: 2026-02-04T02:54:51.589Z
  */
 
 const OSS_ASSETS = {
@@ -16,7 +14,7 @@ const OSS_ASSETS = {
   "preview-after.jpg": "https://wms.webinfra.cloud/miniprogram-assets/preview-after.jpg",
   "preview-before.jpg": "https://wms.webinfra.cloud/miniprogram-assets/preview-before.jpg",
   "wealth-icon.png": "https://wms.webinfra.cloud/miniprogram-assets/wealth-icon.png",
-  "camera-upload.png": "https://wms.webinfra.cloud/miniprogram-assets/camera-upload.png",
+  "camera-upload.png": "https://wms.webinfra.cloud/miniprogram-assets/camera-upload.png?v=1770174611387",
   "templates/transform/classical-palace.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/classical-palace.jpg?v=20260202",
   "templates/transform/fHPym5Te7.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fHPym5Te7.jpg",
   "templates/transform/fHPyN0b67.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fHPyN0b67.jpg",
@@ -32,7 +30,16 @@ const OSS_ASSETS = {
   "templates/puzzle/vintage.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/puzzle/vintage.jpg",
   "templates/transform/fugui-tuanyuan.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fugui-tuanyuan.jpg?v=20260202",
   "templates/transform/haomen-shengyan.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/haomen-shengyan.jpg?v=20260202",
-  "templates/transform/yazhi-jusuo.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/yazhi-jusuo.jpg?v=20260202"
+  "templates/transform/yazhi-jusuo.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/yazhi-jusuo.jpg?v=20260202",
+  "bg/upload-bg.png": "https://wms.webinfra.cloud/miniprogram-assets/bg/upload-bg.png?v=20260204",
+  "logo/logo-1024.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-1024.png",
+  "logo/logo-120.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-120.png",
+  "logo/logo-180.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-180.png",
+  "logo/logo-512.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-512.png",
+  "logo/logo-96.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-96.png",
+  "logo/logo-header.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-header.png",
+  "logo/logo-small.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-small.png",
+  "logo/share-icon.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/share-icon.png"
 };
 
 /**
