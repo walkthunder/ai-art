@@ -7,7 +7,7 @@
   <corner-background />
   
   <!-- 背景 -->
-  <image class="history-bg-image" src="{{commonBgUrl}}" mode="aspectFill" />
+  <image class="history-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
   <view class="history-bg"></view>
   
   <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->

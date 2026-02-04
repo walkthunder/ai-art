@@ -7,7 +7,7 @@
   <corner-background />
   
   <!-- 红色渐变背景 -->
-  <image class="launch-bg-image" src="{{commonBgUrl}}" mode="aspectFill" />
+  <image class="launch-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
   <view class="launch-bg"></view>
   
   <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->

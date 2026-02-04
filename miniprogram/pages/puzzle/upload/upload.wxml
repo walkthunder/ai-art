@@ -7,7 +7,7 @@
   <corner-background />
   
   <!-- 背景 -->
-  <image class="upload-bg-image" src="{{commonBgUrl}}" mode="aspectFill" />
+  <image class="upload-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
   <view class="upload-bg"></view>
   
   <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
@@ -27,7 +27,7 @@
   </view>
   
   <!-- 主内容区 -->
-  <view class="upload-content" style="padding-top: {{statusBarHeight + navBarHeight + 32}}px;">
+  <view class="upload-content" style="top: {{statusBarHeight + navBarHeight}}px; padding-top: 32rpx;">
     <!-- 标题说明 -->
     <view class="title-section">
       <text class="title-text">上传家人照片</text>

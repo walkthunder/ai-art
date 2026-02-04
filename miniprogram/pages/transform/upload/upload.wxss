@@ -16,37 +16,24 @@
   padding-top: 0;
 }
 
-/* 背景图片层 */
+/* 背景图片层 - 去掉导航栏和安全区域 */
 .upload-bg-image {
   position: absolute;
-  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 100%;
+  height: auto;
   z-index: 0;
   pointer-events: none;
+  /* top 由 JS 动态设置 */
 }
-
-.upload-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(180deg, 
-    rgba(212, 48, 43, 0.03) 0%, 
-    rgba(255, 248, 240, 0.9) 30%,
-    rgba(255, 240, 240, 1) 100%
-  );
-  z-index: 0;
-  pointer-events: none;
-}
-
 /* 主内容区 */
 .upload-content {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 10;
   width: 100%;
   padding: 32rpx 48rpx;
@@ -55,7 +42,8 @@
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  /* padding-top 由 JS 动态设置 */
+  overflow-y: auto;
+  /* top 和 padding-top 由 JS 动态设置 */
 }
 
 /* 标题说明 */
@@ -81,7 +69,6 @@
 /* 上传区域 - 虚线框 */
 .upload-area {
   width: 100%;
-  max-width: 500rpx;
   border: 4rpx dashed var(--color-chinese-red);
   border-radius: 32rpx;
   box-sizing: border-box;
@@ -119,7 +106,7 @@
 
 /* 相机图片 - 655:718 比例 */
 .camera-image {
-  width: 100%;
+  width: 600rpx;
   height: 100%;
 }
 
@@ -129,7 +116,6 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  margin-top: 16rpx;
 }
 
 .upload-text {
@@ -140,17 +126,16 @@
 }
 
 .upload-hint {
-  font-size: 24rpx;
-  color: #9CA3AF;
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffd999;
   margin-bottom: 24rpx;
 }
 
 /* 示例提示 */
 .example-tips {
   display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  background: rgba(212, 48, 43, 0.05);
+  justify-content: space-between;
   padding: 20rpx 28rpx;
   border-radius: 16rpx;
   width: 100%;
@@ -172,7 +157,7 @@
 
 .tip-text {
   font-size: 24rpx;
-  color: #6B7280;
+  color: #ffd999;
 }
 
 /* 上传中状态 - 页面居中显示 */
@@ -264,8 +249,7 @@
 
 /* 底部提示 */
 .bottom-tips {
-  margin-top: 32rpx;
-  padding: 24rpx;
+  padding: 12rpx;
   text-align: center;
 }
 
@@ -318,8 +302,6 @@
 .ai-notice {
   width: 100%;
   text-align: center;
-  margin-top: 24rpx;
-  padding-bottom: 32rpx;
 }
 
 .ai-notice-text {
