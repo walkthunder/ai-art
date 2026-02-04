@@ -79,23 +79,23 @@ async function checkBalance(userId, mode = null) {
             (?, ?, 'free_transform', 3, NOW(), NOW()),
             (?, ?, 'paid', 0, NOW(), NOW())
         `, [
-          `${userId}-puzzle`, userId,
-          `${userId}-transform`, userId,
-          `${userId}-paid`, userId
+          uuidv4(), userId,
+          uuidv4(), userId,
+          uuidv4(), userId
         ]);
         
         // 初始化付费信息
         await connection.execute(`
           INSERT IGNORE INTO user_payments (id, user_id, has_ever_paid, current_tier, created_at, updated_at)
           VALUES (?, ?, FALSE, 'free', NOW(), NOW())
-        `, [`${userId}-payment`, userId]);
+        `, [uuidv4(), userId]);
         
         // 初始化邀请码
         const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
         await connection.execute(`
           INSERT IGNORE INTO user_invites (id, user_id, invite_code, created_at, updated_at)
           VALUES (?, ?, ?, NOW(), NOW())
-        `, [`${userId}-invite`, userId, inviteCode]);
+        `, [uuidv4(), userId, inviteCode]);
         
         await connection.commit();
         connection.release();

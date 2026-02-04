@@ -77,25 +77,42 @@ function initMysqlPool() {
   // 其次使用远程数据库配置
   else if (useRemoteDatabase && process.env.REMOTE_DB_HOST) {
     console.log('📡 使用远程数据库配置连接');
-    mysqlPool = mysql.createPool({
-      host: process.env.REMOTE_DB_HOST,
-      port: parseInt(process.env.REMOTE_DB_PORT) || 3306,
-      user: process.env.REMOTE_DB_USER || 'root',
-      password: process.env.REMOTE_DB_PASSWORD || '',
-      database: process.env.REMOTE_DB_NAME || process.env.DB_NAME || 'ai_family_photo',
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0,
-      timezone: '+08:00', // 设置为中国标准时间
-      // 远程数据库连接超时设置
-      connectTimeout: 10000,
-      // SSL 配置（如果远程数据库需要）
-      ssl: process.env.REMOTE_DB_SSL === 'true' ? {
-        rejectUnauthorized: process.env.REMOTE_DB_SSL_REJECT_UNAUTHORIZED !== 'false'
-      } : undefined
-    });
+    
+    // 检查 REMOTE_DB_HOST 是否是完整的连接字符串
+    if (process.env.REMOTE_DB_HOST.startsWith('mysql://')) {
+      // 使用完整的连接字符串
+      mysqlPool = mysql.createPool({
+        uri: process.env.REMOTE_DB_HOST,
+        timezone: '+08:00',
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
+        connectTimeout: 10000
+      });
+    } else {
+      // 使用分离的配置参数
+      mysqlPool = mysql.createPool({
+        host: process.env.REMOTE_DB_HOST,
+        port: parseInt(process.env.REMOTE_DB_PORT) || 3306,
+        user: process.env.REMOTE_DB_USER || 'root',
+        password: process.env.REMOTE_DB_PASSWORD || '',
+        database: process.env.REMOTE_DB_NAME || process.env.DB_NAME || 'ai_family_photo',
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
+        timezone: '+08:00', // 设置为中国标准时间
+        // 远程数据库连接超时设置
+        connectTimeout: 10000,
+        // SSL 配置（如果远程数据库需要）
+        ssl: process.env.REMOTE_DB_SSL === 'true' ? {
+          rejectUnauthorized: process.env.REMOTE_DB_SSL_REJECT_UNAUTHORIZED !== 'false'
+        } : undefined
+      });
+    }
   } 
   // 最后使用本地数据库配置
   else {

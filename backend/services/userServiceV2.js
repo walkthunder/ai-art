@@ -53,9 +53,9 @@ async function createUser(userId, openid, inviteCode = null) {
     
     // 2. 初始化余额（每个模式3次免费）
     const balances = [
-      { id: `${userId}-puzzle`, type: 'free_puzzle', amount: 3 },
-      { id: `${userId}-transform`, type: 'free_transform', amount: 3 },
-      { id: `${userId}-paid`, type: 'paid', amount: 0 }
+      { id: uuidv4(), type: 'free_puzzle', amount: 3 },
+      { id: uuidv4(), type: 'free_transform', amount: 3 },
+      { id: uuidv4(), type: 'paid', amount: 0 }
     ];
     
     for (const balance of balances) {
@@ -68,7 +68,7 @@ async function createUser(userId, openid, inviteCode = null) {
     // 3. 初始化付费信息
     await connection.execute(
       'INSERT INTO user_payments (id, user_id, has_ever_paid, current_tier, created_at, updated_at) VALUES (?, ?, FALSE, ?, NOW(), NOW())',
-      [`${userId}-payment`, userId, 'free']
+      [uuidv4(), userId, 'free']
     );
     
     // 4. 生成并保存邀请码
@@ -96,7 +96,7 @@ async function createUser(userId, openid, inviteCode = null) {
     
     await connection.execute(
       'INSERT INTO user_invites (id, user_id, invite_code, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
-      [`${userId}-invite`, userId, newInviteCode]
+      [uuidv4(), userId, newInviteCode]
     );
     
     // 5. 处理邀请关系
