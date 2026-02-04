@@ -33,7 +33,7 @@ Page({
     wealthIconUrl: getAssetUrl('wealth-icon.png'),
     previewBeforeUrl: getAssetUrl('preview-before.jpg'),
     previewAfterUrl: getAssetUrl('preview-after.jpg'),
-    commonBgUrl: getAssetUrl('common-bg.jpg'),
+    commonBgUrl: getAssetUrl('bg/upload-bg.png'),
     // 使用次数相关
     usageCount: 0,
     userType: 'free',
