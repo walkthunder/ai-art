@@ -292,8 +292,8 @@ router.post('/internal/order-created', async (req, res) => {
         if (userRows.length === 0 && openid) {
           // 用户不存在，尝试创建
           await connection.execute(
-            `INSERT INTO users (id, openid, unionid, payment_status, regenerate_count, created_at, updated_at) 
-             VALUES (?, ?, ?, 'free', 3, NOW(), NOW())
+            `INSERT INTO users (id, openid, unionid, payment_status, created_at, updated_at) 
+             VALUES (?, ?, ?, 'free', NOW(), NOW())
              ON DUPLICATE KEY UPDATE updated_at = NOW()`,
             [userId, openid, unionid || null]
           );
@@ -307,8 +307,8 @@ router.post('/internal/order-created', async (req, res) => {
         } else {
           effectiveUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           await connection.execute(
-            `INSERT INTO users (id, openid, unionid, payment_status, regenerate_count, created_at, updated_at) 
-             VALUES (?, ?, ?, 'free', 3, NOW(), NOW())`,
+            `INSERT INTO users (id, openid, unionid, payment_status, created_at, updated_at) 
+             VALUES (?, ?, ?, 'free', NOW(), NOW())`,
             [effectiveUserId, openid, unionid || null]
           );
           console.log(`创建新用户: ${effectiveUserId}`);
@@ -317,8 +317,8 @@ router.post('/internal/order-created', async (req, res) => {
         // 既没有 userId 也没有 openid，创建临时用户
         effectiveUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         await connection.execute(
-          `INSERT INTO users (id, payment_status, regenerate_count, created_at, updated_at) 
-           VALUES (?, 'free', 3, NOW(), NOW())`,
+          `INSERT INTO users (id, payment_status, created_at, updated_at) 
+           VALUES (?, 'free', NOW(), NOW())`,
           [effectiveUserId]
         );
         console.log(`创建临时用户: ${effectiveUserId}`);

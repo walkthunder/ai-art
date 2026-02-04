@@ -61,7 +61,7 @@ router.get('/', authenticate, authorize('super_admin', 'admin'), async (req, res
       const total = countRows[0].total;
       
       // 获取用户列表（使用query而不是execute）
-      const query = 'SELECT u.id, u.openid, u.payment_status, u.regenerate_count, ' +
+      const query = 'SELECT u.id, u.openid, u.payment_status, ' +
                     'u.created_at, u.updated_at ' +
                     'FROM users u ' +
                     whereClause + ' ' +
@@ -251,7 +251,7 @@ router.get('/export/data', authenticate, authorize('super_admin', 'admin'), asyn
     const connection = await db.pool.getConnection();
     try {
       const [users] = await connection.execute(
-        `SELECT u.id, u.openid, u.payment_status, u.regenerate_count,
+        `SELECT u.id, u.openid, u.payment_status,
                 u.created_at, u.updated_at,
                 COUNT(DISTINCT g.id) as generation_count,
                 COUNT(DISTINCT po.id) as order_count,
@@ -266,9 +266,9 @@ router.get('/export/data', authenticate, authorize('super_admin', 'admin'), asyn
       );
       
       // 转换为CSV格式
-      const csvHeader = 'ID,OpenID,付费状态,剩余次数,生成次数,订单数量,总消费,注册时间\n';
+      const csvHeader = 'ID,OpenID,付费状态,生成次数,订单数量,总消费,注册时间\n';
       const csvRows = users.map(u => 
-        `${u.id},${u.openid || ''},${u.payment_status},${u.regenerate_count},${u.generation_count},${u.order_count},${u.total_spent || 0},${u.created_at}`
+        `${u.id},${u.openid || ''},${u.payment_status},${u.generation_count},${u.order_count},${u.total_spent || 0},${u.created_at}`
       ).join('\n');
       
       const csv = csvHeader + csvRows;
