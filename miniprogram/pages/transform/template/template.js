@@ -11,8 +11,8 @@ const { generationAPI, templateAPI } = require('../../../utils/api');
 const { getAssetUrl } = require('../../../utils/oss-assets');
 const { initNavigation } = require('../../../utils/navigation-helper');
 
-// 默认模板配置（作为后备）
-const DEFAULT_TRANSFORM_TEMPLATES = [
+// 富贵变身模板配置
+const TRANSFORM_TEMPLATES = [
   {
     id: 'transform-custom-1',
     name: '富贵团圆',
@@ -92,18 +92,18 @@ Page({
     statusBarHeight: 0,
     navBarHeight: 44,
     menuRight: 0,
-    templates: [],
+    templates: TRANSFORM_TEMPLATES,
     categories: TRANSFORM_CATEGORIES,
     selectedCategory: 'all',
     selectedTemplate: null,
-    filteredTemplates: [],
-    isLoading: true,
+    filteredTemplates: TRANSFORM_TEMPLATES,
+    isLoading: false,
     showPreview: false,
     previewTemplate: null,
     isGenerating: false
   },
 
-  async onLoad() {
+  onLoad() {
     const app = getApp();
     
     initNavigation(this);
@@ -124,57 +124,9 @@ Page({
       return;
     }
     
-    // 加载模板列表
-    await this.loadTemplates();
-  },
-
-  /**
-   * 从服务端加载模板列表
-   */
-  async loadTemplates() {
-    try {
-      this.setData({ isLoading: true });
-      
-      console.log('[TransformTemplate] 开始加载模板列表');
-      
-      // 调用 API 获取模板列表
-      const result = await templateAPI.getTemplateList('transform');
-      
-      if (result.success && result.data && result.data.length > 0) {
-        // 将服务端返回的数据转换为小程序需要的格式
-        const templates = result.data.map(t => ({
-          id: t.id,
-          name: t.name,
-          url: t.imageUrl, // 服务端返回的是 imageUrl
-          category: t.category,
-          tags: [],
-          description: '',
-          isDefault: t.id === 'transform-custom-1',
-          isPremium: false
-        }));
-        
-        console.log('[TransformTemplate] 从服务端加载了', templates.length, '个模板');
-        
-        this.setData({
-          templates,
-          filteredTemplates: templates,
-          selectedTemplate: templates.find(t => t.isDefault) || templates[0]
-        });
-      } else {
-        throw new Error('服务端返回数据为空');
-      }
-    } catch (error) {
-      console.error('[TransformTemplate] 加载模板失败，使用默认模板:', error);
-      
-      // 使用默认模板作为后备
-      this.setData({
-        templates: DEFAULT_TRANSFORM_TEMPLATES,
-        filteredTemplates: DEFAULT_TRANSFORM_TEMPLATES,
-        selectedTemplate: DEFAULT_TRANSFORM_TEMPLATES[0]
-      });
-    } finally {
-      this.setData({ isLoading: false });
-    }
+    // 默认选中第一个模板
+    const defaultTemplate = TRANSFORM_TEMPLATES.find(t => t.isDefault) || TRANSFORM_TEMPLATES[0];
+    this.setData({ selectedTemplate: defaultTemplate });
   },
 
   onShow() {
@@ -189,10 +141,9 @@ Page({
    */
   handleCategoryChange(e) {
     const { id } = e.currentTarget.dataset;
-    const { templates } = this.data;
     const filteredTemplates = id === 'all' 
-      ? templates 
-      : templates.filter(t => t.category === id);
+      ? TRANSFORM_TEMPLATES
+      : TRANSFORM_TEMPLATES.filter(t => t.category === id);
     
     this.setData({
       selectedCategory: id,

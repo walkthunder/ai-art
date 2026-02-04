@@ -112,10 +112,11 @@
   overflow: hidden;
   display: flex;
   align-items: center;
+  height: 350px;
 }
 .result-frame {
   position: absolute;
-  top: 0;
+  top: -5px;
   bottom: 0;
   left: 0;
   right: 0;
@@ -304,7 +305,7 @@
 .ai-badge {
   position: absolute;
   bottom: 40rpx;
-  left: 40rpx;
+  left: 60rpx;
   display: flex;
   flex-direction: row;
   align-items: center;
