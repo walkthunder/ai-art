@@ -14,6 +14,7 @@ const { saveHistory } = require('../../../utils/storage');
 const { videoAPI } = require('../../../utils/api');
 const cloudbasePayment = require('../../../utils/cloudbase-payment');
 const { initNavigation } = require('../../../utils/navigation-helper');
+const { getAssetUrl } = require('../../../utils/oss-assets');
 
 Page({
   data: {
@@ -43,7 +44,8 @@ Page({
     // 使用次数模态框
     showUsageModal: false,
     usageModalType: '',
-    usageCount: 0
+    usageCount: 0,
+    pictureFrameUrl: getAssetUrl('picture-frame.png'),
   },
 
   // 视频轮询定时器

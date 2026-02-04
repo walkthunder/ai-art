@@ -72,6 +72,14 @@
             <text class="badge-text">AI团圆照相馆</text>
           </view>
         </view>
+
+        <!-- 遮罩层 -->
+        <image
+          class="result-frame"
+          src="{{pictureFrameUrl}}"
+          mode="widthFix"
+          wx:if="{{imageLoaded}}"
+        />
       </view>
     </view>
     
