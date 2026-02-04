@@ -29,7 +29,7 @@ Page({
       buttonText: '立即制作全家福'
     },
     // OSS 资源
-    commonBgUrl: getAssetUrl('common-bg.jpg'),
+    commonBgUrl: getAssetUrl('bg/puzzle-bg.jpg'),
     // 使用次数相关
     usageCount: 0,
     userType: 'free',

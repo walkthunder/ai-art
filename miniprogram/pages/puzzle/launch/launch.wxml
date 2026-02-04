@@ -36,58 +36,18 @@
       hasEverPaid="{{hasEverPaid}}"
     />
     
-    <!-- 标题区域 -->
-    <view class="title-section animate-fade-in">
-      <text class="slogan-text">这个春节，让爱没有距离</text>
-    </view>
-    
-    <!-- 模式图标和名称 -->
-    <view class="mode-section animate-scale-in">
-      <view class="mode-icon-wrapper">
-        <text class="mode-icon">{{modeConfig.icon}}</text>
-      </view>
-      <text class="mode-name">{{modeConfig.name}}</text>
-      <text class="mode-slogan">{{modeConfig.slogan}}</text>
-    </view>
-    
-    <!-- 预览区域 -->
-    <view class="preview-section animate-fade-in">
-      <view class="preview-card">
-        <view class="preview-photos">
-          <view class="photo-item">
-            <text class="photo-icon">👤</text>
-          </view>
-          <view class="photo-item">
-            <text class="photo-icon">👤</text>
-          </view>
-          <view class="photo-item">
-            <text class="photo-icon">👤</text>
-          </view>
-        </view>
-        <view class="preview-arrow">
-          <text class="arrow-text">→</text>
-        </view>
-        <view class="preview-result">
-          <view class="result-placeholder">
-            <text class="result-icon">👨‍👩‍👧‍👦</text>
-            <text class="result-text">全家福</text>
-          </view>
-        </view>
-      </view>
-    </view>
-    
-    <!-- 功能说明 -->
-    <view class="description-section animate-fade-in">
-      <view class="description-card">
-        <text class="description-text">{{modeConfig.description}}</text>
-      </view>
-      <view class="guide-card">
-        <text class="guide-text">{{modeConfig.uploadGuide}}</text>
-      </view>
-    </view>
-    
     <!-- 立即制作按钮 -->
     <view class="action-section">
+    
+      <!-- 功能说明 -->
+      <view class="description-section animate-fade-in">
+        <view class="description-card">
+          <text class="description-text">{{modeConfig.description}}</text>
+        </view>
+        <view class="guide-card">
+          <text class="guide-text">{{modeConfig.uploadGuide}}</text>
+        </view>
+      </view>
       <view class="start-btn {{buttonDisabled ? 'disabled' : ''}}" bindtap="handleStart" hover-class="{{buttonDisabled ? '' : 'start-btn-hover'}}">
         <view class="btn-inner">
           <text class="btn-text">{{buttonText}}</text>

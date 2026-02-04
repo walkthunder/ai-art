@@ -31,22 +31,6 @@
   /* top 由 JS 动态设置 */
 }
 
-/* 背景渐变层 */
-.launch-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(180deg, 
-    rgba(255, 248, 240, 0.85) 0%, 
-    rgba(255, 248, 240, 0.9) 30%,
-    rgba(255, 220, 220, 0.95) 100%
-  );
-  z-index: 1;
-  pointer-events: none;
-}
-
 /* 背景装饰 */
 .bg-decorations {
   position: absolute;
