@@ -97,13 +97,32 @@ function formatSize(bytes) {
  * 生成资源映射 JS 文件
  */
 function generateAssetMapFile(urlMap) {
+  // 读取现有的映射文件（如果存在）
+  let existingAssets = {};
+  if (fs.existsSync(OUTPUT_MAP_FILE)) {
+    try {
+      const existingContent = fs.readFileSync(OUTPUT_MAP_FILE, 'utf-8');
+      // 提取现有的 OSS_ASSETS 对象
+      const match = existingContent.match(/const OSS_ASSETS = ({[\s\S]*?});/);
+      if (match) {
+        existingAssets = eval('(' + match[1] + ')');
+        console.log(`\n📦 找到现有映射 ${Object.keys(existingAssets).length} 条`);
+      }
+    } catch (err) {
+      console.warn('⚠️  读取现有映射文件失败，将创建新文件:', err.message);
+    }
+  }
+  
+  // 合并新旧映射（新的覆盖旧的）
+  const mergedAssets = { ...existingAssets, ...urlMap };
+  
   const content = `/**
  * 小程序静态资源 OSS URL 映射
  * 自动生成，请勿手动修改
  * 生成时间: ${new Date().toISOString()}
  */
 
-const OSS_ASSETS = ${JSON.stringify(urlMap, null, 2)};
+const OSS_ASSETS = ${JSON.stringify(mergedAssets, null, 2)};
 
 /**
  * 获取 OSS 资源 URL
@@ -121,7 +140,10 @@ module.exports = {
 `;
   
   fs.writeFileSync(OUTPUT_MAP_FILE, content);
-  console.log(`\n✅ 资源映射文件已生成: ${OUTPUT_MAP_FILE}`);
+  console.log(`\n✅ 资源映射文件已更新: ${OUTPUT_MAP_FILE}`);
+  console.log(`   现有映射: ${Object.keys(existingAssets).length} 条`);
+  console.log(`   新增映射: ${Object.keys(urlMap).length} 条`);
+  console.log(`   合并后: ${Object.keys(mergedAssets).length} 条`);
 }
 
 /**
