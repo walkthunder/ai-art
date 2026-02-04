@@ -107,7 +107,7 @@ router.post('/login', async (req, res) => {
     // 如果都没找到，创建新用户
     if (!user) {
       const userId = uuidv4();
-      user = await userServiceV2.createUser({ id: userId, openid, unionid });
+      user = await userServiceV2.createUser(userId, openid);
       console.log(`[WeChat Login] 创建新用户: ${userId}`);
     }
     

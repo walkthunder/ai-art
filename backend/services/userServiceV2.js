@@ -196,7 +196,7 @@ async function createUser(userId, openid, inviteCode = null) {
 async function getUserById(userId) {
   try {
     const sql = `
-      SELECT * FROM v_user_full_info WHERE id = ?
+      SELECT * FROM users WHERE id = ?
     `;
     
     const rows = await query(sql, [userId]);
@@ -220,7 +220,7 @@ async function getUserById(userId) {
 async function getUserByOpenid(openid) {
   try {
     const sql = `
-      SELECT * FROM v_user_full_info WHERE openid = ?
+      SELECT * FROM users WHERE openid = ?
     `;
     
     const rows = await query(sql, [openid]);
@@ -381,7 +381,7 @@ async function getUserByUnionid(unionid) {
     if (!unionid) return null;
     
     const sql = `
-      SELECT * FROM v_user_full_info WHERE unionid = ?
+      SELECT * FROM users WHERE unionid = ?
     `;
     
     const rows = await query(sql, [unionid]);

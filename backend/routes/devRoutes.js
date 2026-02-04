@@ -281,7 +281,7 @@ router.post('/login', checkDevMode, async (req, res) => {
     
     if (!user) {
       // 创建新用户
-      user = await userServiceV2.createUser({ id: userId });
+      user = await userServiceV2.createUser(userId, `dev_openid_${userId}`);
       console.log(`[DevMode] 创建新用户: ${userId}`);
     }
 
