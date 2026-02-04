@@ -33,12 +33,16 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
     
     let templateConfig = templateId ? getTemplateConfig(mode, templateId) : getDefaultTemplate(mode);
     if (!templateConfig) {
+      console.warn(`⚠️ 模板 ${templateId} 不存在，使用默认模板`);
       templateConfig = getDefaultTemplate(mode);
     }
     
     if (!templateConfig) {
       return res.status(400).json({ error: '模板配置错误', message: '无法获取模板配置' });
     }
+    
+    console.log(`✅ 使用模板: ${templateConfig.id} - ${templateConfig.name}`);
+    console.log(`📷 模板图片: ${templateConfig.imageUrl}`);
     
     // 验证用户照片数量
     const userImageCount = imageUrls.length;

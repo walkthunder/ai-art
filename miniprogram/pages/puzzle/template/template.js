@@ -8,12 +8,12 @@
  * - 实现生成按钮
  */
 
-const { generationAPI } = require('../../../utils/api');
+const { generationAPI, templateAPI } = require('../../../utils/api');
 const { initNavigation } = require('../../../utils/navigation-helper');
 const { getAssetUrl } = require('../../../utils/oss-assets');
 
-// 时空拼图模板配置
-const PUZZLE_TEMPLATES = [
+// 默认模板配置（作为后备）
+const DEFAULT_PUZZLE_TEMPLATES = [
   {
     id: 'puzzle-1',
     name: '时光全家福',
@@ -84,18 +84,18 @@ Page({
     statusBarHeight: 0,
     navBarHeight: 44,
     menuRight: 0,
-    templates: PUZZLE_TEMPLATES,
+    templates: [],
     categories: PUZZLE_CATEGORIES,
     selectedCategory: 'all',
     selectedTemplate: null,
-    filteredTemplates: PUZZLE_TEMPLATES,
-    isLoading: false,
+    filteredTemplates: [],
+    isLoading: true,
     showPreview: false,
     previewTemplate: null,
     isGenerating: false
   },
 
-  onLoad() {
+  async onLoad() {
     const app = getApp();
     
     initNavigation(this);
@@ -116,9 +116,57 @@ Page({
       return;
     }
     
-    // 默认选中第一个模板
-    const defaultTemplate = PUZZLE_TEMPLATES.find(t => t.isDefault) || PUZZLE_TEMPLATES[0];
-    this.setData({ selectedTemplate: defaultTemplate });
+    // 加载模板列表
+    await this.loadTemplates();
+  },
+
+  /**
+   * 从服务端加载模板列表
+   */
+  async loadTemplates() {
+    try {
+      this.setData({ isLoading: true });
+      
+      console.log('[PuzzleTemplate] 开始加载模板列表');
+      
+      // 调用 API 获取模板列表
+      const result = await templateAPI.getTemplateList('puzzle');
+      
+      if (result.success && result.data && result.data.length > 0) {
+        // 将服务端返回的数据转换为小程序需要的格式
+        const templates = result.data.map(t => ({
+          id: t.id,
+          name: t.name,
+          url: t.imageUrl,
+          category: t.category,
+          tags: [],
+          description: '',
+          isDefault: t.id === 'puzzle-1',
+          isPremium: false
+        }));
+        
+        console.log('[PuzzleTemplate] 从服务端加载了', templates.length, '个模板');
+        
+        this.setData({
+          templates,
+          filteredTemplates: templates,
+          selectedTemplate: templates.find(t => t.isDefault) || templates[0]
+        });
+      } else {
+        throw new Error('服务端返回数据为空');
+      }
+    } catch (error) {
+      console.error('[PuzzleTemplate] 加载模板失败，使用默认模板:', error);
+      
+      // 使用默认模板作为后备
+      this.setData({
+        templates: DEFAULT_PUZZLE_TEMPLATES,
+        filteredTemplates: DEFAULT_PUZZLE_TEMPLATES,
+        selectedTemplate: DEFAULT_PUZZLE_TEMPLATES[0]
+      });
+    } finally {
+      this.setData({ isLoading: false });
+    }
   },
 
   onShow() {
@@ -133,9 +181,10 @@ Page({
    */
   handleCategoryChange(e) {
     const { id } = e.currentTarget.dataset;
+    const { templates } = this.data;
     const filteredTemplates = id === 'all' 
-      ? PUZZLE_TEMPLATES 
-      : PUZZLE_TEMPLATES.filter(t => t.category === id);
+      ? templates 
+      : templates.filter(t => t.category === id);
     
     this.setData({
       selectedCategory: id,

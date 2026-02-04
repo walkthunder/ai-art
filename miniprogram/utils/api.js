@@ -285,12 +285,14 @@ const historyAPI = {
 const templateAPI = {
   /**
    * 获取模板列表
-   * @param {string} [mode] 模式筛选
+   * @param {string} mode 模式 ('puzzle' | 'transform')
    * @returns {Promise<Object>} 模板列表
    */
-  getTemplates: (mode) => {
-    const params = mode ? { mode } : {};
-    return get('/api/templates', params);
+  getTemplateList: (mode) => {
+    if (!mode) {
+      throw new Error('mode 参数是必需的');
+    }
+    return get('/api/templates', { mode });
   },
 
   /**

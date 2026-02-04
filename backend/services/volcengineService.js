@@ -52,6 +52,10 @@ async function generateArtPhotoInternal(prompt, imageUrls, facePositions = null,
   console.log(`\n========== [${mode}模式] 火山方舟API调用准备 ==========`);
   console.log('🔑 API密钥状态:', apiKey ? '已配置' : '未配置');
   console.log('🖼️  输入图片数量:', imageUrls?.length || 0);
+  console.log('📋 输入图片列表:');
+  imageUrls?.forEach((url, index) => {
+    console.log(`   ${index + 1}. ${url}`);
+  });
   
   // 处理图片URL
   const processedImages = processImageUrls(imageUrls);

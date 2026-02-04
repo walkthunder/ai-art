@@ -44,7 +44,7 @@ const TRANSFORM_TEMPLATES = {
   'transform-custom-1': {
     id: 'transform-custom-1',
     name: '富贵团圆',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/templates/transform/fHPym5Te7.jpg`,
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/transform/fugui-tuanyuan.jpg`,
     prompt: `${TRANSFORM_PROMPT_PREFIX}
 将背景替换为图2所示的富贵团圆场景，营造温馨祥和的家庭氛围，背景与人物自然融合，光线柔和均匀，整体画面和谐统一，呈现真实自然的合影效果，高清画质，细节清晰`,
     category: 'chinese'
@@ -52,7 +52,7 @@ const TRANSFORM_TEMPLATES = {
   'transform-custom-2': {
     id: 'transform-custom-2',
     name: '豪门盛宴',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/templates/transform/fHPyN0b67.jpg`,
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/transform/haomen-shengyan.jpg`,
     prompt: `${TRANSFORM_PROMPT_PREFIX}
 将背景替换为图2所示的豪门宴会场景，呈现高雅尊贵的氛围，背景与人物自然融合，室内光线温暖柔和，整体画面协调统一，呈现真实自然的合影效果，高清画质，细节清晰`,
     category: 'luxury'
@@ -60,7 +60,7 @@ const TRANSFORM_TEMPLATES = {
   'transform-custom-3': {
     id: 'transform-custom-3',
     name: '雅致居所',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/templates/transform/fHPyoUXXv.jpg`,
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/transform/yazhi-jusuo.jpg`,
     prompt: `${TRANSFORM_PROMPT_PREFIX}
 将背景替换为图2所示的雅致居所场景，呈现简约大方的现代风格，背景与人物自然融合，自然光线柔和通透，整体画面清新舒适，呈现真实自然的居家合影效果，高清画质，细节清晰`,
     category: 'modern'
@@ -69,7 +69,7 @@ const TRANSFORM_TEMPLATES = {
   'transform-1': {
     id: 'transform-1',
     name: '欧式豪华客厅',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/templates/transform/luxury-european.jpg`,
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/transform/luxury-european.jpg`,
     prompt: `${TRANSFORM_PROMPT_PREFIX}
 将背景替换为图2所示的欧式豪华客厅场景，水晶吊灯璀璨，呈现奢华典雅的氛围，背景与人物自然融合，室内光线温暖柔和，整体画面协调统一，呈现真实自然的合影效果，高清画质，细节清晰`,
     category: 'luxury'
@@ -77,7 +77,7 @@ const TRANSFORM_TEMPLATES = {
   'transform-2': {
     id: 'transform-2',
     name: '中式豪宅大厅',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/templates/transform/luxury-chinese.jpg`,
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/transform/luxury-chinese.jpg`,
     prompt: `${TRANSFORM_PROMPT_PREFIX}
 将背景替换为图2所示的中式豪宅大厅场景，红木家具陈设，呈现富贵大气的中式风格，背景与人物自然融合，室内光线温暖柔和，整体画面协调统一，呈现真实自然的合影效果，高清画质，细节清晰`,
     category: 'chinese'
@@ -85,7 +85,7 @@ const TRANSFORM_TEMPLATES = {
   'transform-3': {
     id: 'transform-3',
     name: '现代轻奢客厅',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/templates/transform/modern-luxury.jpg`,
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/transform/modern-luxury.jpg`,
     prompt: `${TRANSFORM_PROMPT_PREFIX}
 将背景替换为图2所示的现代轻奢客厅场景，简约时尚风格，背景与人物自然融合，自然光线柔和通透，整体画面清新大方，呈现真实自然的居家合影效果，高清画质，细节清晰`,
     category: 'modern'
@@ -93,7 +93,7 @@ const TRANSFORM_TEMPLATES = {
   'transform-4': {
     id: 'transform-4',
     name: '古典宫廷',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/templates/transform/classical-palace.jpg`,
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/transform/classical-palace.jpg`,
     prompt: `${TRANSFORM_PROMPT_PREFIX}
 将背景替换为图2所示的古典宫廷场景，呈现皇家气派庄严的氛围，背景与人物自然融合，室内光线温暖柔和，整体画面协调统一，呈现真实自然的合影效果，高清画质，细节清晰`,
     category: 'luxury'

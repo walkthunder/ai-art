@@ -11,14 +11,19 @@ router.get('/', async (req, res) => {
   try {
     const { mode } = req.query;
     
-    const templates = getTemplateList(mode || 'transform');
+    if (!mode) {
+      return res.status(400).json({ error: '缺少参数', message: '需要提供 mode 参数' });
+    }
     
-    // 返回安全的模板列表（不包含prompt，防止泄露）
+    const templates = getTemplateList(mode);
+    
+    // 返回完整的模板列表（包含 imageUrl，但不包含 prompt）
     const safeTemplates = templates.map(t => ({
       id: t.id,
       name: t.name,
+      imageUrl: t.imageUrl,
       category: t.category,
-      // 不返回 imageUrl 和 prompt
+      // 不返回 prompt，防止泄露
     }));
     
     res.json({ success: true, data: safeTemplates });
