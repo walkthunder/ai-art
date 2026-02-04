@@ -2,23 +2,22 @@
  * CloudBase 云托管请求封装模块
  * 使用 wx.cloud.callContainer 调用云托管服务
  * 
- * 本地调试模式：
- * 设置 USE_LOCAL_SERVER = true 可切换到本地后端调试
- * 本地后端地址：http://localhost:3001
+ * 🔧 环境切换：
+ * 请在 config/api.js 中修改 CURRENT_ENV 来切换环境
+ * 不要在此文件中修改配置！
  */
 
-// ============================================
-// 🔧 本地调试开关
-// true: 连接本地后端 http://localhost:3001
-// false: 连接云托管服务
-// ============================================
-const USE_LOCAL_SERVER = true;  // 改为 true 以使用本地后端
-const LOCAL_SERVER_URL = 'http://localhost:3001';  // 修改为实际的本地端口
+// 导入统一配置
+const apiConfig = require('../config/api.js');
+
+// 从统一配置获取环境设置
+const USE_LOCAL_SERVER = apiConfig.currentConfig.useLocalServer;
+const LOCAL_SERVER_URL = apiConfig.currentConfig.apiBaseUrl;
 
 // 云托管配置
 const CLOUDBASE_CONFIG = {
-  env: '', // 云开发环境 ID，在 app.js 中初始化时设置
-  serviceName: 'express', // 云托管服务名称
+  env: apiConfig.CLOUDBASE_CONFIG.env,
+  serviceName: apiConfig.CLOUDBASE_CONFIG.serviceName,
 };
 
 // 重试配置
