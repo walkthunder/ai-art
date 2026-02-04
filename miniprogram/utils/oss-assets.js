@@ -31,7 +31,7 @@ const OSS_ASSETS = {
   "templates/transform/fugui-tuanyuan.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/fugui-tuanyuan.jpg?v=20260202",
   "templates/transform/haomen-shengyan.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/haomen-shengyan.jpg?v=20260202",
   "templates/transform/yazhi-jusuo.jpg": "https://wms.webinfra.cloud/miniprogram-assets/templates/transform/yazhi-jusuo.jpg?v=20260202",
-  "bg/upload-bg.png": "https://wms.webinfra.cloud/miniprogram-assets/bg/upload-bg.png",
+  "bg/upload-bg.png": "https://wms.webinfra.cloud/miniprogram-assets/bg/upload-bg.png?v=1738713600",
   "logo/logo-1024.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-1024.png",
   "logo/logo-120.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-120.png",
   "logo/logo-180.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-180.png",
