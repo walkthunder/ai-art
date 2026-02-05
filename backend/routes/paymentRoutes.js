@@ -282,7 +282,7 @@ router.post('/internal/order-created', async (req, res) => {
     const { 
       orderId, outTradeNo, userId, openid, unionid,
       amount, packageType, tradeType, status, 
-      reason, dbError 
+      generationId, reason, dbError 
     } = req.body;
     
     // outTradeNo 是必需的
@@ -297,10 +297,12 @@ router.post('/internal/order-created', async (req, res) => {
       return res.status(400).json({ error: '缺少金额', message: '必须提供 amount' });
     }
     
-    console.log(`处理订单备份: ${outTradeNo}, 原因: ${reason}, 金额: ${amount}`);
+    console.log(`处理订单备份: ${outTradeNo}, 原因: ${reason}, 金额: ${amount}, 状态: ${status}`);
     
     const connection = await db.pool.getConnection();
     try {
+      await connection.beginTransaction();
+      
       // 1. 检查用户是否存在，不存在则创建
       let effectiveUserId = userId;
       if (userId) {
@@ -314,6 +316,14 @@ router.post('/internal/order-created', async (req, res) => {
             [userId, openid, unionid || null]
           );
           console.log(`创建用户: ${userId}`);
+          
+          // 初始化用户余额
+          try {
+            await balanceService.initializeUserBalances(userId, connection);
+            console.log(`✅ 用户 ${userId} 余额初始化成功`);
+          } catch (initError) {
+            console.error(`⚠️ 用户 ${userId} 余额初始化失败:`, initError.message);
+          }
         }
       } else if (openid) {
         // 没有 userId，通过 openid 查找或创建
@@ -328,6 +338,14 @@ router.post('/internal/order-created', async (req, res) => {
             [effectiveUserId, openid, unionid || null]
           );
           console.log(`创建新用户: ${effectiveUserId}`);
+          
+          // 初始化用户余额
+          try {
+            await balanceService.initializeUserBalances(effectiveUserId, connection);
+            console.log(`✅ 用户 ${effectiveUserId} 余额初始化成功`);
+          } catch (initError) {
+            console.error(`⚠️ 用户 ${effectiveUserId} 余额初始化失败:`, initError.message);
+          }
         }
       } else {
         // 既没有 userId 也没有 openid，创建临时用户
@@ -338,12 +356,21 @@ router.post('/internal/order-created', async (req, res) => {
           [effectiveUserId]
         );
         console.log(`创建临时用户: ${effectiveUserId}`);
+        
+        // 初始化用户余额
+        try {
+          await balanceService.initializeUserBalances(effectiveUserId, connection);
+          console.log(`✅ 用户 ${effectiveUserId} 余额初始化成功`);
+        } catch (initError) {
+          console.error(`⚠️ 用户 ${effectiveUserId} 余额初始化失败:`, initError.message);
+        }
       }
       
       // 2. 备份订单（使用 INSERT IGNORE 避免重复）
       if (effectiveUserId) {
         // 判断订单类型
         const orderType = generationId ? 'generation' : 'recharge';
+        const finalOrderId = orderId || `order-${outTradeNo}`;
         
         await connection.execute(
           `INSERT IGNORE INTO payment_orders 
@@ -351,7 +378,7 @@ router.post('/internal/order-created', async (req, res) => {
             payment_method, trade_type, status, _openid, created_at, updated_at) 
            VALUES (?, ?, ?, ?, ?, ?, ?, 'wechat', ?, ?, ?, NOW(), NOW())`,
           [
-            orderId || `order-${outTradeNo}`,
+            finalOrderId,
             effectiveUserId,
             generationId || null,  // 充值订单可以为 NULL
             outTradeNo,
@@ -363,8 +390,59 @@ router.post('/internal/order-created', async (req, res) => {
             openid || ''
           ]
         );
-        console.log(`订单已备份: ${outTradeNo}, 类型: ${orderType}`);
+        console.log(`✅ 订单已备份: ${outTradeNo}, 类型: ${orderType}, 状态: ${status || 'pending'}`);
+        
+        // ✅ 关键修复：如果订单状态是 paid，立即充值
+        if (status === 'paid' && packageType) {
+          try {
+            // 检查是否已经充值过
+            const [logRows] = await connection.execute(
+              `SELECT id FROM usage_logs 
+               WHERE user_id = ? AND reference_id = ? AND action_type = 'increment' AND reason = 'payment'
+               LIMIT 1`,
+              [effectiveUserId, finalOrderId]
+            );
+            
+            if (logRows.length === 0) {
+              // 还没充值，立即充值
+              const rechargeAmount = await priceConfigService.getRechargeAmount(packageType, connection);
+              
+              if (rechargeAmount > 0 && rechargeAmount <= 1000) {
+                await balanceService.addBalance(
+                  effectiveUserId, 
+                  rechargeAmount, 
+                  'payment', 
+                  finalOrderId, 
+                  balanceService.BALANCE_TYPES.PAID,
+                  connection
+                );
+                
+                // 更新用户支付状态
+                await connection.execute(
+                  'UPDATE users SET payment_status = ?, updated_at = NOW() WHERE id = ?',
+                  [packageType, effectiveUserId]
+                );
+                
+                console.log(`✅ 订单备份时已充值: 用户 ${effectiveUserId}, 套餐 ${packageType}, 次数 ${rechargeAmount}`);
+              } else {
+                console.error(`❌ 充值次数配置异常: ${rechargeAmount}`);
+              }
+            } else {
+              console.log(`✅ 订单 ${outTradeNo} 已充值过，跳过`);
+            }
+          } catch (rechargeError) {
+            console.error(`❌ 订单备份充值失败:`, rechargeError);
+            // 记录错误但不影响订单保存
+            await errorLogService.logError('BACKUP_RECHARGE_FAILED', rechargeError.message, {
+              userId: effectiveUserId,
+              orderId: finalOrderId,
+              packageType
+            });
+          }
+        }
       }
+      
+      await connection.commit();
       
       // 3. 记录错误日志
       await errorLogService.logError('CLOUD_DB_UNAVAILABLE', `云函数数据库故障: ${reason}`, {
@@ -375,6 +453,9 @@ router.post('/internal/order-created', async (req, res) => {
       monitorService.recordDbBackup();
       
       res.json({ success: true, message: '订单已备份', userId: effectiveUserId });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
     } finally {
       connection.release();
     }
@@ -408,84 +489,103 @@ router.post('/internal/notify', async (req, res) => {
       return res.status(400).json({ error: '缺少订单号' });
     }
     
-    // ⚠️ 如果没有 transactionId，说明这是订单备份通知，不是支付成功通知
-    if (!transactionId) {
-      console.log('[PAYMENT_NOTIFY] 订单备份通知（无 transactionId），无需处理业务逻辑');
-      return res.json({ success: true, message: '订单备份已接收' });
-    }
-    
-    console.log(`处理支付成功通知: 订单 ${outTradeNo}, 微信订单号 ${transactionId}, 状态 ${status}`);
+    console.log(`处理支付通知: 订单 ${outTradeNo}, 微信订单号 ${transactionId || '无'}, 状态 ${status}`);
     
     const connection = await db.pool.getConnection();
     try {
-      // 1. 更新订单状态（幂等性处理）
+      await connection.beginTransaction();
+      
+      // 1. 查询订单
       const [orderRows] = await connection.execute(
         'SELECT * FROM payment_orders WHERE out_trade_no = ?',
         [outTradeNo]
       );
       
-      if (orderRows.length > 0) {
-        const order = orderRows[0];
+      if (orderRows.length === 0) {
+        await connection.rollback();
+        console.warn(`订单 ${outTradeNo} 不存在于后端数据库`);
+        return res.status(404).json({ error: '订单不存在', message: '请先调用订单备份接口' });
+      }
+      
+      const order = orderRows[0];
+      console.log(`找到订单: ${order.id}, 当前状态: ${order.status}, 用户: ${order.user_id}`);
+      
+      // 2. 更新订单状态（如果需要）
+      if (order.status !== 'paid' && status === 'paid') {
+        await connection.execute(
+          `UPDATE payment_orders 
+           SET status = 'paid', transaction_id = ?, paid_at = NOW(), updated_at = NOW() 
+           WHERE id = ?`,
+          [transactionId || order.transaction_id, order.id]
+        );
+        console.log(`✅ 订单 ${outTradeNo} 状态已更新为 paid`);
+      }
+      
+      // 3. 检查并充值余额（幂等性处理）
+      if (status === 'paid' || order.status === 'paid') {
+        // 检查是否已经充值过
+        const [logRows] = await connection.execute(
+          `SELECT id FROM usage_logs 
+           WHERE user_id = ? AND reference_id = ? AND action_type = 'increment' AND reason = 'payment'
+           LIMIT 1`,
+          [order.user_id, order.id]
+        );
         
-        // 只有订单状态为 pending 时才更新
-        if (order.status === 'pending' && status === 'paid') {
-          await connection.execute(
-            `UPDATE payment_orders 
-             SET status = ?, transaction_id = ?, paid_at = NOW(), updated_at = NOW() 
-             WHERE out_trade_no = ?`,
-            [status, transactionId, outTradeNo]
-          );
+        if (logRows.length === 0) {
+          // 还没充值，立即充值
+          const effectivePackageType = packageType || order.package_type;
           
-          // 更新用户权益
-          if (order.user_id && packageType) {
-            await connection.execute(
-              'UPDATE users SET payment_status = ?, updated_at = NOW() WHERE id = ?',
-              [packageType, order.user_id]
-            );
-          }
-          
-          console.log(`订单 ${outTradeNo} 状态已更新为 ${status}`);
-          
-          // 记录监控指标
-          monitorService.recordCallback(true);
-          
-          // ✅ 充值余额（关键修复）
-          if (order.user_id) {
-            const effectivePackageType = packageType || order.package_type;
-            try {
-              // 根据套餐类型确定充值次数
-              const rechargeAmount = await priceConfigService.getRechargeAmount(effectivePackageType, connection);
-              
-              await balanceService.addBalance(order.user_id, rechargeAmount, 'payment', order.id, balanceService.BALANCE_TYPES.PAID);
-              
-              console.log(`✅ 用户 ${order.user_id} 充值成功: ${effectivePackageType}, 次数: ${rechargeAmount}`);
+          try {
+            const rechargeAmount = await priceConfigService.getRechargeAmount(effectivePackageType, connection);
+            
+            if (rechargeAmount > 0 && rechargeAmount <= 1000) {
+              await balanceService.addBalance(
+                order.user_id, 
+                rechargeAmount, 
+                'payment', 
+                order.id, 
+                balanceService.BALANCE_TYPES.PAID,
+                connection
+              );
               
               // 更新用户支付状态
-              await userServiceV2.updatePaymentStatus(order.user_id, effectivePackageType, order.amount);
-            } catch (rechargeError) {
-              console.error(`❌ 用户 ${order.user_id} 充值失败:`, rechargeError);
-              // 记录错误但不影响订单状态更新
-              await errorLogService.logError('BALANCE_RECHARGE_FAILED', rechargeError.message, {
+              await connection.execute(
+                'UPDATE users SET payment_status = ?, updated_at = NOW() WHERE id = ?',
+                [effectivePackageType, order.user_id]
+              );
+              
+              console.log(`✅ 充值成功: 用户 ${order.user_id}, 订单 ${outTradeNo}, 套餐 ${effectivePackageType}, 次数 ${rechargeAmount}`);
+              
+              // 记录监控指标
+              monitorService.recordCallback(true);
+            } else {
+              console.error(`❌ 充值次数配置异常: ${rechargeAmount}`);
+              await errorLogService.logError('INVALID_RECHARGE_AMOUNT', `充值次数配置异常: ${rechargeAmount}`, {
                 userId: order.user_id,
                 orderId: order.id,
                 packageType: effectivePackageType
               });
             }
+          } catch (rechargeError) {
+            console.error(`❌ 充值失败:`, rechargeError);
+            await errorLogService.logError('BALANCE_RECHARGE_FAILED', rechargeError.message, {
+              userId: order.user_id,
+              orderId: order.id,
+              packageType: effectivePackageType
+            });
+            // 不回滚事务，订单状态已更新，可以后续补单
           }
-          
-          // 2. 触发业务逻辑（可选）
-          // await triggerBusinessLogic({ orderId: order.id, userId: order.user_id, packageType });
-          
-          // 3. 实时推送给前端（可选）
-          // io.to(`order:${outTradeNo}`).emit('payment:status', { outTradeNo, status });
         } else {
-          console.log(`订单 ${outTradeNo} 已处理，当前状态: ${order.status}`);
+          console.log(`✅ 订单 ${outTradeNo} 已充值过，跳过（幂等性保护）`);
         }
-      } else {
-        console.warn(`订单 ${outTradeNo} 不存在于后端数据库`);
       }
       
+      await connection.commit();
+      
       res.json({ success: true, message: '处理成功' });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
     } finally {
       connection.release();
     }
@@ -622,6 +722,46 @@ router.get('/order/:orderId', async (req, res) => {
           amount: parseFloat(order.amount), packageType: order.package_type,
           paymentMethod: order.payment_method, transactionId: order.transaction_id,
           status: order.status, createdAt: order.created_at, updatedAt: order.updated_at
+        }
+      });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('查询支付订单失败:', error);
+    res.status(500).json({ error: '查询支付订单失败', message: error.message });
+  }
+});
+
+// 通过商户订单号查询订单状态（用于小程序轮询）
+router.get('/order/by-trade-no/:outTradeNo', async (req, res) => {
+  try {
+    const { outTradeNo } = req.params;
+    
+    const connection = await db.pool.getConnection();
+    try {
+      const [rows] = await connection.execute('SELECT * FROM payment_orders WHERE out_trade_no = ?', [outTradeNo]);
+      
+      if (rows.length === 0) {
+        return res.status(404).json({ error: '订单不存在', message: '未找到对应的支付订单' });
+      }
+      
+      const order = rows[0];
+      res.json({ 
+        success: true, 
+        data: {
+          orderId: order.id, 
+          outTradeNo: order.out_trade_no,
+          userId: order.user_id, 
+          generationId: order.generation_id,
+          amount: parseFloat(order.amount), 
+          packageType: order.package_type,
+          paymentMethod: order.payment_method, 
+          transactionId: order.transaction_id,
+          status: order.status, 
+          createdAt: order.created_at, 
+          updatedAt: order.updated_at,
+          paidAt: order.paid_at
         }
       });
     } finally {

@@ -118,6 +118,16 @@
     </view>
   </view>
   
+  <!-- 使用次数模态框 -->
+  <usage-modal
+    visible="{{showUsageModal}}"
+    modalType="{{usageModalType}}"
+    usageCount="{{usageCount}}"
+    isElderMode="{{isElderMode}}"
+    bind:close="onUsageModalClose"
+    bind:paymentSuccess="onPaymentSuccess"
+  />
+  
   <!-- 模板预览弹窗 -->
   <view class="preview-modal {{showPreview ? 'show' : ''}}" catchtouchmove="preventMove">
     <view class="preview-mask" bindtap="closePreview"></view>

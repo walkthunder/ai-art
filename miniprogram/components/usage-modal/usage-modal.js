@@ -53,7 +53,9 @@ Component({
       }
     },
     // 是否正在加载配置
-    isLoadingConfig: false
+    isLoadingConfig: false,
+    // 当前选中的套餐
+    selectedPackage: null
   },
 
   /**
@@ -145,11 +147,79 @@ Component({
     },
 
     /**
-     * 点击支付按钮
+     * 选择套餐（点击套餐卡片）
      */
-    onPayment() {
-      console.log('[UsageModal] 触发支付事件');
-      this.triggerEvent('payment');
+    onSelectPackage(e) {
+      const packageType = e.currentTarget.dataset.package;
+      console.log('[UsageModal] 选择套餐:', packageType);
+      
+      // 设置选中的套餐
+      this.setData({
+        selectedPackage: packageType
+      });
+      
+      // 直接发起支付
+      this.handlePayment(packageType);
+    },
+
+    /**
+     * 处理支付
+     */
+    async handlePayment(packageType) {
+      console.log('[UsageModal] 开始支付流程，套餐:', packageType);
+      
+      try {
+        const app = getApp();
+        const userId = app.globalData.userId;
+        const openid = app.globalData.openid;
+        
+        if (!userId || !openid) {
+          wx.showToast({
+            title: '请先登录',
+            icon: 'none'
+          });
+          return;
+        }
+        
+        wx.showLoading({
+          title: '正在创建订单...',
+          mask: true
+        });
+        
+        // 调用支付服务
+        const cloudbasePayment = require('../../utils/cloudbase-payment');
+        const result = await cloudbasePayment.pay({
+          packageType,
+          generationId: null, // template 页面没有 generationId
+          userId
+        });
+        
+        wx.hideLoading();
+        
+        if (result.success) {
+          console.log('[UsageModal] 支付成功');
+          // 关闭弹窗
+          this.triggerEvent('close');
+          // 触发支付成功事件
+          this.triggerEvent('paymentSuccess', { packageType });
+        } else if (result.cancelled) {
+          console.log('[UsageModal] 用户取消支付');
+          // 用户取消支付，不显示错误提示
+        } else {
+          console.error('[UsageModal] 支付失败:', result.message);
+          wx.showToast({
+            title: result.message || '支付失败',
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        wx.hideLoading();
+        console.error('[UsageModal] 支付异常:', error);
+        wx.showToast({
+          title: error.message || '支付失败，请重试',
+          icon: 'none'
+        });
+      }
     },
 
     /**

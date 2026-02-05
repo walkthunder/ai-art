@@ -92,7 +92,13 @@ Page({
     isLoading: true,
     showPreview: false,
     previewTemplate: null,
-    isGenerating: false
+    isGenerating: false,
+    // 使用次数相关
+    usageCount: 0,
+    userType: 'free',
+    paymentStatus: 'free',
+    showUsageModal: false,
+    usageModalType: null
   },
 
   async onLoad() {
@@ -308,31 +314,6 @@ Page({
       console.log('[PuzzleTemplate] 生成API响应:', result);
       
       if (!result.success || !result.data?.taskId) {
-        // 检查是否是次数不足错误
-        if (result.error === 'INSUFFICIENT_USAGE') {
-          wx.hideLoading();
-          wx.showModal({
-            title: '使用次数不足',
-            content: result.message || '您的使用次数已用完，请购买套餐或邀请好友获取次数',
-            confirmText: '去购买',
-            cancelText: '取消',
-            success: (modalRes) => {
-              if (modalRes.confirm) {
-                // 显示支付弹窗
-                this.setData({ showPaymentModal: true });
-              } else {
-                // 返回上一页
-                wx.navigateBack({
-                  fail: () => {
-                    wx.redirectTo({ url: '/pages/puzzle/launch/launch' });
-                  }
-                });
-              }
-            }
-          });
-          return;
-        }
-        
         throw new Error(result.message || '未获取到任务ID');
       }
       
@@ -372,12 +353,116 @@ Page({
     } catch (err) {
       console.error('[PuzzleTemplate] 生成失败:', err);
       wx.hideLoading();
+      
+      // 检查是否是余额不足错误
+      if (err.errorCode === 'INSUFFICIENT_USAGE' || 
+          err.errorCode === 'INSUFFICIENT_MODE_USAGE' || 
+          err.errorCode === 'DECREMENT_FAILED' || 
+          err.errorCode === 'BALANCE_CHECK_FAILED') {
+        console.log('[PuzzleTemplate] 余额不足，显示充值引导弹窗');
+        
+        // 获取最新的使用次数信息
+        const app = getApp();
+        const result = await app.updateUsageCount();
+        
+        // 统一显示次数用尽弹窗，引导用户充值或邀请好友
+        // 不区分用户类型，因为此时都是次数不足
+        this.setData({
+          usageCount: result ? result.usageCount : 0,
+          userType: result ? result.userType : 'free',
+          paymentStatus: result ? (result.paymentStatus || 'free') : 'free',
+          showUsageModal: true,
+          usageModalType: 'free_exhausted' // 统一使用次数用尽弹窗
+        });
+        return;
+      }
+      
       wx.showToast({
         title: err.message || '启动生成失败，请重试',
         icon: 'none'
       });
     } finally {
       this.setData({ isGenerating: false });
+    }
+  },
+
+  /**
+   * 关闭使用次数模态框
+   */
+  onUsageModalClose() {
+    this.setData({ showUsageModal: false });
+  },
+
+  /**
+   * 支付成功回调 - 自动继续生成流程
+   */
+  async onPaymentSuccess() {
+    console.log('[PuzzleTemplate] 支付成功，自动继续生成');
+    
+    this.setData({ showUsageModal: false });
+    
+    wx.showLoading({
+      title: '支付成功，处理中...',
+      mask: true
+    });
+    
+    // 轮询查询用户次数，等待后端回调处理完成
+    const app = getApp();
+    const maxRetries = 10; // 最多重试10次
+    const retryInterval = 1000; // 每次间隔1秒
+    let retryCount = 0;
+    let usageIncreased = false;
+    
+    // 记录支付前的次数
+    const beforeUsageCount = app.globalData.usageCount || 0;
+    
+    while (retryCount < maxRetries && !usageIncreased) {
+      await new Promise(resolve => setTimeout(resolve, retryInterval));
+      
+      try {
+        const result = await app.updateUsageCount(true); // 强制刷新
+        const currentUsageCount = result ? result.usageCount : 0;
+        
+        console.log('[PuzzleTemplate] 轮询次数:', {
+          retry: retryCount + 1,
+          before: beforeUsageCount,
+          current: currentUsageCount
+        });
+        
+        // 检查次数是否增加
+        if (currentUsageCount > beforeUsageCount) {
+          usageIncreased = true;
+          console.log('[PuzzleTemplate] 次数已增加，继续生成');
+          break;
+        }
+      } catch (err) {
+        console.error('[PuzzleTemplate] 查询次数失败:', err);
+      }
+      
+      retryCount++;
+    }
+    
+    wx.hideLoading();
+    
+    if (usageIncreased) {
+      // 次数已增加，显示成功提示并继续生成
+      wx.showToast({
+        title: '支付成功，开始生成',
+        icon: 'success',
+        duration: 1500
+      });
+      
+      setTimeout(() => {
+        this.handleGenerate();
+      }, 1500);
+    } else {
+      // 超时未增加，提示用户手动刷新
+      wx.showModal({
+        title: '支付成功',
+        content: '支付处理中，请稍后刷新页面查看次数',
+        showCancel: false,
+        confirmText: '知道了'
+      });
     }
   },
 

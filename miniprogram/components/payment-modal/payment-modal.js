@@ -40,6 +40,11 @@ Component({
     hasEverPaid: {
       type: Boolean,
       value: false
+    },
+    // 预选的套餐类型
+    preselectedPackage: {
+      type: String,
+      value: ''
     }
   },
   
@@ -73,9 +78,17 @@ Component({
     'visible': function(visible) {
       if (visible) {
         console.log('[PaymentModal] visible changed to true, currentPaymentStatus:', this.data.currentPaymentStatus);
+        console.log('[PaymentModal] preselectedPackage:', this.data.preselectedPackage);
         // 弹窗打开时重新加载价格（确保最新）
         this.loadPrices().then(() => {
           this.filterPackages(this.data.currentPaymentStatus);
+          // 如果有预选的套餐，自动选中
+          if (this.data.preselectedPackage) {
+            console.log('[PaymentModal] 自动选中预选套餐:', this.data.preselectedPackage);
+            this.setData({
+              selectedPackage: this.data.preselectedPackage
+            });
+          }
         });
       }
     },
@@ -83,6 +96,14 @@ Component({
       if (this.data.visible) {
         console.log('[PaymentModal] currentPaymentStatus changed to:', currentPaymentStatus);
         this.filterPackages(currentPaymentStatus);
+      }
+    },
+    'preselectedPackage': function(preselectedPackage) {
+      if (this.data.visible && preselectedPackage) {
+        console.log('[PaymentModal] preselectedPackage changed to:', preselectedPackage);
+        this.setData({
+          selectedPackage: preselectedPackage
+        });
       }
     }
   },

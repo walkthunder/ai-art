@@ -321,12 +321,14 @@ async function getWatermarkConfig() {
   const appName = await getAppName();
   const textTemplate = await getConfig('watermark.textTemplate', '{appName}\n扫码去水印');
   const qrUrl = await getConfig('watermark.qrUrl', 'https://your-domain.com/pay');
+  const qrImageUrl = await getConfig('watermark.qrImageUrl', ''); // 新增：小程序码图片URL
   const position = await getConfig('watermark.position', 'center');
   const opacity = await getConfig('watermark.opacity', 180);
   
   return {
     text: textTemplate.replace('{appName}', appName),
     qrUrl,
+    qrImageUrl, // 新增：返回小程序码图片URL
     position,
     opacity,
   };

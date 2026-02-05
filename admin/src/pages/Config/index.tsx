@@ -203,9 +203,17 @@ const Config: React.FC = () => {
               <Form.Item
                 label="二维码URL"
                 name={['watermark', 'qrUrl']}
-                extra="水印中二维码指向的URL"
+                extra="水印中二维码指向的URL（当小程序码图片为空时使用）"
               >
                 <Input placeholder="https://your-domain.com/pay" />
+              </Form.Item>
+
+              <Form.Item
+                label="小程序码图片URL"
+                name={['watermark', 'qrImageUrl']}
+                extra="水印中使用的小程序码图片URL（优先使用，为空则动态生成二维码）"
+              >
+                <Input placeholder="https://your-oss.com/miniprogram-qr.png" />
               </Form.Item>
 
               <Form.Item

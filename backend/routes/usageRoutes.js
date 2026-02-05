@@ -105,7 +105,7 @@ router.post('/decrement', async (req, res) => {
     console.error('扣减使用次数失败:', error);
 
     // 处理特定错误
-    if (error.message.includes('使用次数不足') || error.message === 'INSUFFICIENT_USAGE') {
+    if (error.message.includes('余额不足') || error.message === 'INSUFFICIENT_BALANCE') {
       return res.status(403).json({
         success: false,
         error: 'INSUFFICIENT_USAGE',

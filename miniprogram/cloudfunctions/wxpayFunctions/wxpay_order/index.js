@@ -606,9 +606,10 @@ exports.main = async (event, context) => {
     const dbResult = await safeDb.insert('payment_orders', {
       id: orderId,
       user_id: effectiveUserId,
-      generation_id: generationId || effectiveUserId, // generation_id 是 NOT NULL，使用 user_id 作为默认值
+      generation_id: generationId || null, // 充值订单可以为 null
       amount: (orderAmount / 100).toFixed(2), // 转换为元（DECIMAL 类型）
       package_type: packageType || 'basic',
+      order_type: generationId ? 'generation' : 'recharge', // 区分订单类型
       payment_method: 'wechat',
       trade_type: tradeType || 'JSAPI',
       out_trade_no: outTradeNo, // 商户订单号（用于查询）
@@ -700,9 +701,26 @@ async function notifyBackendOrderCreated(orderData) {
   
   try {
     const axios = require('axios');
+    
+    // ✅ 确保传递所有必要参数
+    const completeOrderData = {
+      orderId: orderData.orderId,
+      outTradeNo: orderData.outTradeNo,
+      userId: orderData.userId,
+      openid: orderData.openid,
+      unionid: orderData.unionid,
+      amount: orderData.amount,
+      packageType: orderData.packageType,
+      tradeType: orderData.tradeType,
+      status: orderData.status || 'pending',
+      generationId: orderData.generationId || null,  // ✅ 添加 generationId
+      reason: orderData.reason,
+      dbError: orderData.dbError
+    };
+    
     const response = await axios.post(
       `${apiBaseUrl}/api/payment/internal/order-created`, 
-      orderData, 
+      completeOrderData, 
       {
         timeout: 5000,
         headers: {

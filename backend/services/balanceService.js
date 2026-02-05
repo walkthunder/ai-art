@@ -153,10 +153,11 @@ async function checkBalance(userId, mode = null, retryCount = 0) {
                    (balances[BALANCE_TYPES.PAID] || 0),
       can_generate: Object.values(balances).some(amount => amount > 0),
       user_type: paymentInfo.has_ever_paid ? 'paid' : 'free',
-      has_ever_paid: paymentInfo.has_ever_paid
+      has_ever_paid: paymentInfo.has_ever_paid,
+      can_generate_mode: false // 默认值
     };
     
-    // 如果指定了 mode，检查该模式是否可以生成
+    // ✅ 修复：如果指定了 mode，检查该模式是否可以生成
     if (mode) {
       const freeBalance = balances[getBalanceType(mode, false)] || 0;
       const paidBalance = balances[BALANCE_TYPES.PAID] || 0;

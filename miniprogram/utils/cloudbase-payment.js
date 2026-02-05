@@ -508,8 +508,175 @@ const queryRefund = async (outRefundNo) => {
 };
 
 /**
+ * 轮询订单状态（支付成功后确认订单状态）
+ * @param {string} outTradeNo 商户订单号
+ * @param {Object} options 轮询选项
+ * @param {number} options.maxAttempts 最大尝试次数，默认 10
+ * @param {number} options.interval 轮询间隔（毫秒），默认 2000
+ * @returns {Promise<Object>} 订单状态结果
+ */
+const pollOrderStatus = async (outTradeNo, options = {}) => {
+  const { maxAttempts = 10, interval = 2000 } = options;
+  
+  log('开始轮询订单状态', { outTradeNo, maxAttempts, interval });
+  
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      log(`轮询订单状态 (${i + 1}/${maxAttempts})`, { outTradeNo });
+      
+      // 1. 先查询云函数数据库
+      try {
+        const cloudResult = await queryOrder(outTradeNo);
+        if (cloudResult.success && cloudResult.data.isPaid) {
+          log('云函数数据库查询到已支付订单', cloudResult.data);
+          return { 
+            success: true, 
+            status: 'paid', 
+            source: 'cloud',
+            data: cloudResult.data
+          };
+        }
+      } catch (cloudError) {
+        log('云函数数据库查询失败（可能不可用）', cloudError);
+        // 继续查询后端数据库
+      }
+      
+      // 2. 查询后端数据库
+      try {
+        const apiBaseUrl = getApp().globalData.apiBaseUrl;
+        let backendResult;
+        
+        if (apiBaseUrl === 'cloudbase') {
+          // 使用 CloudBase SDK
+          const cloudbaseRequest = require('./cloudbase-request');
+          backendResult = await cloudbaseRequest.get(`/api/payment/order/by-trade-no/${outTradeNo}`);
+        } else {
+          // 使用普通 HTTP 请求
+          backendResult = await new Promise((resolve, reject) => {
+            wx.request({
+              url: `${apiBaseUrl}/api/payment/order/by-trade-no/${outTradeNo}`,
+              method: 'GET',
+              timeout: 5000,
+              success: (res) => resolve(res),
+              fail: (err) => reject(err)
+            });
+          });
+        }
+        
+        // 处理不同的返回格式
+        let responseData;
+        if (apiBaseUrl === 'cloudbase') {
+          responseData = backendResult;
+        } else {
+          responseData = backendResult.data;
+        }
+        
+        if (responseData && responseData.success && responseData.data) {
+          const orderData = responseData.data;
+          if (orderData.status === 'paid') {
+            log('后端数据库查询到已支付订单', orderData);
+            return { 
+              success: true, 
+              status: 'paid', 
+              source: 'backend',
+              data: orderData
+            };
+          }
+        }
+      } catch (backendError) {
+        log('后端数据库查询失败', backendError);
+      }
+      
+      // 3. 如果都没有查到已支付状态，等待后重试
+      if (i < maxAttempts - 1) {
+        log(`订单尚未支付，等待 ${interval}ms 后重试`);
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+    } catch (error) {
+      log(`轮询订单状态失败 (${i + 1}/${maxAttempts})`, error);
+      
+      // 如果不是最后一次尝试，继续重试
+      if (i < maxAttempts - 1) {
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+    }
+  }
+  
+  log('轮询订单状态超时，未确认支付状态');
+  return { 
+    success: false, 
+    status: 'unknown',
+    message: '无法确认订单状态，请稍后查看历史记录'
+  };
+};
+
+/**
+ * 强制刷新用户余额
+ * @param {string} userId 用户ID
+ * @returns {Promise<Object>} 刷新结果
+ */
+const refreshUserBalance = async (userId) => {
+  try {
+    log('强制刷新用户余额', { userId });
+    
+    const apiBaseUrl = getApp().globalData.apiBaseUrl;
+    let result;
+    
+    if (apiBaseUrl === 'cloudbase') {
+      // 使用 CloudBase SDK
+      const cloudbaseRequest = require('./cloudbase-request');
+      result = await cloudbaseRequest.get(`/api/users/${userId}/balance`);
+    } else {
+      // 使用普通 HTTP 请求
+      result = await new Promise((resolve, reject) => {
+        wx.request({
+          url: `${apiBaseUrl}/api/users/${userId}/balance`,
+          method: 'GET',
+          timeout: 5000,
+          success: (res) => resolve(res),
+          fail: (err) => reject(err)
+        });
+      });
+    }
+    
+    // 处理不同的返回格式
+    let responseData;
+    if (apiBaseUrl === 'cloudbase') {
+      responseData = result;
+    } else {
+      responseData = result.data;
+    }
+    
+    if (responseData && responseData.success && responseData.data) {
+      log('用户余额刷新成功', responseData.data);
+      
+      // 更新本地缓存
+      const cloudbaseAuth = require('./cloudbase-auth');
+      const userInfo = cloudbaseAuth.getUserInfo();
+      if (userInfo) {
+        userInfo.balance = responseData.data;
+        cloudbaseAuth.setUserInfo(userInfo);
+      }
+      
+      return {
+        success: true,
+        data: responseData.data
+      };
+    }
+    
+    throw new Error('刷新余额失败：返回数据异常');
+  } catch (error) {
+    log('刷新用户余额失败', error);
+    return {
+      success: false,
+      message: error.message || '刷新余额失败'
+    };
+  }
+};
+
+/**
  * 完整支付流程
- * 创建订单 -> 发起支付 -> 返回结果
+ * 创建订单 -> 发起支付 -> 轮询确认 -> 刷新余额 -> 返回结果
  * @param {Object} params 支付参数
  * @param {string} params.packageType 套餐类型
  * @param {string} params.generationId 生成任务ID
@@ -538,23 +705,63 @@ const pay = async (params) => {
       throw new Error('创建订单失败');
     }
     
+    const outTradeNo = orderResult.data.outTradeNo;
+    
     // 2. 发起支付
     const paymentResult = await requestPayment(orderResult.data);
     
-    // 3. 支付成功，更新用户状态
+    // 3. 支付成功，轮询确认订单状态
     if (paymentResult.success) {
-      // 更新本地用户付费状态
-      const cloudbaseAuth = require('./cloudbase-auth');
-      cloudbaseAuth.updatePaymentStatus(packageType);
+      log('支付成功，开始轮询订单状态', { outTradeNo });
       
-      return {
-        success: true,
-        data: {
-          packageType,
-          outTradeNo: orderResult.data.outTradeNo,
-          status: ORDER_STATUS.PAID
+      // 轮询订单状态（最多 10 次，每次间隔 2 秒）
+      const pollResult = await pollOrderStatus(outTradeNo, {
+        maxAttempts: 10,
+        interval: 2000
+      });
+      
+      if (pollResult.success && pollResult.status === 'paid') {
+        log('订单状态确认成功', pollResult);
+        
+        // 4. 强制刷新用户余额
+        const balanceResult = await refreshUserBalance(userId);
+        if (balanceResult.success) {
+          log('用户余额刷新成功', balanceResult.data);
+        } else {
+          log('用户余额刷新失败（不影响支付结果）', balanceResult.message);
         }
-      };
+        
+        // 5. 更新本地用户付费状态
+        const cloudbaseAuth = require('./cloudbase-auth');
+        cloudbaseAuth.updatePaymentStatus(packageType);
+        
+        return {
+          success: true,
+          data: {
+            packageType,
+            outTradeNo,
+            status: ORDER_STATUS.PAID,
+            balance: balanceResult.success ? balanceResult.data : null
+          }
+        };
+      } else {
+        // 轮询超时或失败，但支付可能已成功
+        log('订单状态确认超时，但支付可能已成功', pollResult);
+        
+        // 仍然尝试刷新余额
+        await refreshUserBalance(userId);
+        
+        return {
+          success: true,
+          warning: true,
+          data: {
+            packageType,
+            outTradeNo,
+            status: 'pending_confirmation',
+            message: '支付成功，但订单状态确认超时，请稍后查看历史记录'
+          }
+        };
+      }
     }
     
     return paymentResult;
@@ -589,6 +796,10 @@ module.exports = {
   // 订单查询
   queryOrder,
   queryOrderByTransactionId,
+  pollOrderStatus,      // ✅ 新增：订单状态轮询
+  
+  // 用户余额
+  refreshUserBalance,   // ✅ 新增：刷新用户余额
   
   // 退款
   refund,

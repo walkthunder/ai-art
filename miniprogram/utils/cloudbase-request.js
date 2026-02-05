@@ -301,6 +301,21 @@ const cloudContainerRequest = (options) => {
 
       // 处理认证失败
       if (statusCode === 401 || statusCode === 403) {
+        // 检查是否是业务错误（如余额不足），而非认证错误
+        const businessErrors = ['INSUFFICIENT_USAGE', 'INSUFFICIENT_MODE_USAGE', 'DECREMENT_FAILED', 'BALANCE_CHECK_FAILED'];
+        if (responseData?.error && businessErrors.includes(responseData.error)) {
+          // 这是业务错误，不是认证错误
+          // 不显示 Toast，让页面级代码使用 usage-modal 组件处理
+          reject({
+            code: statusCode,
+            message: responseData.message || '操作失败',
+            errorCode: responseData.error,
+            data: responseData
+          });
+          return;
+        }
+
+        // 真正的认证失败
         // 清除本地登录信息
         wx.removeStorageSync('token');
         wx.removeStorageSync('userId');

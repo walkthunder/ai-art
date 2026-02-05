@@ -217,10 +217,13 @@ exports.main = async (event, context) => {
       }
       
       // 即使数据库操作失败，也要通知后端
+      // ✅ 传递完整参数（虽然没有 order 对象，但尽量传递可用信息）
       notifyBackend({
         outTradeNo,
         transactionId,
         status: 'paid',
+        packageType: 'basic',  // 默认套餐，后端会从订单中读取
+        generationId: null,    // 补录订单时没有 generationId
         openid: payer?.openid
       }).catch(err => {
         console.error('[wxpay_order_callback] 通知后端失败:', err.message);
@@ -255,12 +258,13 @@ exports.main = async (event, context) => {
     }
     
     // 通知后端处理业务逻辑（包括用户权益更新）
+    // ✅ 传递完整参数，包括 generationId
     notifyBackend({
       outTradeNo,
       transactionId,
       status: 'paid',
       packageType: order.package_type,
-      generationId: order.generation_id,
+      generationId: order.generation_id,  // ✅ 确保传递 generationId
       openid: payer?.openid
     }).catch(err => {
       console.error('[wxpay_order_callback] 通知后端失败:', err.message);

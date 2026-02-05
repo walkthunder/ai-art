@@ -40,12 +40,35 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
       const balance = await balanceService.checkBalance(userId, mode);
       console.log(`[生成任务] 用户 ${userId} 余额检查:`, balance);
       
+      // ✅ 修复：检查总体余额
       if (!balance.can_generate) {
         return res.status(403).json({
           success: false,
           error: 'INSUFFICIENT_USAGE',
           message: '使用次数不足，请购买套餐或邀请好友获取次数',
           data: {
+            puzzle: balance.puzzle,
+            transform: balance.transform,
+            paid: balance.paid,
+            usage_count: balance.usage_count
+          }
+        });
+      }
+      
+      // ✅ 修复：检查当前模式的余额
+      if (!balance.can_generate_mode) {
+        const modeNames = {
+          puzzle: '时空拼图',
+          transform: '富贵变身'
+        };
+        const modeName = modeNames[mode] || mode;
+        
+        return res.status(403).json({
+          success: false,
+          error: 'INSUFFICIENT_MODE_USAGE',
+          message: `${modeName}模式的使用次数不足，请购买套餐或邀请好友获取次数`,
+          data: {
+            mode,
             puzzle: balance.puzzle,
             transform: balance.transform,
             paid: balance.paid,
