@@ -10,6 +10,7 @@ const { getDateTimeNow } = require('../utils/crypto');
 const { uploadImageToOSS } = require('./ossService');
 const { executeWithRetry } = require('../utils/apiRetry');
 const apiLogService = require('./apiLogService');
+const watermarkService = require('./watermarkService');
 
 // 火山引擎API配置
 const VOLCENGINE_ARK_ENDPOINT = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
@@ -64,17 +65,29 @@ async function generateArtPhotoInternal(prompt, imageUrls, facePositions = null,
     throw new Error('请提供至少一张有效的照片');
   }
   
+  // 根据付费状态确定画质和水印
+  // 免费版：2K画质 + API水印关闭（后续添加自定义水印）
+  // 付费版：4K画质 + 无水印
+  const isPaid = paymentStatus === 'paid';
+  const imageSize = isPaid ? "4K" : "2K";
+  // 注意：API的watermark参数设为false，我们会在后端添加自定义水印
+  const hasWatermark = false;
+  
+  console.log(`💎 付费状态: ${paymentStatus}`);
+  console.log(`📐 图片尺寸: ${imageSize} (${isPaid ? '高清' : '普通'})`);
+  console.log(`🏷️  水印设置: ${isPaid ? '无水印' : '后端添加自定义水印'}`);
+  
   // 构造请求体
   const requestBody = {
     model: "doubao-seedream-4-5-251128",
     prompt: prompt,
     image: processedImages,
-    size: "2K",
+    size: imageSize,
     sequential_image_generation: "auto",
     sequential_image_generation_options: { max_images: 4 },
     stream: false,
     response_format: "url",
-    watermark: paymentStatus === 'free',
+    watermark: hasWatermark,
   };
   
   if (mode === 'transform') {
@@ -120,8 +133,20 @@ async function generateArtPhotoInternal(prompt, imageUrls, facePositions = null,
     }
     
     if (result.data && Array.isArray(result.data)) {
-      const generatedImages = extractGeneratedImages(result.data);
+      let generatedImages = extractGeneratedImages(result.data);
       console.log(`✅ API成功返回 ${generatedImages.length} 张图片`);
+      
+      // 为免费用户添加自定义水印
+      if (await watermarkService.shouldAddWatermark(paymentStatus)) {
+        console.log(`🏷️  开始为免费用户添加自定义水印...`);
+        try {
+          generatedImages = await watermarkService.addWatermarkToImages(generatedImages);
+          console.log(`✅ 自定义水印添加完成`);
+        } catch (watermarkError) {
+          console.error('❌ 添加自定义水印失败:', watermarkError);
+          // 水印添加失败不影响主流程，继续返回原图
+        }
+      }
       
       const taskId = uuidv4();
       

@@ -29,7 +29,7 @@
       
       <view class="section">
         <text class="section-title">引言</text>
-        <text class="section-text">欢迎使用AI全家福·团圆照相馆（以下简称"本服务"）。我们非常重视您的隐私保护和个人信息安全。本隐私政策将帮助您了解我们如何收集、使用、存储和保护您的个人信息。</text>
+        <text class="section-text">欢迎使用{{appName}}（以下简称"本服务"）。我们非常重视您的隐私保护和个人信息安全。本隐私政策将帮助您了解我们如何收集、使用、存储和保护您的个人信息。</text>
       </view>
       
       <view class="section">

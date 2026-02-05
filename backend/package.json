@@ -6,7 +6,6 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "prestart": "node scripts/check-dependencies.js",
     "check-deps": "node scripts/check-dependencies.js",
     "install-ffmpeg": "bash scripts/install-ffmpeg.sh",
     "db:init": "node scripts/init-database.js",

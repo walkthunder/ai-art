@@ -107,6 +107,9 @@ function registerRoutes(app) {
   // 系统配置接口（管理后台）
   app.use('/admin-api/config', configRoutes);
   
+  // 公开配置接口（小程序可访问）
+  app.use('/api/config', configRoutes);
+  
   // 日志查询接口（管理后台）
   app.use('/admin-api/logs', logRoutes);
 }

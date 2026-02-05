@@ -32,11 +32,14 @@ api.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
       
-      // 401 未授权 - 跳转登录
+      // 401 未授权 - 只有在非登录页面时才跳转
       if (status === 401) {
-        localStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_user');
-        window.location.href = '/login';
+        // 如果当前不在登录页，清除token并跳转
+        if (!window.location.pathname.includes('/login')) {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_user');
+          window.location.href = '/login';
+        }
       }
       
       // 返回错误信息

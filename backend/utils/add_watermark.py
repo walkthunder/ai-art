@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 水印添加脚本
-使用Pillow添加自定义水印，水印包含二维码和文字
+使用Pillow添加自定义水印，水印包含二维码/图片和文字
 Requirements: 3.1, 3.2
 """
 
@@ -10,10 +10,12 @@ import json
 import os
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
+import requests
+from io import BytesIO
 
 
 def add_watermark(image_path, output_path=None, watermark_text="AI全家福制作\n扫码去水印", 
-                  qr_url="https://your-domain.com/pay", position="center"):
+                  qr_url="https://your-domain.com/pay", qr_image_url=None, position="center"):
     """
     在图片上添加水印
     
@@ -21,7 +23,8 @@ def add_watermark(image_path, output_path=None, watermark_text="AI全家福制�
         image_path: 输入图片路径
         output_path: 输出图片路径（可选）
         watermark_text: 水印文字
-        qr_url: 二维码URL
+        qr_url: 二维码URL（如果qr_image_url为空则生成二维码）
+        qr_image_url: 二维码图片URL（优先使用，如小程序码）
         position: 水印位置（center/bottom-right）
         
     Returns:
@@ -49,16 +52,19 @@ def add_watermark(image_path, output_path=None, watermark_text="AI全家福制�
         watermark_height = max(watermark_height, 100)
         watermark_width = max(watermark_width, 300)
         
-        # 生成二维码
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=10,
-            border=2
-        )
-        qr.add_data(qr_url)
-        qr.make(fit=True)
-        qr_img = qr.make_image(fill_color="black", back_color="white")
+        # 获取二维码/小程序码图片
+        if qr_image_url:
+            # 使用提供的图片URL
+            try:
+                response = requests.get(qr_image_url, timeout=10)
+                qr_img = Image.open(BytesIO(response.content))
+                print(f"使用自定义二维码图片: {qr_image_url}")
+            except Exception as e:
+                print(f"下载二维码图片失败，使用生成的二维码: {e}")
+                qr_img = generate_qr_code(qr_url)
+        else:
+            # 生成二维码
+            qr_img = generate_qr_code(qr_url)
         
         # 调整二维码大小
         qr_size = min(watermark_height, 150)
@@ -144,6 +150,19 @@ def add_watermark(image_path, output_path=None, watermark_text="AI全家福制�
         }
 
 
+def generate_qr_code(qr_url):
+    """生成二维码图片"""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=2
+    )
+    qr.add_data(qr_url)
+    qr.make(fit=True)
+    return qr.make_image(fill_color="black", back_color="white")
+
+
 def main():
     """
     命令行入口
@@ -152,6 +171,7 @@ def main():
         "output_path": "...",
         "watermark_text": "...",
         "qr_url": "...",
+        "qr_image_url": "...",
         "position": "center"
     }
     """
@@ -167,6 +187,7 @@ def main():
         output_path = params.get('output_path')
         watermark_text = params.get('watermark_text', 'AI全家福制作\n扫码去水印')
         qr_url = params.get('qr_url', 'https://your-domain.com/pay')
+        qr_image_url = params.get('qr_image_url')  # 新增：自定义二维码图片URL
         position = params.get('position', 'center')
         
         if not image_path:
@@ -175,7 +196,7 @@ def main():
                 'message': '缺少必需参数: image_path'
             }
         else:
-            result = add_watermark(image_path, output_path, watermark_text, qr_url, position)
+            result = add_watermark(image_path, output_path, watermark_text, qr_url, qr_image_url, position)
         
         # 输出JSON结果
         print(json.dumps(result, ensure_ascii=False))

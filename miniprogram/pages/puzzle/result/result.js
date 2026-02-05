@@ -27,6 +27,7 @@ Page({
     showProductModal: false,
     showPaymentModal: false,
     isSaving: false,
+    serverWatermarkApplied: false, // 服务端是否已应用水印
     // Live Photo 相关
     hasLivePhoto: false,
     isPlayingLivePhoto: false,
@@ -568,7 +569,7 @@ Page({
   },
 
   async doSaveImage() {
-    const { selectedImage, generationId, hasEverPaid } = this.data;
+    const { selectedImage, hasEverPaid } = this.data;
     
     this.setData({ isSaving: true });
     
@@ -577,6 +578,7 @@ Page({
       
       console.log('[PuzzleResult] 开始下载图片:', selectedImage);
       
+      // 下载图片到本地
       const downloadRes = await new Promise((resolve, reject) => {
         wx.downloadFile({ url: selectedImage, success: resolve, fail: reject });
       });
@@ -585,9 +587,7 @@ Page({
       
       if (downloadRes.statusCode !== 200) throw new Error('下载图片失败');
       
-      // 处理临时文件路径：去掉 http:// 协议头
-      // 微信返回的临时文件路径可能是 http://tmp/ 格式
-      // saveImageToPhotosAlbum 需要去掉协议头
+      // 处理临时文件路径
       let tempFilePath = downloadRes.tempFilePath;
       if (tempFilePath.startsWith('http://tmp/')) {
         tempFilePath = tempFilePath.replace('http://', '');
@@ -597,16 +597,25 @@ Page({
       
       let finalImagePath = tempFilePath;
       
-      // 免费用户添加水印
+      // 前端降级方案：免费用户且服务端水印失败时，前端静默添加水印
       if (!hasEverPaid) {
         try {
-          wx.showLoading({ title: '添加水印中...', mask: true });
-          const { addWatermark } = require('../../../utils/watermark');
-          finalImagePath = await addWatermark(tempFilePath, '团圆照相馆');
-          console.log('[PuzzleResult] 水印添加成功');
+          // 检测图片是否已有水印
+          const hasWatermarkFlag = selectedImage.includes('watermark=true') || 
+                                   selectedImage.includes('_wm.') ||
+                                   this.data.serverWatermarkApplied;
+          
+          if (!hasWatermarkFlag) {
+            console.log('[PuzzleResult] 检测到服务端水印可能失败，启用前端降级方案');
+            const { addWatermark } = require('../../../utils/watermark');
+            finalImagePath = await addWatermark(tempFilePath, '团圆照相馆');
+            console.log('[PuzzleResult] 前端水印添加成功（降级方案）');
+          } else {
+            console.log('[PuzzleResult] 服务端水印已应用，跳过前端处理');
+          }
         } catch (watermarkErr) {
-          console.error('[PuzzleResult] 水印添加失败，使用原图:', watermarkErr);
-          // 水印添加失败不影响保存，继续使用原图
+          console.error('[PuzzleResult] 前端水印添加失败，使用原图:', watermarkErr);
+          // 降级方案失败也不影响保存
         }
       }
       

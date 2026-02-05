@@ -15,6 +15,7 @@ const { videoAPI } = require('../../../utils/api');
 const cloudbasePayment = require('../../../utils/cloudbase-payment');
 const { initNavigation } = require('../../../utils/navigation-helper');
 const { getAssetUrl } = require('../../../utils/oss-assets');
+const saveImageHelper = require('../../../utils/saveImageHelper');
 
 Page({
   data: {
@@ -28,6 +29,10 @@ Page({
     showProductModal: false,
     showPaymentModal: false,
     isSaving: false,
+    hasSavedFreeVersion: false, // 是否已保存过免费版本
+    savedStateKey: '', // 用于存储状态的key
+    isSharedView: false, // 是否是分享视图
+    serverWatermarkApplied: false, // 服务端是否已应用水印（从API响应中获取）
     // Live Photo 相关
     hasLivePhoto: false,
     isPlayingLivePhoto: false,
@@ -56,6 +61,11 @@ Page({
   onLoad(options) {
     const app = getApp();
     const paymentStatus = wx.getStorageSync('paymentStatus') || 'free';
+    const hasEverPaid = wx.getStorageSync('hasEverPaid') || false;
+    const generationId = options.generationId || Date.now().toString();
+    
+    // 使用工具函数恢复保存状态
+    const hasSavedFreeVersion = saveImageHelper.getSaveState(generationId);
     
     initNavigation(this);
     
@@ -63,13 +73,21 @@ Page({
       isElderMode: app.globalData.isElderMode,
       isPremiumUser: paymentStatus === 'premium' || paymentStatus === 'basic',
       paymentStatus: paymentStatus,
+      hasEverPaid: hasEverPaid,
       hasLivePhoto: options.hasLivePhoto === 'true',
-      generationId: options.generationId || Date.now().toString()
+      generationId: generationId,
+      hasSavedFreeVersion: hasSavedFreeVersion,
+      savedStateKey: saveImageHelper.getSaveStateKey(generationId)
     });
     
     // 检查是否从分享进入
     if (options.shareId && options.from === 'share') {
       console.log('[TransformResult] 从分享进入，shareId:', options.shareId);
+      // 分享视图不显示保存按钮状态
+      this.setData({ 
+        isSharedView: true,
+        hasSavedFreeVersion: false // 重置状态，避免污染
+      });
       this.loadSharedResult(options.shareId);
       return;
     }
@@ -116,13 +134,20 @@ Page({
   async onShow() {
     const app = getApp();
     const paymentStatus = wx.getStorageSync('paymentStatus') || 'free';
+    const hasEverPaid = wx.getStorageSync('hasEverPaid') || false;
     
     console.log('[TransformResult] onShow 触发');
+    
+    // 使用工具函数恢复保存状态
+    const generationId = this.data.generationId;
+    const hasSavedFreeVersion = generationId ? saveImageHelper.getSaveState(generationId) : false;
     
     this.setData({
       isElderMode: app.globalData.isElderMode,
       isPremiumUser: paymentStatus === 'premium' || paymentStatus === 'basic',
-      paymentStatus: paymentStatus
+      paymentStatus: paymentStatus,
+      hasEverPaid: hasEverPaid,
+      hasSavedFreeVersion: hasEverPaid ? false : hasSavedFreeVersion // 已付费用户重置状态
     });
     
     // 只在非首次显示时刷新使用次数（首次显示已在onLoad中加载）
@@ -257,6 +282,9 @@ Page({
       clearInterval(this.videoPollingTimer);
       this.videoPollingTimer = null;
     }
+    
+    // 使用工具函数清理过期的保存状态
+    saveImageHelper.cleanupExpiredSaveStates();
   },
 
   /**
@@ -600,37 +628,19 @@ Page({
   /**
    * 保存图片到相册
    * Requirements: 8.1
-   * 免费用户（从未付费）保存时弹出套餐选择
+   * 免费用户（从未付费）首次保存免费版本，再次点击弹出套餐选择
    */
   async handleSaveImage() {
-    const { selectedImage, isSaving, hasEverPaid } = this.data;
+    const result = saveImageHelper.handleSaveImageLogic(this.data, 'TransformResult');
     
-    console.log('[TransformResult] handleSaveImage 被调用:', {
-      selectedImage: !!selectedImage,
-      isSaving,
-      hasEverPaid,
-      showPaymentModal: this.data.showPaymentModal
-    });
-    
-    if (!selectedImage || isSaving) {
-      console.log('[TransformResult] 返回：selectedImage=', !!selectedImage, 'isSaving=', isSaving);
+    if (result.shouldShowPayment) {
+      this.setData({ showPaymentModal: true });
       return;
     }
     
-    // 免费用户（从未付费）显示支付弹窗
-    if (!hasEverPaid) {
-      console.log('[TransformResult] 用户从未付费，显示支付弹窗');
-      this.setData({ 
-        showPaymentModal: true 
-      }, () => {
-        console.log('[TransformResult] setData 回调，showPaymentModal:', this.data.showPaymentModal);
-      });
-      return;
+    if (result.shouldSave) {
+      await this.doSaveImage();
     }
-    
-    // 已付费，直接保存
-    console.log('[TransformResult] 用户已付费，开始保存');
-    await this.doSaveImage();
   },
 
   /**
@@ -646,9 +656,11 @@ Page({
 
   /**
    * 执行保存图片
+   * 服务端应该根据用户付费状态返回对应版本（免费=带水印，付费=无水印）
+   * 前端作为降级方案：如果检测到免费用户但图片无水印，则前端静默添加
    */
   async doSaveImage() {
-    const { selectedImage, generationId, hasEverPaid } = this.data;
+    const { selectedImage, hasEverPaid } = this.data;
     
     this.setData({ isSaving: true });
     
@@ -672,9 +684,7 @@ Page({
         throw new Error('下载图片失败');
       }
       
-      // 处理临时文件路径：去掉 http:// 协议头
-      // 微信返回的临时文件路径可能是 http://tmp/ 格式
-      // saveImageToPhotosAlbum 需要去掉协议头
+      // 处理临时文件路径
       let tempFilePath = downloadRes.tempFilePath;
       if (tempFilePath.startsWith('http://tmp/')) {
         tempFilePath = tempFilePath.replace('http://', '');
@@ -684,16 +694,25 @@ Page({
       
       let finalImagePath = tempFilePath;
       
-      // 免费用户添加水印
+      // 前端降级方案：免费用户且服务端水印失败时，前端静默添加水印
       if (!hasEverPaid) {
         try {
-          wx.showLoading({ title: '添加水印中...', mask: true });
-          const { addWatermark } = require('../../../utils/watermark');
-          finalImagePath = await addWatermark(downloadRes.tempFilePath, '团圆照相馆');
-          console.log('[TransformResult] 水印添加成功');
+          // 检测图片是否已有水印（通过URL参数或其他标识）
+          const hasWatermarkFlag = selectedImage.includes('watermark=true') || 
+                                   selectedImage.includes('_wm.') ||
+                                   this.data.serverWatermarkApplied;
+          
+          if (!hasWatermarkFlag) {
+            console.log('[TransformResult] 检测到服务端水印可能失败，启用前端降级方案');
+            const { addWatermark } = require('../../../utils/watermark');
+            finalImagePath = await addWatermark(tempFilePath, '团圆照相馆');
+            console.log('[TransformResult] 前端水印添加成功（降级方案）');
+          } else {
+            console.log('[TransformResult] 服务端水印已应用，跳过前端处理');
+          }
         } catch (watermarkErr) {
-          console.error('[TransformResult] 水印添加失败，使用原图:', watermarkErr);
-          // 水印添加失败不影响保存，继续使用原图
+          console.error('[TransformResult] 前端水印添加失败，使用原图:', watermarkErr);
+          // 降级方案失败也不影响保存，继续使用原图
         }
       }
       
@@ -707,6 +726,18 @@ Page({
               title: '保存成功',
               icon: 'success'
             });
+            
+            // 使用工具函数处理保存成功后的逻辑
+            const needUpdate = saveImageHelper.handleSaveSuccess(
+              this.data.hasEverPaid, 
+              this.data.hasSavedFreeVersion, 
+              this.data.generationId
+            );
+            
+            if (needUpdate) {
+              this.setData({ hasSavedFreeVersion: true });
+            }
+            
             resolve();
           },
           fail: reject
@@ -758,18 +789,24 @@ Page({
     // 更新付费状态
     const newPaymentStatus = packageType;
     wx.setStorageSync('paymentStatus', newPaymentStatus);
+    wx.setStorageSync('hasEverPaid', true);
+    
+    // 使用工具函数清除免费版本保存状态
+    const generationId = this.data.generationId;
+    if (generationId) {
+      saveImageHelper.clearSaveState(generationId);
+      console.log('[TransformResult] 已清除免费版本保存状态');
+    }
     
     this.setData({
       showPaymentModal: false,
       paymentStatus: newPaymentStatus,
       isPremiumUser: newPaymentStatus === 'premium' || newPaymentStatus === 'basic',
-      hasEverPaid: true // 付费后立即更新状态
+      hasEverPaid: true,
+      hasSavedFreeVersion: false // 重置状态
     });
     
-    // 缓存到本地存储
-    wx.setStorageSync('hasEverPaid', true);
-    
-    // 支付/选择完成后自动保存图片
+    // 支付/选择完成后自动保存高清图片
     setTimeout(() => {
       this.doSaveImage();
     }, 500);

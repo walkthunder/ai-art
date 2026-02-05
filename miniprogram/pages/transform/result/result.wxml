@@ -113,15 +113,17 @@
         <view class="btn-shine"></view>
       </view>
       
-      <!-- 自己的作品：保存图片 -->
+      <!-- 自己的作品：保存图片 / 高清下载 -->
       <view 
         wx:if="{{!isSharedView}}"
-        class="action-btn save-btn {{isSaving ? 'loading' : ''}}"
+        class="action-btn save-btn {{isSaving ? 'loading' : ''}} {{!hasEverPaid && hasSavedFreeVersion ? 'hd-download' : ''}}"
         bindtap="handleSaveImage"
       >
-        <view class="btn-inner gold">
-          <text class="btn-icon">📥</text>
-          <text class="btn-text">{{isSaving ? '保存中...' : '保存至相册'}}</text>
+        <view class="btn-inner {{!hasEverPaid && hasSavedFreeVersion ? 'premium-gold' : 'gold'}}">
+          <text class="btn-icon">{{!hasEverPaid && hasSavedFreeVersion ? '💎' : '📥'}}</text>
+          <text class="btn-text">{{isSaving ? '保存中...' : (!hasEverPaid && hasSavedFreeVersion ? '高清下载' : '保存至相册')}}</text>
+          <!-- 高清下载提示标签 -->
+          <text class="hd-tag" wx:if="{{!hasEverPaid && hasSavedFreeVersion}}">无水印</text>
         </view>
         <view class="btn-shine"></view>
       </view>

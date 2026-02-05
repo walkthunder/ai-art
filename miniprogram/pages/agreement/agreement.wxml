@@ -28,13 +28,13 @@
       <view class="update-time">更新日期：2026年2月5日</view>
       
       <view class="section">
-        <text class="section-title">欢迎使用AI全家福·团圆照相馆</text>
+        <text class="section-title">欢迎使用{{appName}}</text>
         <text class="section-text">在使用本服务前，请您仔细阅读并充分理解本协议。您使用本服务即表示您已阅读、理解并同意接受本协议的全部内容。</text>
       </view>
       
       <view class="section">
         <text class="section-title">一、服务说明</text>
-        <text class="section-text">AI全家福·团圆照相馆（以下简称"本服务"）是一款基于人工智能技术的照片生成服务，为用户提供：</text>
+        <text class="section-text">{{appName}}（以下简称"本服务"）是一款基于人工智能技术的照片生成服务，为用户提供：</text>
         <view class="list-item">
           <text class="bullet">•</text>
           <text class="list-text">时空拼图：将多张照片合成为全家福</text>

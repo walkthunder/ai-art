@@ -14,6 +14,7 @@ export default defineConfig({
   },
   server: {
     port: 3002,
+    open: true, // 自动打开浏览器
     proxy: {
       '/admin-api': {
         target: BACKEND_URL,

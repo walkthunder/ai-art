@@ -3,13 +3,16 @@
  */
 
 const { initNavigation } = require('../../utils/navigation-helper');
+const appConfig = require('../../config/app');
 
 Page({
   data: {
     isElderMode: false,
     statusBarHeight: 0,
     navBarHeight: 44,
-    menuRight: 0
+    menuRight: 0,
+    appName: appConfig.getAppName(),
+    companyName: appConfig.legal.companyName
   },
 
   onLoad() {

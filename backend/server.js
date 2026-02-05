@@ -23,8 +23,8 @@ const { executeArtPhotoTask } = require('./services/artPhotoWorker');
 const { generateArtPhotoInternal } = require('./services/volcengineService');
 
 const app = express();
-// 从环境变量读取端口，默认 3002
-const PORT = process.env.PORT || 3002;
+// 从环境变量读取端口，云托管默认 3000
+const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(cors());
@@ -43,7 +43,7 @@ app.get('/health', (req, res) => {
 registerRoutes(app);
 
 // 启动服务器
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n========================================`);
   console.log(`🚀 AI全家福服务器运行在端口 ${PORT}`);
   console.log(`========================================\n`);

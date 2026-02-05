@@ -12,6 +12,7 @@
 
 // 导入 API 配置
 const { API_BASE_URL, CLOUDBASE_CONFIG, currentConfig } = require('./config/api');
+const appConfig = require('./config/app');
 
 // CloudBase 配置
 const CLOUDBASE_ENV_ID = CLOUDBASE_CONFIG.env; // 云开发环境 ID
@@ -32,6 +33,7 @@ App({
     usageCount: 0,       // 剩余使用次数
     userType: 'free',     // 用户类型 ('free' | 'paid')
     apiBaseUrl: API_BASE_URL, // API基础URL（从配置文件读取）
+    appConfig: null,     // 应用配置（从服务器加载）
     // 导航栏相关
     statusBarHeight: 0,  // 状态栏高度
     navBarHeight: 0,     // 导航栏高度
@@ -62,9 +64,26 @@ App({
     // 初始化开发者模式
     this.initDevMode();
     
+    // 加载应用配置
+    this.loadAppConfig();
+    
     // 初始化云开发并自动登录（顺序执行）
     // 保存 Promise 供页面等待
     this.globalData.loginPromise = this.initAndLogin();
+  },
+  
+  /**
+   * 加载应用配置
+   */
+  async loadAppConfig() {
+    try {
+      console.log('[App] 开始加载应用配置...');
+      const config = await appConfig.loadConfig();
+      this.globalData.appConfig = config;
+      console.log('[App] 应用配置加载成功:', config.app?.name);
+    } catch (error) {
+      console.error('[App] 加载应用配置失败:', error);
+    }
   },
 
   /**

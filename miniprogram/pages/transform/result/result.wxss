@@ -291,6 +291,18 @@
   margin-left: 8rpx;
 }
 
+/* 高清下载标签 */
+.hd-tag {
+  font-size: 20rpx;
+  color: #8B0000;
+  background: #FFFFFF;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  margin-left: 8rpx;
+  font-weight: bold;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
 /* 返回首页按钮 */
 .btn-inner.blue {
   background: linear-gradient(135deg, #3B82F6, #2563EB);
@@ -388,6 +400,19 @@
 .btn-inner.gold {
   background: linear-gradient(135deg, var(--color-festival-gold), #D4AF37);
   border: 2rpx solid rgba(255, 215, 0, 0.3);
+}
+
+/* 高清下载按钮 - 升级样式 */
+.btn-inner.premium-gold {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border: 4rpx solid #FF6B6B;
+  box-shadow: 0 8rpx 24rpx rgba(255, 215, 0, 0.4);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.btn-inner.premium-gold .btn-text {
+  color: #8B0000;
+  font-weight: bold;
 }
 
 /* 制作同款按钮 - 主CTA样式 */
