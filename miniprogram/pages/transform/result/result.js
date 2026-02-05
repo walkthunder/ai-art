@@ -51,6 +51,8 @@ Page({
     usageModalType: '',
     usageCount: 0,
     pictureFrameUrl: getAssetUrl('picture-frame.png'),
+    downloadBtnBg: getAssetUrl('download-btn.png'),
+    shareBtnBg: getAssetUrl('share-btn.png'),
   },
 
   // 视频轮询定时器

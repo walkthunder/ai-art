@@ -352,7 +352,7 @@
 
 /* 功能按钮区 */
 .action-section {
-  padding: 16rpx 32rpx 48rpx;
+  padding: 60rpx 32rpx 48rpx;
   padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
   width: 100%;
   display: flex;
@@ -367,6 +367,17 @@
   height: 96rpx;
   border-radius: 48rpx;
   overflow: hidden;
+}
+
+/* 按钮背景图 */
+.btn-bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .action-btn.save-btn {
@@ -385,6 +396,8 @@
 }
 
 .btn-inner {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   display: flex;
@@ -484,6 +497,7 @@
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   animation: shine 2s ease-in-out infinite;
+  z-index: 2;
 }
 
 @keyframes shine {

@@ -119,6 +119,7 @@
         class="action-btn save-btn {{isSaving ? 'loading' : ''}} {{!hasEverPaid && hasSavedFreeVersion ? 'hd-download' : ''}}"
         bindtap="handleSaveImage"
       >
+        <image class="btn-bg-image" src="{{downloadBtnBg}}" mode="aspectFill" />
         <view class="btn-inner {{!hasEverPaid && hasSavedFreeVersion ? 'premium-gold' : 'gold'}}">
           <text class="btn-icon">{{!hasEverPaid && hasSavedFreeVersion ? '💎' : '📥'}}</text>
           <text class="btn-text">{{isSaving ? '保存中...' : (!hasEverPaid && hasSavedFreeVersion ? '高清下载' : '保存至相册')}}</text>
@@ -162,6 +163,7 @@
         class="action-btn share-btn"
         open-type="share"
       >
+        <image class="btn-bg-image" src="{{shareBtnBg}}" mode="aspectFill" />
         <view class="btn-inner transparent">
           <text class="btn-icon">👨‍👩‍👧‍👦</text>
           <text class="btn-text">分享家族群</text>
