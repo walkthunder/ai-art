@@ -149,15 +149,16 @@ async function fetchPricesFromAPI() {
       const apiPrices = response.data.data;
       
       // 转换API返回的价格格式
+      // API 返回格式: { free: 0, basic: 9.9, premium: 29.9 }
       const packages = {
         basic: {
-          name: '0.01元尝鲜包',
-          amount: Math.round((apiPrices.packages?.basic || 0.01) * 100),
+          name: '尝鲜包',
+          amount: Math.round((apiPrices.basic !== undefined ? apiPrices.basic : 0.01) * 100),
           description: 'AI全家福-尝鲜包'
         },
         premium: {
-          name: '29.9元尊享包',
-          amount: Math.round((apiPrices.packages?.premium || 29.9) * 100),
+          name: '尊享包',
+          amount: Math.round((apiPrices.premium !== undefined ? apiPrices.premium : 29.9) * 100),
           description: 'AI全家福-尊享包'
         }
       };

@@ -27,40 +27,65 @@ async function getAllPriceConfigs() {
 /**
  * 获取当前生效的价格配置
  * @param {boolean} useCache - 是否使用缓存（默认true）
+ * @param {boolean} includeDetails - 是否包含详细信息（充值次数等）
  */
-async function getCurrentPrices(useCache = true) {
+async function getCurrentPrices(useCache = true, includeDetails = false) {
   // 简单的内存缓存，5分钟过期
-  if (useCache && priceCache.data && Date.now() - priceCache.timestamp < 5 * 60 * 1000) {
-    return priceCache.data;
+  const cacheKey = includeDetails ? 'detailed' : 'simple';
+  if (useCache && priceCache[cacheKey] && Date.now() - priceCache.timestamp < 5 * 60 * 1000) {
+    return priceCache[cacheKey];
   }
   
   const connection = await db.pool.getConnection();
   try {
     const [rows] = await connection.execute(
-      `SELECT code, name, price, category, effective_date 
+      `SELECT code, name, price, recharge_amount, category, effective_date 
        FROM price_configs 
        WHERE status = 'active' 
          AND effective_date <= NOW()
        ORDER BY code, effective_date DESC`
     );
     
-    // 转换为兼容旧格式的对象 { free: 0, basic: 9.9, premium: 29.9 }
-    const priceMap = {};
-    rows.forEach(row => {
-      // 提取套餐类型：free_package -> free
-      if (row.category === 'package') {
-        const packageType = row.code.replace('_package', '');
-        if (!priceMap[packageType]) {
-          priceMap[packageType] = parseFloat(row.price);
+    if (includeDetails) {
+      // 返回详细信息格式 { free: { price: 0, rechargeAmount: 0 }, basic: { price: 9.9, rechargeAmount: 10 }, ... }
+      const detailMap = {};
+      rows.forEach(row => {
+        if (row.category === 'package') {
+          const packageType = row.code.replace('_package', '');
+          if (!detailMap[packageType]) {
+            detailMap[packageType] = {
+              price: parseFloat(row.price),
+              rechargeAmount: row.recharge_amount || 0,
+              name: row.name
+            };
+          }
         }
-      }
-    });
-    
-    // 更新缓存
-    priceCache.data = priceMap;
-    priceCache.timestamp = Date.now();
-    
-    return priceMap;
+      });
+      
+      // 更新缓存
+      priceCache.detailed = detailMap;
+      priceCache.timestamp = Date.now();
+      
+      return detailMap;
+    } else {
+      // 转换为兼容旧格式的对象 { free: 0, basic: 9.9, premium: 29.9 }
+      const priceMap = {};
+      rows.forEach(row => {
+        // 提取套餐类型：free_package -> free
+        if (row.category === 'package') {
+          const packageType = row.code.replace('_package', '');
+          if (!priceMap[packageType]) {
+            priceMap[packageType] = parseFloat(row.price);
+          }
+        }
+      });
+      
+      // 更新缓存
+      priceCache.simple = priceMap;
+      priceCache.timestamp = Date.now();
+      
+      return priceMap;
+    }
   } finally {
     connection.release();
   }
@@ -298,13 +323,15 @@ async function getRechargeAmount(packageType, connection = null) {
  * 清除价格缓存
  */
 function clearPriceCache() {
-  priceCache.data = null;
+  priceCache.simple = null;
+  priceCache.detailed = null;
   priceCache.timestamp = 0;
 }
 
 // 价格缓存对象
 const priceCache = {
-  data: null,
+  simple: null,
+  detailed: null,
   timestamp: 0
 };
 

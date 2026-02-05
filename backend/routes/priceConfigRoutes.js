@@ -26,10 +26,12 @@ router.get('/', authenticate, authorize('super_admin', 'admin'), async (req, res
 /**
  * 获取当前生效的价格（公开API）
  * GET /api/prices/current
+ * Query参数: details=true 返回详细信息（包含充值次数）
  */
 router.get('/current', async (req, res) => {
   try {
-    const prices = await priceConfigService.getCurrentPrices();
+    const includeDetails = req.query.details === 'true';
+    const prices = await priceConfigService.getCurrentPrices(true, includeDetails);
     res.json({ success: true, data: prices });
   } catch (error) {
     console.error('获取当前价格失败:', error);

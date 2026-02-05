@@ -10,9 +10,12 @@
  * - cloudbaseInitialized: CloudBase 是否已初始化
  */
 
+// 导入 API 配置
+const { API_BASE_URL, CLOUDBASE_CONFIG, currentConfig } = require('./config/api');
+
 // CloudBase 配置
-const CLOUDBASE_ENV_ID = 'test-1g71tc7eb37627e2'; // 云开发环境 ID，请替换为实际值
-const CLOUDBASE_SERVICE_NAME = 'express'; // 云托管服务名称
+const CLOUDBASE_ENV_ID = CLOUDBASE_CONFIG.env; // 云开发环境 ID
+const CLOUDBASE_SERVICE_NAME = CLOUDBASE_CONFIG.serviceName; // 云托管服务名称
 
 App({
   /**
@@ -24,11 +27,11 @@ App({
     userId: '',          // 用户ID
     openid: '',          // 微信openid
     isElderMode: false,  // 老年模式
-    useCloudBase: true,  // 使用云托管
+    useCloudBase: !currentConfig.useLocalServer,  // 使用云托管（根据环境配置）
     cloudbaseInitialized: false, // CloudBase 是否已初始化
     usageCount: 0,       // 剩余使用次数
     userType: 'free',     // 用户类型 ('free' | 'paid')
-    apiBaseUrl: 'https://your-api-domain.com', // API基础URL，请替换为实际值
+    apiBaseUrl: API_BASE_URL, // API基础URL（从配置文件读取）
     // 导航栏相关
     statusBarHeight: 0,  // 状态栏高度
     navBarHeight: 0,     // 导航栏高度

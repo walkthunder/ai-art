@@ -28,7 +28,7 @@
 .invite-content {
   position: relative;
   z-index: 10;
-  padding: 24rpx 32rpx;
+  padding: 24rpx 0rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }
 

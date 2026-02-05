@@ -12,61 +12,124 @@
       <view class="modal-desc">您的免费次数仅剩 {{usageCount}} 次</view>
       
       <view class="modal-benefits">
-        <view class="benefits-title">付费套餐优势：</view>
-        <view class="benefit-item">
-          <text class="benefit-icon">✓</text>
-          <text class="benefit-text">无水印 - 高清原图下载</text>
+        <view class="benefits-title">🎁 升级付费版，解锁更多权益</view>
+        
+        <view class="benefit-section">
+          <view class="section-title">📸 画质升级</view>
+          <view class="benefit-item">
+            <text class="benefit-icon">✓</text>
+            <text class="benefit-text">高清无水印 - 可直接保存分享</text>
+          </view>
+          <view class="benefit-item">
+            <text class="benefit-icon">✓</text>
+            <text class="benefit-text">尊享版支持 4K 超清原图</text>
+          </view>
         </view>
-        <view class="benefit-item">
-          <text class="benefit-icon">✓</text>
-          <text class="benefit-text">无广告 - 纯净使用体验</text>
+        
+        <view class="benefit-section">
+          <view class="section-title">🎯 使用次数</view>
+          <view class="benefit-item">
+            <text class="benefit-icon">✓</text>
+            <text class="benefit-text">尝鲜包 - {{packageConfig.basic.rechargeAmount}}次使用机会</text>
+          </view>
+          <view class="benefit-item">
+            <text class="benefit-icon">✓</text>
+            <text class="benefit-text">尊享包 - {{packageConfig.premium.rechargeAmount}}次使用机会</text>
+          </view>
         </view>
-        <view class="benefit-item">
-          <text class="benefit-icon">✓</text>
-          <text class="benefit-text">更多次数 - 体验版+5次，尊享版+20次</text>
-        </view>
-        <view class="benefit-item">
-          <text class="benefit-icon">✓</text>
-          <text class="benefit-text">高清画质 - 体验版2K，尊享版4K</text>
+        
+        <view class="benefit-section">
+          <view class="section-title">✨ 专属功能</view>
+          <view class="benefit-item">
+            <text class="benefit-icon">✓</text>
+            <text class="benefit-text">无广告 - 纯净使用体验</text>
+          </view>
+          <view class="benefit-item">
+            <text class="benefit-icon">✓</text>
+            <text class="benefit-text">尊享版支持微动态、贺卡等新功能</text>
+          </view>
         </view>
       </view>
       
       <view class="modal-actions">
         <button class="btn btn-secondary" bindtap="onClose">知道了</button>
-        <button class="btn btn-primary" bindtap="onShare">邀请好友获取次数</button>
-        <button class="btn btn-primary" bindtap="onPayment">查看套餐</button>
+        <button class="btn btn-secondary" bindtap="onShare">邀请好友获次数</button>
+        <button class="btn btn-primary" bindtap="onPayment">立即升级</button>
       </view>
     </view>
 
     <!-- 免费用户次数用尽模态框（剩余 = 0次）-->
     <view wx:elif="{{modalType === 'free_exhausted'}}" class="modal-body">
-      <view class="modal-icon">🚫</view>
+      <view class="modal-icon">🎁</view>
       <view class="modal-title">免费次数已用尽</view>
-      <view class="modal-desc">您的免费次数已经用尽，请选择是否继续体验</view>
+      <view class="modal-desc">升级付费版，继续创作精彩作品</view>
+      
+      <view class="modal-packages">
+        <view class="package-item">
+          <view class="package-header">
+            <text class="package-name">🌟 尝鲜包</text>
+            <text class="package-price">¥{{packageConfig.basic.price}}</text>
+          </view>
+          <view class="package-features">
+            <text class="feature-item">• {{packageConfig.basic.rechargeAmount}}次使用机会</text>
+            <text class="feature-item">• 高清无水印</text>
+            <text class="feature-item">• 无广告体验</text>
+          </view>
+        </view>
+        
+        <view class="package-item highlight">
+          <view class="package-badge">推荐</view>
+          <view class="package-header">
+            <text class="package-name">💎 尊享包</text>
+            <text class="package-price">¥{{packageConfig.premium.price}}</text>
+          </view>
+          <view class="package-features">
+            <text class="feature-item">• {{packageConfig.premium.rechargeAmount}}次使用机会</text>
+            <text class="feature-item">• 4K超清原图</text>
+            <text class="feature-item">• 微动态、贺卡等新功能</text>
+            <text class="feature-item">• 优先处理队列</text>
+          </view>
+        </view>
+      </view>
       
       <view class="modal-actions">
-        <button class="btn btn-secondary" bindtap="onShare">邀请好友获取次数</button>
+        <button class="btn btn-secondary" bindtap="onShare">邀请好友获次数</button>
         <button class="btn btn-primary" bindtap="onPayment">选择套餐</button>
       </view>
     </view>
 
-    <!-- 付费用户续费/升级模态框（体验版）-->
+    <!-- 付费用户续费/升级模态框（尝鲜包）-->
     <view wx:elif="{{modalType === 'paid_renewal_basic'}}" class="modal-body">
       <view class="modal-icon">💎</view>
-      <view class="modal-title">次数已用完</view>
-      <view class="modal-desc">您的使用次数已用完，继续享受服务</view>
+      <view class="modal-title">使用次数已用完</view>
+      <view class="modal-desc">继续创作，选择续费或升级</view>
       
       <view class="modal-packages">
-        <view class="package-title">套餐选项：</view>
+        <view class="package-title">💡 续费或升级套餐</view>
+        
         <view class="package-item">
-          <text class="package-name">续费体验版</text>
-          <text class="package-price">¥9.9</text>
-          <text class="package-desc">再获得5次使用机会</text>
+          <view class="package-header">
+            <text class="package-name">续费尝鲜包</text>
+            <text class="package-price">¥{{packageConfig.basic.price}}</text>
+          </view>
+          <view class="package-features">
+            <text class="feature-item">• 再获得 {{packageConfig.basic.rechargeAmount}}次 使用机会</text>
+            <text class="feature-item">• 高清无水印</text>
+          </view>
         </view>
+        
         <view class="package-item highlight">
-          <text class="package-name">升级尊享版</text>
-          <text class="package-price">¥29.9</text>
-          <text class="package-desc">再获得20次使用机会</text>
+          <view class="package-badge">更划算</view>
+          <view class="package-header">
+            <text class="package-name">升级尊享包</text>
+            <text class="package-price">¥{{packageConfig.premium.price}}</text>
+          </view>
+          <view class="package-features">
+            <text class="feature-item">• 再获得 {{packageConfig.premium.rechargeAmount}}次 使用机会</text>
+            <text class="feature-item">• 4K超清原图</text>
+            <text class="feature-item">• 解锁微动态、贺卡等新功能</text>
+            <text class="feature-item">• 优先处理，更快出图</text>
+          </view>
         </view>
       </view>
       
@@ -76,24 +139,36 @@
       </view>
     </view>
 
-    <!-- 付费用户续费模态框（尊享版）-->
+    <!-- 付费用户续费模态框（尊享包）-->
     <view wx:elif="{{modalType === 'paid_renewal_premium'}}" class="modal-body">
       <view class="modal-icon">💎</view>
-      <view class="modal-title">次数已用完</view>
-      <view class="modal-desc">您的使用次数已用完，继续享受服务</view>
+      <view class="modal-title">使用次数已用完</view>
+      <view class="modal-desc">续费尊享包，继续享受顶级服务</view>
       
       <view class="modal-packages">
-        <view class="package-title">套餐选项：</view>
+        <view class="package-title">💎 尊享包续费</view>
+        
         <view class="package-item highlight">
-          <text class="package-name">续费尊享版</text>
-          <text class="package-price">¥29.9</text>
-          <text class="package-desc">再获得20次使用机会</text>
+          <view class="package-header">
+            <text class="package-name">续费尊享包</text>
+            <text class="package-price">¥{{packageConfig.premium.price}}</text>
+          </view>
+          <view class="package-features">
+            <text class="feature-item">• 再获得 {{packageConfig.premium.rechargeAmount}}次 使用机会</text>
+            <text class="feature-item">• 4K超清原图，无水印</text>
+            <text class="feature-item">• 微动态、贺卡等全功能</text>
+            <text class="feature-item">• 优先处理队列</text>
+          </view>
         </view>
+      </view>
+      
+      <view class="modal-tip">
+        <text>💡 提示：邀请好友也可获得免费次数哦</text>
       </view>
       
       <view class="modal-actions">
         <button class="btn btn-secondary" bindtap="onClose">暂不续费</button>
-        <button class="btn btn-primary" bindtap="onPayment">续费尊享版</button>
+        <button class="btn btn-primary" bindtap="onPayment">立即续费</button>
       </view>
     </view>
 

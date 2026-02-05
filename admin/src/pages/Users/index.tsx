@@ -37,7 +37,6 @@ import {
   updateUserPaymentStatus,
   exportUsers,
   type User,
-  type UserDetail,
   type UserListParams
 } from '../../services/user';
 
@@ -63,7 +62,7 @@ const UsersPage: React.FC = () => {
     paymentStatus: ''
   });
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<{ user: User; generations: Generation[]; orders: Order[] } | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
@@ -329,7 +328,7 @@ const UsersPage: React.FC = () => {
             <div style={{ marginTop: 24 }}>
               <h3>生成历史（最近10条）</h3>
               <Timeline
-                items={selectedUser.generations.map(gen => ({
+                items={selectedUser.generations.map((gen: any) => ({
                   children: (
                     <div>
                       <div>模式: {gen.mode} | 状态: {gen.status}</div>
@@ -345,7 +344,7 @@ const UsersPage: React.FC = () => {
             <div style={{ marginTop: 24 }}>
               <h3>订单记录（最近10条）</h3>
               <Timeline
-                items={selectedUser.orders.map(order => ({
+                items={selectedUser.orders.map((order: any) => ({
                   children: (
                     <div>
                       <div>

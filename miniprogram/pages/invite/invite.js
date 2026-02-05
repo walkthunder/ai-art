@@ -282,14 +282,14 @@ Page({
       return {
         title: 'AI全家福·团圆照相馆',
         path: '/pages/launch/launch',
-        imageUrl: '/assets/lantern.png'
+        imageUrl: '/assets/logo/share-icon.png'
       };
     }
     
     return {
       title: '邀请你一起使用AI全家福·团圆照相馆',
       path: `/pages/launch/launch?invite_code=${inviteCode}`,
-      imageUrl: '/assets/lantern.png'
+      imageUrl: '/assets/logo/share-icon.png'
     };
   },
 
@@ -303,14 +303,14 @@ Page({
     if (!inviteCode) {
       return {
         title: 'AI全家福·团圆照相馆',
-        imageUrl: '/assets/lantern.png'
+        imageUrl: '/assets/logo/share-icon.png'
       };
     }
     
     return {
       title: 'AI全家福·团圆照相馆 - 邀请你一起制作全家福',
       query: `invite_code=${inviteCode}`,
-      imageUrl: '/assets/lantern.png'
+      imageUrl: '/assets/logo/share-icon.png'
     };
   },
 

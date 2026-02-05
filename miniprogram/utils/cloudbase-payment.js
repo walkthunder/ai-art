@@ -82,34 +82,70 @@ const fetchPricesFromAPI = async () => {
       return priceCache;
     }
 
-    log('从API获取价格配置');
+    const apiBaseUrl = getApp().globalData.apiBaseUrl;
+    log('从API获取价格配置', apiBaseUrl);
     
-    // 调用价格查询API
-    const result = await wx.request({
-      url: `${getApp().globalData.apiBaseUrl || 'https://your-api-domain.com'}/api/prices/current`,
-      method: 'GET',
-      timeout: 5000
-    });
+    let result;
+    
+    // 判断是否使用云托管
+    if (apiBaseUrl === 'cloudbase') {
+      // 使用 CloudBase SDK 调用云托管服务
+      log('使用 CloudBase SDK 调用云托管服务');
+      const cloudbaseRequest = require('./cloudbase-request');
+      result = await cloudbaseRequest.get('/api/prices/current');
+    } else {
+      // 使用普通 HTTP 请求
+      const apiUrl = `${apiBaseUrl}/api/prices/current`;
+      log('使用 HTTP 请求', apiUrl);
+      
+      result = await new Promise((resolve, reject) => {
+        wx.request({
+          url: apiUrl,
+          method: 'GET',
+          timeout: 5000,
+          success: (res) => resolve(res),
+          fail: (err) => reject(err)
+        });
+      });
+    }
 
-    if (result.statusCode === 200 && result.data && result.data.success) {
-      const apiPrices = result.data.data;
+    log('API 响应:', result);
+
+    // CloudBase SDK 返回格式和 wx.request 不同
+    // CloudBase SDK 直接返回 {success: true, data: {...}}
+    // wx.request 返回 {statusCode: 200, data: {success: true, data: {...}}}
+    let responseData, statusCode;
+    
+    if (apiBaseUrl === 'cloudbase') {
+      // CloudBase SDK 返回格式
+      responseData = result;
+      statusCode = result.success ? 200 : 500;
+    } else {
+      // wx.request 返回格式
+      responseData = result.data;
+      statusCode = result.statusCode;
+    }
+
+    if (statusCode === 200 && responseData && responseData.success) {
+      const apiPrices = responseData.data;
       
       // 转换API返回的价格格式为本地格式
+      // API 返回格式: { free: 0, basic: 9.9, premium: 29.9 }
       const packages = {
         free: {
           ...FALLBACK_PACKAGES.free,
-          price: apiPrices.packages?.free || 0,
-          amount: (apiPrices.packages?.free || 0) * 100
+          price: apiPrices.free !== undefined ? apiPrices.free : 0,
+          amount: (apiPrices.free !== undefined ? apiPrices.free : 0) * 100
         },
         basic: {
           ...FALLBACK_PACKAGES.basic,
-          price: apiPrices.packages?.basic || 0.01,
-          amount: Math.round((apiPrices.packages?.basic || 0.01) * 100)
+          price: apiPrices.basic !== undefined ? apiPrices.basic : 0.01,
+          amount: Math.round((apiPrices.basic !== undefined ? apiPrices.basic : 0.01) * 100)
         },
         premium: {
           ...FALLBACK_PACKAGES.premium,
-          price: apiPrices.packages?.premium || 29.9,
-          amount: Math.round((apiPrices.packages?.premium || 29.9) * 100)
+          price: apiPrices.premium !== undefined ? apiPrices.premium : 29.9,
+          amount: Math.round((apiPrices.premium !== undefined ? apiPrices.premium : 29.9) * 100)
         }
       };
 

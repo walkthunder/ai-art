@@ -16,7 +16,6 @@ import {
   Statistic,
   Row,
   Col,
-  Tabs
 } from 'antd';
 import {
   SearchOutlined,
@@ -24,8 +23,6 @@ import {
   ExportOutlined,
   DollarOutlined,
   ShoppingOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -580,7 +577,7 @@ const Orders: React.FC = () => {
 
         {/* 订单表格 */}
         <Table
-          columns={getColumns()}
+          columns={getColumns() as any}
           dataSource={orders}
           rowKey="id"
           loading={loading}

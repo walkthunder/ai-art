@@ -63,11 +63,11 @@
       </view>
 
       <!-- 隐私协议勾选（仅付费套餐显示） -->
-      <view wx:if="{{selectedPackage !== 'free'}}" class="privacy-agreement">
+      <view wx:if="{{selectedPackage !== 'free'}}" class="payment-notice">
         <checkbox-group bindchange="onPrivacyChange">
           <label class="privacy-label">
             <checkbox value="agreed" checked="{{privacyAgreed}}" color="#DC143C" />
-            <text class="privacy-text">我已阅读并同意</text>
+            <text class="privacy-text">支付即表示同意</text>
             <text class="privacy-link" bindtap="viewAgreement">《用户协议》</text>
             <text class="privacy-text">和</text>
             <text class="privacy-link" bindtap="viewPrivacy">《隐私政策》</text>
@@ -105,11 +105,7 @@
         disabled="{{isPaying}}"
       >取消</button>
       
-      <!-- 支付说明 -->
-      <view class="payment-notice">
-        <text>支付即表示同意《用户协议》和《隐私政策》</text>
-        <text wx:if="{{orderId}}" class="order-id">订单号: {{orderId}}</text>
-      </view>
+
       
       <!-- 安全标识 -->
       <view class="security-badge">

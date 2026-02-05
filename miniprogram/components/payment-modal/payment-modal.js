@@ -46,9 +46,9 @@ Component({
   data: {
     // 选中的套餐
     selectedPackage: 'free',
-    // 套餐列表 - 从 cloudbase-payment 模块获取
+    // 套餐列表 - 从 API 动态获取
     packages: [],
-    allPackages: Object.values(cloudbasePayment.FALLBACK_PACKAGES),
+    allPackages: [],
     // 支付状态
     isPaying: false,
     paymentStatus: 'idle', // idle, processing, success, failed
@@ -56,15 +56,27 @@ Component({
     outTradeNo: null,
     // 是否免费次数已用尽
     isFreeExhausted: false,
-    // 隐私协议勾选状态
-    privacyAgreed: false
+    // 隐私协议勾选状态（默认勾选）
+    privacyAgreed: true,
+    // 价格加载状态
+    isPriceLoading: true
+  },
+
+  lifetimes: {
+    attached() {
+      // 组件加载时获取最新价格
+      this.loadPrices();
+    }
   },
 
   observers: {
     'visible': function(visible) {
       if (visible) {
         console.log('[PaymentModal] visible changed to true, currentPaymentStatus:', this.data.currentPaymentStatus);
-        this.filterPackages(this.data.currentPaymentStatus);
+        // 弹窗打开时重新加载价格（确保最新）
+        this.loadPrices().then(() => {
+          this.filterPackages(this.data.currentPaymentStatus);
+        });
       }
     },
     'currentPaymentStatus': function(currentPaymentStatus) {
@@ -76,12 +88,44 @@ Component({
   },
   
   methods: {
+    // 加载最新价格
+    async loadPrices() {
+      console.log('[PaymentModal] 开始加载价格...');
+      this.setData({ isPriceLoading: true });
+      
+      try {
+        // 从 API 获取最新价格
+        const packages = await cloudbasePayment.getAllPackages();
+        const allPackages = Object.values(packages);
+        
+        console.log('[PaymentModal] 价格加载成功:', allPackages);
+        
+        this.setData({
+          allPackages: allPackages,
+          isPriceLoading: false
+        });
+        
+        return allPackages;
+      } catch (error) {
+        console.error('[PaymentModal] 价格加载失败，使用降级方案:', error);
+        
+        // 降级方案：使用硬编码价格
+        const fallbackPackages = Object.values(cloudbasePayment.FALLBACK_PACKAGES);
+        this.setData({
+          allPackages: fallbackPackages,
+          isPriceLoading: false
+        });
+        
+        return fallbackPackages;
+      }
+    },
+    
     // 根据当前付费状态过滤可选套餐
     filterPackages(currentStatus) {
       console.log('[PaymentModal] filterPackages called with currentStatus:', currentStatus, 'usageCount:', this.data.usageCount);
       
       const currentLevel = PACKAGE_LEVEL[currentStatus] || 0;
-      const allPackages = Object.values(cloudbasePayment.FALLBACK_PACKAGES);
+      const allPackages = this.data.allPackages;
       
       console.log('[PaymentModal] currentLevel:', currentLevel, 'allPackages count:', allPackages.length);
       
@@ -118,7 +162,7 @@ Component({
         isFreeExhausted: isFreeExhausted,
         paymentStatus: 'idle',
         error: null,
-        privacyAgreed: false // 重置隐私协议勾选状态
+        privacyAgreed: true // 默认勾选隐私协议
       });
     },
 
@@ -159,8 +203,14 @@ Component({
     
     // 隐私协议勾选变化
     onPrivacyChange(e) {
+      // checkbox-group 返回的是选中的 value 数组
+      const values = e.detail.value;
+      const isAgreed = values.includes('agreed');
+      
+      console.log('[PaymentModal] onPrivacyChange:', values, 'isAgreed:', isAgreed);
+      
       this.setData({
-        privacyAgreed: e.detail.value
+        privacyAgreed: isAgreed
       });
     },
 
