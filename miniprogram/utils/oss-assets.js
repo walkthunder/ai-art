@@ -1,7 +1,7 @@
 /**
  * 小程序静态资源 OSS URL 映射
  * 自动生成，请勿手动修改
- * 生成时间: 2026-02-05T11:28:46.834Z
+ * 生成时间: 2026-02-05T11:59:04.689Z
  */
 
 const OSS_ASSETS = {
@@ -40,14 +40,20 @@ const OSS_ASSETS = {
   "logo/logo-header.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-header.png",
   "logo/logo-small.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/logo-small.png",
   "logo/share-icon.png": "https://wms.webinfra.cloud/miniprogram-assets/logo/share-icon.png",
-  "bg/button-bg.png": "https://wms.webinfra.cloud/miniprogram-assets/bg/button-bg.png",
   "bg/puzzle-bg.jpg": "https://wms.webinfra.cloud/miniprogram-assets/bg/puzzle-bg.jpg",
   "picture-frame.png": "https://wms.webinfra.cloud/miniprogram-assets/picture-frame.png?v=1738714400",
   "bg/puzzle-upload-bg.jpg": "https://wms.webinfra.cloud/miniprogram-assets/bg/puzzle-upload-bg.jpg?v=1738747749",
   "puzzle-upload.png": "https://wms.webinfra.cloud/miniprogram-assets/puzzle-upload.png?v=1738748400",
   "bg/puzzle-result-bg.jpg": "https://wms.webinfra.cloud/miniprogram-assets/bg/puzzle-result-bg.jpg?v=1738750000",
   "download-btn.png": "https://wms.webinfra.cloud/miniprogram-assets/download-btn.png?v=1738751326",
-  "share-btn.png": "https://wms.webinfra.cloud/miniprogram-assets/share-btn.png?v=1738751326"
+  "share-btn.png": "https://wms.webinfra.cloud/miniprogram-assets/share-btn.png?v=1738751326",
+  "bg/button-bg.png": "https://wms.webinfra.cloud/miniprogram-assets/bg/button-bg.png",
+  "gray-button.png": "https://wms.webinfra.cloud/miniprogram-assets/gray-button.png?v=1738752708",
+  "purple-button.png": "https://wms.webinfra.cloud/miniprogram-assets/purple-button.png?v=1738752708",
+  "red-button-2.png": "https://wms.webinfra.cloud/miniprogram-assets/red-button-2.png?v=1738752708",
+  "red-button.png": "https://wms.webinfra.cloud/miniprogram-assets/red-button.png?v=1738752708",
+  "yellow-button.png": "https://wms.webinfra.cloud/miniprogram-assets/yellow-button.png?v=1738752708",
+  "bg/transform-result-bg.jpg": "https://wms.webinfra.cloud/miniprogram-assets/bg/transform-result-bg.jpg?v=1738753080"
 };
 
 /**
