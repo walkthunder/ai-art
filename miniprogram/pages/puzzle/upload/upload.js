@@ -5,11 +5,9 @@
  * 功能：
  * - 5个独立图片框，可单独上传和删除
  * - 实现多图上传（最多5张）
- * - 实现人脸检测
  */
 
 const { chooseImage, uploadImage, validateImage } = require('../../../utils/upload');
-const { faceAPI } = require('../../../utils/api');
 const pageMixin = require('../../../utils/page-mixin');
 const { initNavigation } = require('../../../utils/navigation-helper');
 const { getAssetUrl } = require('../../../utils/oss-assets');
@@ -235,30 +233,9 @@ Page({
       
       console.log('[PuzzleUpload] 所有图片上传成功:', uploadedUrls.length);
       
-      // 2. 人脸检测（已在后端跳过，这里仅做形式调用）
+      // 2. 直接跳转到模板选择页
       this.setData({
-        statusText: '正在检测人脸...',
-        uploadProgress: 75
-      });
-      
-      const result = await faceAPI.extractFaces(uploadedUrls);
-      console.log('[PuzzleUpload] 人脸检测结果:', {
-        success: result.success,
-        faceCount: result.data?.faces?.length || 0
-      });
-      
-      if (!result.success || !result.data?.faces || result.data.faces.length === 0) {
-        this.setData({
-          isProcessing: false,
-          statusText: '',
-          errorMessage: result.message || '未检测到人脸，请上传包含清晰人脸的照片'
-        });
-        return;
-      }
-      
-      // 3. 检测成功，跳转到模板选择页
-      this.setData({
-        statusText: '检测成功，正在跳转...',
+        statusText: '上传成功，正在跳转...',
         uploadProgress: 100
       });
       
@@ -266,8 +243,7 @@ Page({
       const app = getApp();
       app.globalData.puzzleData = {
         mode: 'puzzle',
-        uploadedImages: uploadedUrls,
-        faces: result.data.faces
+        uploadedImages: uploadedUrls
       };
       
       setTimeout(() => {

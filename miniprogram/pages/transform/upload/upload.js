@@ -5,11 +5,9 @@
  * 功能：
  * - 复用原网页 TransformUploadPage 样式
  * - 实现单图上传
- * - 实现人脸检测
  */
 
 const { chooseImage, uploadImage, validateImage } = require('../../../utils/upload');
-const { faceAPI } = require('../../../utils/api');
 const { initNavigation } = require('../../../utils/navigation-helper');
 const { getAssetUrl } = require('../../../utils/oss-assets');
 
@@ -177,40 +175,17 @@ Page({
       });
       console.log('[TransformUpload] 图片上传成功:', imageUrl);
       
-      // 2. 人脸检测（已在后端跳过，这里仅做形式调用）
+      // 2. 直接跳转到模板选择页
       this.setData({
-        statusText: '正在检测人脸...',
+        statusText: '上传成功，正在跳转...',
         uploadProgress: 100
       });
-      console.log('[TransformUpload] 开始人脸检测（已跳过实际检测）');
-      
-      const result = await faceAPI.extractFaces([imageUrl]);
-      console.log('[TransformUpload] 人脸检测结果:', {
-        success: result.success,
-        faceCount: result.data?.faces?.length || 0
-      });
-      
-      // 由于后端已跳过检测，这里直接认为成功
-      if (!result.success) {
-        console.log('[TransformUpload] 检测接口调用失败');
-        this.setData({
-          isUploading: false,
-          statusText: '',
-          errorMessage: result.message || '图片处理失败，请重试'
-        });
-        return;
-      }
-      
-      // 3. 检测成功，跳转到模板选择页
-      this.setData({ statusText: '检测成功，正在跳转...' });
-      console.log('[TransformUpload] 人脸检测成功，准备跳转');
       
       // 存储数据到全局
       const app = getApp();
       app.globalData.transformData = {
         mode: 'transform',
-        uploadedImages: [imageUrl],
-        faces: result.data.faces
+        uploadedImages: [imageUrl]
       };
       
       setTimeout(() => {
