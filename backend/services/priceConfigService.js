@@ -30,9 +30,9 @@ async function getAllPriceConfigs() {
  * @param {boolean} includeDetails - 是否包含详细信息（充值次数等）
  */
 async function getCurrentPrices(useCache = true, includeDetails = false) {
-  // 简单的内存缓存，5分钟过期
+  // 简单的内存缓存，1分钟过期
   const cacheKey = includeDetails ? 'detailed' : 'simple';
-  if (useCache && priceCache[cacheKey] && Date.now() - priceCache.timestamp < 5 * 60 * 1000) {
+  if (useCache && priceCache[cacheKey] && Date.now() - priceCache.timestamp < 60 * 1000) {
     return priceCache[cacheKey];
   }
   
