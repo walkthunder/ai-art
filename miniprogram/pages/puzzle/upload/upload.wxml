@@ -1,5 +1,5 @@
 <!--
-  时空拼图模式上传页 - 5个独立图片框
+  时空拼图模式上传页 - 2个独立图片框
   Requirements: 2.2, 6.1-6.5
 -->
 <view class="upload-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
@@ -28,10 +28,11 @@
   <!-- 主内容区 -->
   <view class="upload-content" style="top: {{statusBarHeight + navBarHeight}}px; margin-top: {{260 - statusBarHeight - navBarHeight}}px;">
     
-    <!-- 5个图片框布局 -->
+    <!-- 2个图片框布局 -->
     <view class="upload-grid">
-      <!-- 第一行：2个框 -->
+      <!-- 动态显示：默认只显示一个占位图，选择后显示两个框 -->
       <view class="upload-row">
+        <!-- 第一个框：始终显示 -->
         <view class="upload-box" bindtap="handleUploadClick" data-index="0">
           <image 
             wx:if="{{selectedImages[0]}}" 
@@ -50,7 +51,8 @@
           </view>
         </view>
         
-        <view class="upload-box" bindtap="handleUploadClick" data-index="1">
+        <!-- 第二个框：只在有图片时显示 -->
+        <view wx:if="{{uploadedCount > 0}}" class="upload-box" bindtap="handleUploadClick" data-index="1">
           <image 
             wx:if="{{selectedImages[1]}}" 
             class="uploaded-image" 
@@ -68,80 +70,26 @@
           </view>
         </view>
       </view>
-      
-      <!-- 第二行：3个框 -->
-      <view class="upload-row">
-        <view class="upload-box" bindtap="handleUploadClick" data-index="2">
-          <image 
-            wx:if="{{selectedImages[2]}}" 
-            class="uploaded-image" 
-            src="{{selectedImages[2]}}" 
-            mode="aspectFill"
-          />
-          <image 
-            wx:else 
-            class="placeholder-image" 
-            src="{{cameraUploadUrl}}" 
-            mode="scaleToFill"
-          />
-          <view wx:if="{{selectedImages[2]}}" class="delete-btn" catchtap="removeImage" data-index="2">
-            <text class="delete-icon">✕</text>
-          </view>
-        </view>
-        
-        <view class="upload-box" bindtap="handleUploadClick" data-index="3">
-          <image 
-            wx:if="{{selectedImages[3]}}" 
-            class="uploaded-image" 
-            src="{{selectedImages[3]}}" 
-            mode="aspectFill"
-          />
-          <image 
-            wx:else 
-            class="placeholder-image" 
-            src="{{cameraUploadUrl}}" 
-            mode="scaleToFill"
-          />
-          <view wx:if="{{selectedImages[3]}}" class="delete-btn" catchtap="removeImage" data-index="3">
-            <text class="delete-icon">✕</text>
-          </view>
-        </view>
-        
-        <view class="upload-box" bindtap="handleUploadClick" data-index="4">
-          <image 
-            wx:if="{{selectedImages[4]}}" 
-            class="uploaded-image" 
-            src="{{selectedImages[4]}}" 
-            mode="aspectFill"
-          />
-          <image 
-            wx:else 
-            class="placeholder-image" 
-            src="{{cameraUploadUrl}}" 
-            mode="scaleToFill"
-          />
-          <view wx:if="{{selectedImages[4]}}" class="delete-btn" catchtap="removeImage" data-index="4">
-            <text class="delete-icon">✕</text>
-          </view>
-        </view>
-      </view>
     </view>
     
     <!-- 提示文字 -->
     <view class="upload-tips">
-      <text class="tips-count">已上传 {{uploadedCount}}/5 张照片</text>
-      <text class="tips-hint">点击框内上传或更换照片</text>
+      <text class="tips-hint">{{uploadedCount === 0 ? '点击上传照片（可多选）' : '点击框内上传或更换照片'}}</text>
     </view>
     
-    <!-- 下一步按钮 - 始终显示 -->
+    <!-- 下一步按钮 - 根据上传数量显示不同文案 -->
     <view class="action-buttons">
-      <button 
-        class="next-btn {{isProcessing ? 'disabled' : ''}}" 
+      <view 
+        class="start-btn {{uploadedCount < 2 || isProcessing ? 'disabled' : ''}}" 
         bindtap="goToTemplate"
-        disabled="{{isProcessing}}"
+        hover-class="{{uploadedCount < 2 || isProcessing ? '' : 'start-btn-hover'}}"
       >
-        下一步：选择模板
-      </button>
+        <view class="btn-inner">
+          <text class="btn-text">{{uploadedCount < 2 ? '还需添加 ' + (2 - uploadedCount) + ' 人' : '下一步：选择模板'}}</text>
+        </view>
+        <!-- 光效动画 -->
+        <view class="btn-shine" wx:if="{{uploadedCount >= 2 && !isProcessing}}"></view>
+      </view>
     </view>
     
     <!-- 示例提示 -->

@@ -1,10 +1,10 @@
 /**
- * 时空拼图模式上传页 - 5个独立图片框
+ * 时空拼图模式上传页 - 2个独立图片框
  * Requirements: 2.2, 6.1-6.5
  * 
  * 功能：
- * - 5个独立图片框，可单独上传和删除
- * - 实现多图上传（最多5张）
+ * - 2个独立图片框，可单独上传和删除
+ * - 实现多图上传（最多2张）
  */
 
 const { chooseImage, uploadImage, validateImage } = require('../../../utils/upload');
@@ -18,7 +18,7 @@ Page({
     statusBarHeight: 0,
     navBarHeight: 44,
     menuRight: 0,
-    selectedImages: [null, null, null, null, null], // 5个图片框
+    selectedImages: [null, null], // 2个图片框
     uploadedCount: 0,
     isProcessing: false,
     isChecking: false,  // ✅ 新增：是否正在检查（防止重复点击）
@@ -27,7 +27,7 @@ Page({
     uploadProgress: 0,
     // OSS 资源
     commonBgUrl: getAssetUrl('bg/puzzle-upload-bg.jpg'),
-    cameraUploadUrl: getAssetUrl('camera-upload.png'),
+    cameraUploadUrl: getAssetUrl('puzzle-upload.png'),
     // 支付弹窗
     showPaymentModal: false,
     currentPaymentStatus: 'free'
@@ -52,6 +52,7 @@ Page({
   /**
    * 点击上传框
    * Requirements: 6.1
+   * 支持多选和单独更换
    */
   async handleUploadClick(e) {
     // ✅ 防止重复点击
@@ -60,8 +61,11 @@ Page({
       return;
     }
     
+    // 获取点击的框索引（如果有）
     const index = e.currentTarget.dataset.index;
-    console.log('[PuzzleUpload] 点击上传框:', index);
+    const isReplace = index !== undefined && this.data.selectedImages[index] !== null;
+    
+    console.log('[PuzzleUpload] 点击上传框, index:', index, 'isReplace:', isReplace);
     
     this.setData({ errorMessage: '' });
     
@@ -109,31 +113,66 @@ Page({
         this.setData({ isChecking: false });
       }
       
-      // 3. 选择单张图片
-      const tempFiles = await chooseImage(1);
+      // 3. 选择图片
+      let tempFiles;
+      if (isReplace) {
+        // 更换单张图片
+        tempFiles = await chooseImage({ count: 1 });
+      } else {
+        // 多选图片（最多2张）
+        const maxCount = 2 - this.data.uploadedCount;
+        tempFiles = await chooseImage({ count: maxCount });
+      }
+      
       if (!tempFiles || tempFiles.length === 0) {
         console.log('[PuzzleUpload] 用户取消选择');
         return;
       }
       
-      const file = tempFiles[0];
-      console.log('[PuzzleUpload] 选择的文件:', file);
+      console.log('[PuzzleUpload] 选择的文件数:', tempFiles.length);
       
-      // 4. 验证图片
-      const validation = await validateImage(file.path);
-      if (!validation.valid) {
-        console.log('[PuzzleUpload] 图片验证失败:', validation.error);
-        this.setData({
-          errorMessage: validation.error
-        });
-        return;
-      }
-      
-      console.log('[PuzzleUpload] 图片验证通过:', validation.info);
-      
-      // 5. 显示临时图片
+      // 4. 验证并添加所有图片
       const selectedImages = [...this.data.selectedImages];
-      selectedImages[index] = file.path;
+      let addedCount = 0;
+      
+      if (isReplace) {
+        // 更换指定位置的图片
+        const file = tempFiles[0];
+        const validation = await validateImage(file.path);
+        if (!validation.valid) {
+          console.log('[PuzzleUpload] 图片验证失败:', validation.error);
+          this.setData({
+            errorMessage: validation.error
+          });
+          return;
+        }
+        
+        console.log('[PuzzleUpload] 图片验证通过:', validation.info);
+        selectedImages[index] = file.path;
+        addedCount = 1;
+      } else {
+        // 添加新图片
+        for (const file of tempFiles) {
+          // 验证图片
+          const validation = await validateImage(file.path);
+          if (!validation.valid) {
+            console.log('[PuzzleUpload] 图片验证失败:', validation.error);
+            this.setData({
+              errorMessage: validation.error
+            });
+            continue;
+          }
+          
+          console.log('[PuzzleUpload] 图片验证通过:', validation.info);
+          
+          // 找到第一个空位置
+          const emptyIndex = selectedImages.findIndex(img => img === null);
+          if (emptyIndex !== -1) {
+            selectedImages[emptyIndex] = file.path;
+            addedCount++;
+          }
+        }
+      }
       
       // 计算已上传数量
       const uploadedCount = selectedImages.filter(img => img !== null).length;
@@ -142,6 +181,8 @@ Page({
         selectedImages,
         uploadedCount
       });
+      
+      console.log('[PuzzleUpload] 添加了', addedCount, '张图片，总数:', uploadedCount);
       
     } catch (err) {
       console.error('[PuzzleUpload] 操作失败:', err);
@@ -201,11 +242,11 @@ Page({
     
     console.log('[PuzzleUpload] 进入模板选择，图片数量:', validImages.length);
     
-    // 如果没有上传图片，直接跳转到模板选择页
-    if (validImages.length === 0) {
-      console.log('[PuzzleUpload] 无图片，直接跳转模板选择');
-      wx.navigateTo({
-        url: '/pages/puzzle/template/template'
+    // 必须上传2张照片
+    if (validImages.length < 2) {
+      wx.showToast({
+        title: `还需添加 ${2 - validImages.length} 人`,
+        icon: 'none'
       });
       return;
     }
