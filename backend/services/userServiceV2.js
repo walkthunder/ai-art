@@ -253,8 +253,9 @@ async function processPaymentUpgrade(userId, tier, amount) {
       throw new Error(`无效的套餐类型: ${tier}`);
     }
     
-    // 确定增加的次数
-    const usageIncrement = tier === 'basic' ? 5 : 20;
+    // ✅ 从 priceConfigService 读取充值次数配置
+    const priceConfigService = require('./priceConfigService');
+    const usageIncrement = await priceConfigService.getRechargeAmount(tier, connection);
     
     await connection.beginTransaction();
     

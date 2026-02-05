@@ -38,9 +38,10 @@ function getBalanceType(mode, isPaid = false) {
  * 检查用户余额
  * @param {string} userId - 用户ID
  * @param {string} mode - 生成模式 ('puzzle' | 'transform')，可选
+ * @param {number} retryCount - 重试次数（内部使用）
  * @returns {Promise<Object>} 余额信息
  */
-async function checkBalance(userId, mode = null) {
+async function checkBalance(userId, mode = null, retryCount = 0) {
   try {
     const sql = `
       SELECT balance_type, amount
@@ -164,6 +165,13 @@ async function checkBalance(userId, mode = null) {
     
     return result;
   } catch (error) {
+    // ✅ 添加重试机制
+    if (retryCount < 2 && error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
+      console.warn(`[BalanceService] 检查余额失败，重试 ${retryCount + 1}/2:`, error.message);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+      return checkBalance(userId, mode, retryCount + 1);
+    }
+    
     console.error('检查用户余额失败:', error);
     throw new Error(`检查用户余额失败: ${error.message}`);
   }

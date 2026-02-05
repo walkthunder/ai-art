@@ -564,6 +564,25 @@ async function recoverPendingTasks(executeTaskFn) {
           task.completedAt = new Date().toISOString();
           await persistTask(task);
           taskQueue.set(task.id, task);
+          
+          // ✅ 恢复用户余额
+          try {
+            const balanceService = require('./balanceService');
+            const result = await balanceService.restoreBalance(
+              task.meta.userId,
+              task.id,
+              task.meta.mode
+            );
+            
+            if (result.success) {
+              logQueue(task.id, '恢复', '✅ 超时任务余额已恢复');
+            } else {
+              logQueue(task.id, '恢复', `⚠️ 余额恢复被拒绝: ${result.error} - ${result.message}`);
+            }
+          } catch (restoreError) {
+            logQueue(task.id, '恢复', `⚠️ 恢复余额失败: ${restoreError.message}`);
+          }
+          
           continue;
         }
         
