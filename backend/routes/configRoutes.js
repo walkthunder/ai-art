@@ -5,14 +5,14 @@
 const express = require('express');
 const router = express.Router();
 const appConfigService = require('../services/appConfigService');
-const { verifyAdminAuth } = require('../middleware/adminAuth');
+const { authenticate } = require('../middleware/adminAuth');
 
 /**
  * 获取所有配置（管理后台）
  * GET /admin-api/config/all
  * 需要管理员权限
  */
-router.get('/all', verifyAdminAuth, async (req, res) => {
+router.get('/all', authenticate, async (req, res) => {
   try {
     const config = await appConfigService.getAllConfig(true);
     
@@ -55,7 +55,7 @@ router.get('/public', async (req, res) => {
  * PUT /admin-api/config
  * 需要管理员权限
  */
-router.put('/', verifyAdminAuth, async (req, res) => {
+router.put('/', authenticate, async (req, res) => {
   try {
     const configs = req.body;
     const updatedBy = req.user?.username || req.user?.id || 'admin';
@@ -91,7 +91,7 @@ router.put('/', verifyAdminAuth, async (req, res) => {
  * GET /admin-api/config/system
  * 需要管理员权限
  */
-router.get('/system', verifyAdminAuth, async (req, res) => {
+router.get('/system', authenticate, async (req, res) => {
   try {
     const config = await appConfigService.getAllConfig();
     
@@ -126,7 +126,7 @@ router.get('/system', verifyAdminAuth, async (req, res) => {
  * PUT /admin-api/config/system
  * 需要管理员权限
  */
-router.put('/system', verifyAdminAuth, async (req, res) => {
+router.put('/system', authenticate, async (req, res) => {
   try {
     const newConfig = req.body;
     const updatedBy = req.user?.username || 'admin';
