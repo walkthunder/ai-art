@@ -130,13 +130,7 @@
   border: 4rpx dashed var(--color-chinese-red);
   border-radius: 24rpx;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.5);
   transition: all 0.3s ease;
-}
-
-.upload-box:active {
-  transform: scale(0.95);
-  border-style: solid;
 }
 
 /* 占位图片 */

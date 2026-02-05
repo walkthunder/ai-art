@@ -8,7 +8,6 @@
   
   <!-- 背景 -->
   <image class="upload-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
-  <view class="upload-bg"></view>
   
   <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
   <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
@@ -27,21 +26,7 @@
   </view>
   
   <!-- 主内容区 -->
-  <view class="upload-content" style="top: {{statusBarHeight + navBarHeight}}px; padding-top: 32rpx;">
-    <!-- 标题说明 -->
-    <view class="title-section">
-      <text class="title-text">上传家人照片</text>
-      <text class="subtitle-text">最多可选择5张，AI将为您合成时空全家福</text>
-    </view>
-    
-    <!-- 错误提示 -->
-    <view class="error-toast" wx:if="{{errorMessage}}">
-      <text class="error-icon">⚠️</text>
-      <text class="error-text">{{errorMessage}}</text>
-      <view class="error-close" bindtap="clearError">
-        <text class="close-icon">✕</text>
-      </view>
-    </view>
+  <view class="upload-content" style="top: {{statusBarHeight + navBarHeight}}px; margin-top: {{260 - statusBarHeight - navBarHeight}}px;">
     
     <!-- 5个图片框布局 -->
     <view class="upload-grid">
@@ -164,10 +149,6 @@
       <view class="tip-item">
         <text class="tip-icon">✓</text>
         <text class="tip-text">可上传不同年代的照片</text>
-      </view>
-      <view class="tip-item">
-        <text class="tip-icon">✓</text>
-        <text class="tip-text">人脸清晰可见</text>
       </view>
       <view class="tip-item">
         <text class="tip-icon">✓</text>

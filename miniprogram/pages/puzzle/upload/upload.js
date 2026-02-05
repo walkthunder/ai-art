@@ -26,6 +26,7 @@ Page({
     errorMessage: '',
     uploadProgress: 0,
     // OSS 资源
+    commonBgUrl: getAssetUrl('bg/puzzle-upload-bg.jpg'),
     cameraUploadUrl: getAssetUrl('camera-upload.png'),
     // 支付弹窗
     showPaymentModal: false,
