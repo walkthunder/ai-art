@@ -418,7 +418,7 @@
   align-items: center;
   gap: 8rpx;
   padding: 14rpx 32rpx;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 32rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
@@ -435,7 +435,7 @@
 
 .history-text {
   font-size: 24rpx;
-  color: #8B4513;
+  color: wheat;
   font-weight: 500;
 }
 
@@ -474,7 +474,7 @@
 
 .get-more-text {
   font-size: 24rpx;
-  color: #8B4513;
+  color: wheat;
   font-weight: 600;
 }
 
