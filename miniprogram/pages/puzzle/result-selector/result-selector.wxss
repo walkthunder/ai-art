@@ -13,6 +13,19 @@
   overflow-x: hidden;
 }
 
+/* 背景图片层 - 去掉导航栏和安全区域 */
+.selector-bg-image {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
+  /* top 由 JS 动态设置 */
+}
+
 .selector-bg {
   position: fixed;
   top: 0;
@@ -26,17 +39,25 @@
 
 /* 导航栏样式使用通用样式文件 common-navigation.wxss */
 
+/* 主内容区 */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 10;
+}
+
 /* 提示区域 */
 .tip-section {
-  padding: 24rpx 32rpx 16rpx;
+  padding: 16rpx 32rpx 8rpx;
   text-align: center;
 }
 
 .tip-text {
   display: block;
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 8rpx;
 }
 
 .ai-tip {
@@ -50,8 +71,9 @@
 .selector-content {
   flex: 1;
   position: relative;
-  z-index: 10;
-  padding: 16rpx 32rpx 32rpx;
+  padding: 0 16rpx 32rpx;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 老年模式适配 */
@@ -60,7 +82,7 @@
 }
 
 .elder-mode .tip-text {
-  font-size: 30rpx;
+  font-size: 28rpx;
 }
 
 .elder-mode .ai-tip {

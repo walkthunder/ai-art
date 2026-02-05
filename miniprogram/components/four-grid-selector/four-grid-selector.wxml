@@ -2,9 +2,8 @@
 <view class="selector-wrapper">
   <!-- 标题区域 -->
   <view class="header">
-    <text class="title">🎊 {{images.length === 1 ? '您的生成结果' : '选择您最满意的一张'}}</text>
-    <text class="subtitle">{{images.length === 1 ? '点击确认后可以保存或重新生成' : '点击图片进行选择'}}</text>
-    <text wx:if="{{images.length > 2}}" class="scroll-hint">← 左右滑动查看更多 →</text>
+    <text class="title">{{images.length === 1 ? '🎊 您的生成结果' : ''}}</text>
+    <text class="subtitle">{{images.length === 1 ? '点击确认后可以保存或重新生成' : ''}}</text>
   </view>
   
   <!-- 加载状态 -->
@@ -18,16 +17,15 @@
     </view>
   </view>
   
-  <!-- 图片网格 - 使用 scroll-view 支持左右滑动 -->
+  <!-- 图片网格 - 两列垂直滚动布局 -->
   <scroll-view 
     wx:else 
     class="grid-scroll-container" 
-    scroll-x="{{images.length > 2}}"
+    scroll-y="{{true}}"
     enhanced="{{true}}"
     show-scrollbar="{{false}}"
-    enable-flex="{{true}}"
   >
-    <view class="grid-container {{images.length === 1 ? 'single-image' : ''}} {{images.length > 2 ? 'scroll-mode' : ''}}">
+    <view class="grid-container {{images.length === 1 ? 'single-image' : ''}}">
     <view 
       wx:for="{{images}}" 
       wx:key="index"

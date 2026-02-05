@@ -18,7 +18,9 @@ Page({
     navBarHeight: 44,
     menuRight: 0,
     images: [],
-    selectedImage: ''
+    selectedImage: '',
+    // OSS 资源
+    commonBgUrl: getAssetUrl('bg/puzzle-result-bg.jpg'),
   },
 
   onLoad() {
