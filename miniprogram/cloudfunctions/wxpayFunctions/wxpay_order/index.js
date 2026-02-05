@@ -56,20 +56,8 @@ function initWechatPaymentSDK() {
       privateKey = privateKey.trim();
     }
     
-    // 处理平台公钥证书（可选，用于验证回调签名）
-    let publicKey = process.env.WECHAT_PUBLIC_KEY;
-    if (publicKey) {
-      // 处理换行符
-      publicKey = publicKey.replace(/\\\\n/g, '\n');
-      publicKey = publicKey.replace(/\\n/g, '\n');
-      
-      // 确保公钥格式正确
-      if (!publicKey.includes('BEGIN CERTIFICATE')) {
-        publicKey = `-----BEGIN CERTIFICATE-----\n${publicKey}\n-----END CERTIFICATE-----`;
-      }
-      
-      publicKey = publicKey.trim();
-    }
+    // 注意：不要配置 publicKey，让 SDK 自动从微信服务器获取平台证书
+    // 如果配置了错误的证书（如商户证书），会导致签名验证失败
     
     console.log('[wxpay_order] 初始化微信支付 SDK，配置信息:', {
       appid: process.env.WECHAT_APPID,
@@ -77,12 +65,10 @@ function initWechatPaymentSDK() {
       serial_no: process.env.WECHAT_SERIAL_NO,
       hasPrivateKey: !!privateKey,
       privateKeyLength: privateKey ? privateKey.length : 0,
-      hasPublicKey: !!publicKey,
-      publicKeyLength: publicKey ? publicKey.length : 0,
       hasApiv3Key: !!process.env.WECHAT_APIV3_KEY
     });
     
-    // 初始化配置
+    // 初始化配置（不配置 publicKey，让 SDK 自动获取平台证书）
     const config = {
       appid: process.env.WECHAT_APPID,
       mchid: process.env.WECHAT_MCHID,
@@ -90,11 +76,6 @@ function initWechatPaymentSDK() {
       privateKey: privateKey,
       key: process.env.WECHAT_APIV3_KEY,
     };
-    
-    // 如果提供了平台公钥，添加到配置中
-    if (publicKey) {
-      config.publicKey = publicKey;
-    }
     
     wechatPayment = new WxPay(config);
     

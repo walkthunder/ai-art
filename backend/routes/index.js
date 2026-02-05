@@ -26,6 +26,7 @@ const adminTemplateRoutes = require('./adminTemplateRoutes');
 const monitorRoutes = require('./monitorRoutes');
 const configRoutes = require('./configRoutes');
 const logRoutes = require('./logRoutes');
+const callbackLogRoutes = require('./callbackLogRoutes');
 
 /**
  * 注册所有路由
@@ -112,6 +113,9 @@ function registerRoutes(app) {
   
   // 日志查询接口（管理后台）
   app.use('/admin-api/logs', logRoutes);
+  
+  // 支付回调日志接口（管理后台）
+  app.use('/admin-api/callback-logs', callbackLogRoutes);
 }
 
 module.exports = {
@@ -138,5 +142,6 @@ module.exports = {
   adminTemplateRoutes,
   monitorRoutes,
   configRoutes,
-  logRoutes
+  logRoutes,
+  callbackLogRoutes
 };

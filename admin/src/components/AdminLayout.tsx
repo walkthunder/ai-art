@@ -11,6 +11,7 @@ import {
   FileTextOutlined,
   LogoutOutlined,
   MonitorOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { logout } from '@/services/auth';
@@ -66,6 +67,12 @@ function AdminLayout() {
       icon: <FileTextOutlined />,
       label: '日志查询',
       onClick: () => navigate('/logs'),
+    },
+    {
+      key: '/callback-logs',
+      icon: <BellOutlined />,
+      label: '回调日志',
+      onClick: () => navigate('/callback-logs'),
     },
     {
       key: '/config',

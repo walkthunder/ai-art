@@ -14,6 +14,9 @@ importers:
       axios:
         specifier: ^1.6.0
         version: 1.13.3
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.1
       wechatpay-node-v3:
         specifier: ^2.2.1
         version: 2.2.1
@@ -660,6 +663,10 @@ packages:
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
     deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+    hasBin: true
+
+  uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
 
   verror@1.10.0:
@@ -1434,6 +1441,8 @@ snapshots:
       qs: 6.14.1
 
   uuid@3.4.0: {}
+
+  uuid@9.0.1: {}
 
   verror@1.10.0:
     dependencies:

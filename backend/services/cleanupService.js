@@ -19,7 +19,7 @@ async function closeTimeoutOrders() {
   try {
     const [result] = await connection.execute(
       `UPDATE payment_orders 
-       SET status = 'cancelled', updated_at = NOW()
+       SET status = 'failed', updated_at = NOW()
        WHERE status = 'pending' 
        AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)`
     );

@@ -418,8 +418,8 @@ Page({
     
     // 轮询查询用户次数，等待后端回调处理完成
     const app = getApp();
-    const maxRetries = 10; // 最多重试10次
-    const retryInterval = 1000; // 每次间隔1秒
+    const maxRetries = 4; // 最多重试10次
+    const retryInterval = 4000; // 每次间隔1秒
     let retryCount = 0;
     let usageIncreased = false;
     

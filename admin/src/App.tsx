@@ -8,6 +8,7 @@ import Orders from './pages/Orders';
 import Monitor from './pages/Monitor';
 import Config from './pages/Config';
 import Logs from './pages/Logs';
+import CallbackLogs from './pages/CallbackLogs';
 import AuthGuard from './components/AuthGuard';
 import AdminLayout from './components/AdminLayout';
 
@@ -32,6 +33,7 @@ function App() {
         <Route path="monitor" element={<Monitor />} />
         <Route path="config" element={<Config />} />
         <Route path="logs" element={<Logs />} />
+        <Route path="callback-logs" element={<CallbackLogs />} />
       </Route>
     </Routes>
   );
