@@ -418,28 +418,27 @@ async function addBalance(userId, amount, reason, referenceId = null, balanceTyp
     
     await connection.beginTransaction();
     
-    try {
-      // 使用 INSERT ... ON DUPLICATE KEY UPDATE 保证原子性
-      // 依赖 UNIQUE(user_id, balance_type) 约束
-      const balanceId = uuidv4();
-      
-      await connection.execute(
-        `INSERT INTO user_balances (id, user_id, balance_type, amount, created_at, updated_at)
-         VALUES (?, ?, ?, ?, NOW(), NOW())
-         ON DUPLICATE KEY UPDATE 
-           amount = amount + VALUES(amount),
-           updated_at = NOW()`,
-        [balanceId, userId, balanceType, amount]
-      );
-      
-      // 获取更新后的余额
-      const [rows] = await connection.execute(
-        'SELECT amount FROM user_balances WHERE user_id = ? AND balance_type = ?',
-        [userId, balanceType]
-      );
-      
-      const newCount = rows[0]?.amount || 0;
+    // 使用 INSERT ... ON DUPLICATE KEY UPDATE 保证原子性
+    // 依赖 UNIQUE(user_id, balance_type) 约束
+    const balanceId = uuidv4();
     
+    await connection.execute(
+      `INSERT INTO user_balances (id, user_id, balance_type, amount, created_at, updated_at)
+       VALUES (?, ?, ?, ?, NOW(), NOW())
+       ON DUPLICATE KEY UPDATE 
+         amount = amount + VALUES(amount),
+         updated_at = NOW()`,
+      [balanceId, userId, balanceType, amount]
+    );
+    
+    // 获取更新后的余额
+    const [rows] = await connection.execute(
+      'SELECT amount FROM user_balances WHERE user_id = ? AND balance_type = ?',
+      [userId, balanceType]
+    );
+    
+    const newCount = rows[0]?.amount || 0;
+  
     // 记录日志
     const logId = uuidv4();
     await connection.execute(
