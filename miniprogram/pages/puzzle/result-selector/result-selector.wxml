@@ -7,7 +7,8 @@
   <corner-background />
   
   <!-- 背景 -->
-  <view class="selector-bg"></view>
+  <!-- 背景 -->
+  <image class="selector-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
   
   <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
   <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
@@ -25,18 +26,17 @@
     <view class="nav-right"></view>
   </view>
   
-  <!-- 提示文字 -->
-  <view class="tip-section">
-    <text class="tip-text">点击图片可放大预览，长按可预览大图</text>
-  </view>
-  
-  <!-- 四宫格选择器 -->
-  <view class="selector-content">
-    <four-grid-selector 
-      images="{{images}}"
-      selectedImage="{{selectedImage}}"
-      bind:select="handleSelect"
-      bind:confirm="handleConfirm"
-    />
+  <!-- 主内容区 -->
+  <view class="main-content" style="padding-top: {{statusBarHeight + navBarHeight + 90}}px;">
+    
+    <!-- 四宫格选择器 -->
+    <view class="selector-content">
+      <four-grid-selector 
+        images="{{images}}"
+        selectedImage="{{selectedImage}}"
+        bind:select="handleSelect"
+        bind:confirm="handleConfirm"
+      />
+    </view>
   </view>
 </view>

@@ -8,7 +8,7 @@
   <corner-background />
   
   <!-- 背景 -->
-  <view class="result-bg"></view>
+  <image class="result-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
   
   <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
   <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
@@ -27,7 +27,7 @@
   </view>
   
   <!-- 主内容区 -->
-  <scroll-view class="result-content" scroll-y style="padding-top: {{statusBarHeight + navBarHeight}}px;">
+  <scroll-view class="result-content" scroll-y  style="top: {{statusBarHeight + navBarHeight}}px; margin-top: {{210 - statusBarHeight - navBarHeight}}px;">
     <!-- 图片展示区 -->
     <view class="image-section">
       <view class="image-frame">
@@ -106,7 +106,7 @@
         class="action-btn make-same-btn"
         bindtap="handleMakeSame"
       >
-        <view class="btn-inner gold primary">
+        <view class="btn-inner primary">
           <text class="btn-icon">✨</text>
           <text class="btn-text">制作同款</text>
         </view>
@@ -119,8 +119,8 @@
         class="action-btn save-btn {{isSaving ? 'loading' : ''}} {{!hasEverPaid && hasSavedFreeVersion ? 'hd-download' : ''}}"
         bindtap="handleSaveImage"
       >
+        <image class="btn-bg-image" src="{{downloadBtnBg}}" mode="aspectFill" />
         <view class="btn-inner {{!hasEverPaid && hasSavedFreeVersion ? 'premium-gold' : 'gold'}}">
-          <text class="btn-icon">{{!hasEverPaid && hasSavedFreeVersion ? '💎' : '📥'}}</text>
           <text class="btn-text">{{isSaving ? '保存中...' : (!hasEverPaid && hasSavedFreeVersion ? '高清下载' : '保存至相册')}}</text>
           <!-- 高清下载提示标签 -->
           <text class="hd-tag" wx:if="{{!hasEverPaid && hasSavedFreeVersion}}">无水印</text>
@@ -162,22 +162,8 @@
         class="action-btn share-btn"
         open-type="share"
       >
-        <view class="btn-inner transparent">
-          <text class="btn-icon">👨‍👩‍👧‍👦</text>
-          <text class="btn-text">分享家族群</text>
-        </view>
+        <image class="btn-bg-image" src="{{shareBtnBg}}" mode="aspectFill" />
       </button>
-      
-      <!-- 返回首页（分享视图时显示为"了解更多"） -->
-      <view 
-        class="action-btn home-btn"
-        bindtap="goHome"
-      >
-        <view class="btn-inner blue">
-          <text class="btn-icon">{{isSharedView ? '🎨' : '🏠'}}</text>
-          <text class="btn-text">{{isSharedView ? '了解更多' : '返回首页'}}</text>
-        </view>
-      </view>
     </view>
     
     <!-- AI生成提示（合规要求） -->

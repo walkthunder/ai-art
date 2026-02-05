@@ -14,6 +14,19 @@
   box-sizing: border-box;
 }
 
+/* 背景图片层 - 去掉导航栏和安全区域 */
+.result-bg-image {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
+  /* top 由 JS 动态设置 */
+}
+
 .result-bg {
   position: fixed;
   top: 0;
@@ -352,7 +365,7 @@
 
 /* 功能按钮区 */
 .action-section {
-  padding: 16rpx 32rpx 48rpx;
+  padding: 60rpx 32rpx 48rpx;
   padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
   width: 100%;
   display: flex;
@@ -369,8 +382,19 @@
   overflow: hidden;
 }
 
+/* 按钮背景图 */
+.btn-bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .action-btn.save-btn {
-  width: 420rpx;
+  width: 640rpx;
   margin: 0 auto;
 }
 
@@ -385,6 +409,8 @@
 }
 
 .btn-inner {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   display: flex;
@@ -395,11 +421,6 @@
   border-radius: 48rpx;
   white-space: nowrap;
   padding: 0 32rpx;
-}
-
-.btn-inner.gold {
-  background: linear-gradient(135deg, var(--color-festival-gold), #D4AF37);
-  border: 2rpx solid rgba(255, 215, 0, 0.3);
 }
 
 /* 高清下载按钮 - 升级样式 */
@@ -454,8 +475,7 @@
 }
 
 .btn-text {
-  font-size: 32rpx;
-  font-weight: bold;
+  font-size: 50rpx;
   white-space: nowrap;
 }
 
@@ -484,6 +504,7 @@
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   animation: shine 2s ease-in-out infinite;
+  z-index: 2;
 }
 
 @keyframes shine {
@@ -497,6 +518,7 @@
   padding: 0;
   margin: 0;
   border: none;
+  width: 640rpx !important;
   line-height: normal;
 }
 
@@ -526,7 +548,7 @@
 }
 
 .elder-mode .btn-text {
-  font-size: 38rpx;
+  font-size: 44rpx;
   white-space: nowrap;
 }
 

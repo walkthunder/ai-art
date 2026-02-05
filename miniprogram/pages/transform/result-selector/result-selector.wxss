@@ -1,6 +1,6 @@
 /**
- * 富贵变身结果选择页样式 - 复用原网页 ResultSelectorPage 设计
- * Requirements: 2.3, 15.1-15.4, 10.1-10.3
+ * 富贵变身结果选择页样式
+ * Requirements: 2.3, 15.1-15.4
  */
 
 .result-selector-page {
@@ -11,7 +11,19 @@
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  box-sizing: border-box;
+}
+
+/* 背景图片层 - 去掉导航栏和安全区域 */
+.selector-bg-image {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
+  /* top 由 JS 动态设置 */
 }
 
 .selector-bg {
@@ -20,62 +32,84 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, 
-    rgba(212, 175, 55, 0.08) 0%, 
-    rgba(255, 248, 220, 0.9) 30%,
-    rgba(255, 240, 204, 1) 100%
-  );
+  background: radial-gradient(circle at 50% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 50%);
   z-index: 0;
   pointer-events: none;
 }
 
 /* 导航栏样式使用通用样式文件 common-navigation.wxss */
 
-/* 提示文字 */
-.tip-section {
+/* 主内容区 */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   position: relative;
   z-index: 10;
-  padding: 24rpx 32rpx;
+}
+
+/* 提示区域 */
+.tip-section {
+  padding: 16rpx 32rpx 8rpx;
   text-align: center;
 }
 
 .tip-text {
-  font-size: 26rpx;
-  color: #8B4513;
+  display: block;
+  font-size: 24rpx;
+  color: rgba(139, 69, 19, 0.7);
 }
 
-/* 选择器内容 */
+.ai-tip {
+  display: block;
+  font-size: 22rpx;
+  color: rgba(212, 175, 55, 0.8);
+  font-weight: 500;
+}
+
+/* 选择器内容区 */
 .selector-content {
   flex: 1;
   position: relative;
-  z-index: 10;
-  width: 100%;
-  padding-bottom: calc(env(safe-area-inset-bottom));
-  box-sizing: border-box;
+  padding: 0 16rpx 32rpx;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ========================================
-   老年模式适配
-   ======================================== */
-
+/* 老年模式适配 */
 .elder-mode .nav-title {
   font-size: 42rpx;
 }
 
 .elder-mode .tip-text {
-  font-size: 32rpx;
+  font-size: 28rpx;
 }
 
-/* AI生成提示（合规要求） */
-.ai-tip {
-  display: block;
-  font-size: 22rpx;
-  color: rgba(139, 0, 0, 0.8);
-  font-weight: 500;
-  margin-top: 8rpx;
-}
-
-/* 老年模式 - AI提示 */
 .elder-mode .ai-tip {
   font-size: 26rpx;
+}
+
+/* ========================================
+   富贵变身模式导航栏覆盖
+   ======================================== */
+
+.result-selector-page .back-icon {
+  color: #D4AF37;
+}
+
+/* 保持 Transform 的金色背景 */
+.result-selector-page .page-with-nav::before {
+  background: #D4AF37 !important;
+}
+
+.result-selector-page .mode-subtitle-bar {
+  background: #D4AF37 !important;
+}
+
+.result-selector-page .nav-bar {
+  background: #D4AF37 !important;
+}
+
+.result-selector-page .nav-title {
+  color: #8B4513 !important;
 }

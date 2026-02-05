@@ -10,6 +10,7 @@
  */
 
 const { initNavigation } = require('../../../utils/navigation-helper');
+const { getAssetUrl } = require('../../../utils/oss-assets');
 
 Page({
   data: {
@@ -18,7 +19,8 @@ Page({
     navBarHeight: 44,
     menuRight: 0,
     images: [],
-    selectedImage: ''
+    selectedImage: '',
+    commonBgUrl: getAssetUrl('common-bg.jpg')
   },
 
   onLoad() {

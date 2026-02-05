@@ -159,7 +159,7 @@
 }
 
 .record-item {
-  width: calc(50% - 12rpx);
+  width: calc(50% - 14rpx);
   background: rgba(255, 255, 255, 0.9);
   border-radius: 24rpx;
   overflow: hidden;

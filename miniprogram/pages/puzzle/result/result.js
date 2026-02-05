@@ -14,6 +14,8 @@ const { saveHistory } = require('../../../utils/storage');
 const { videoAPI } = require('../../../utils/api');
 const cloudbasePayment = require('../../../utils/cloudbase-payment');
 const { initNavigation } = require('../../../utils/navigation-helper');
+const { getAssetUrl } = require('../../../utils/oss-assets');
+const saveImageHelper = require('../../../utils/saveImageHelper');
 
 Page({
   data: {
@@ -44,7 +46,14 @@ Page({
     // 使用次数模态框
     showUsageModal: false,
     usageModalType: '',
-    usageCount: 0
+    usageCount: 0,
+    commonBgUrl: getAssetUrl('bg/puzzle-result-bg-2.jpg'),
+    pictureFrameUrl: getAssetUrl('picture-frame.png'),
+    downloadBtnBg: getAssetUrl('download-btn.png'),
+    shareBtnBg: getAssetUrl('share-btn.png'),
+    hasSavedFreeVersion: false, // 是否已保存过免费版本
+    savedStateKey: '', // 用于存储状态的key
+    isSharedView: false, // 是否是分享视图
   },
 
   videoPollingTimer: null,
@@ -53,6 +62,11 @@ Page({
   onLoad(options) {
     const app = getApp();
     const paymentStatus = wx.getStorageSync('paymentStatus') || 'free';
+    const hasEverPaid = wx.getStorageSync('hasEverPaid') || false;
+    const generationId = options.generationId || Date.now().toString();
+    
+    // 使用工具函数恢复保存状态
+    const hasSavedFreeVersion = saveImageHelper.getSaveState(generationId);
     
     initNavigation(this);
     
@@ -60,8 +74,11 @@ Page({
       isElderMode: app.globalData.isElderMode,
       isPremiumUser: paymentStatus === 'premium' || paymentStatus === 'basic',
       paymentStatus: paymentStatus,
+      hasEverPaid: hasEverPaid,
       hasLivePhoto: options.hasLivePhoto === 'true',
-      generationId: options.generationId || Date.now().toString()
+      generationId: generationId,
+      hasSavedFreeVersion: hasSavedFreeVersion,
+      savedStateKey: saveImageHelper.getSaveStateKey(generationId)
     });
     
     // 检查是否从分享进入
