@@ -1,7 +1,7 @@
 /**
  * 小程序静态资源 OSS URL 映射
  * 自动生成，请勿手动修改
- * 生成时间: 2026-02-05T11:59:04.689Z
+ * 生成时间: 2026-02-05T12:16:41.096Z
  */
 
 const OSS_ASSETS = {
@@ -53,7 +53,8 @@ const OSS_ASSETS = {
   "red-button-2.png": "https://wms.webinfra.cloud/miniprogram-assets/red-button-2.png?v=1738752708",
   "red-button.png": "https://wms.webinfra.cloud/miniprogram-assets/red-button.png?v=1738752708",
   "yellow-button.png": "https://wms.webinfra.cloud/miniprogram-assets/yellow-button.png?v=1738752708",
-  "bg/transform-result-bg.jpg": "https://wms.webinfra.cloud/miniprogram-assets/bg/transform-result-bg.jpg?v=1738753080"
+  "bg/transform-result-bg.jpg": "https://wms.webinfra.cloud/miniprogram-assets/bg/transform-result-bg.jpg?v=1738753080",
+  "bg/puzzle-result-bg-2.jpg": "https://wms.webinfra.cloud/miniprogram-assets/bg/puzzle-result-bg-2.jpg?v=1738753776"
 };
 
 /**
