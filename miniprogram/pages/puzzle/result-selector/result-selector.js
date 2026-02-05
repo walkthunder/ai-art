@@ -10,6 +10,7 @@
  */
 
 const { initNavigation } = require('../../../utils/navigation-helper');
+const { getAssetUrl } = require('../../../utils/oss-assets');
 
 Page({
   data: {
