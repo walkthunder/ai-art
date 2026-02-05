@@ -98,11 +98,6 @@
   
   <!-- 底部操作区 -->
   <view class="bottom-action">
-    <!-- 当前选中提示 -->
-    <view wx:if="{{selectedTemplate}}" class="selected-tip">
-      <text class="tip-label">已选择：</text>
-      <text class="tip-value">{{selectedTemplate.name}}</text>
-    </view>
     
     <!-- 生成按钮 -->
     <view 
