@@ -305,6 +305,14 @@ App({
       
       console.log('[App] 登录成功:', loginState.userId);
       
+      // 处理邀请码（如果是新用户首次登录）
+      await this.processInviteCode(loginState);
+      
+      // 预加载邀请码（用于分享功能）
+      this.preloadInviteCode(loginState.userId).catch(err => {
+        console.warn('[App] 预加载邀请码失败:', err);
+      });
+      
       // 后台同步用户信息
       cloudbaseAuth.syncUserInfo().catch(err => {
         console.warn('[App] 后台同步用户信息失败:', err);
@@ -314,6 +322,86 @@ App({
     } catch (err) {
       console.error('[App] 登录失败:', err);
       throw err;
+    }
+  },
+
+  /**
+   * 处理邀请码绑定
+   * @param {Object} loginState - 登录状态
+   */
+  async processInviteCode(loginState) {
+    try {
+      // 检查是否有待处理的邀请码
+      const inviteCode = wx.getStorageSync('pending_invite_code');
+      
+      if (!inviteCode) {
+        return;
+      }
+
+      console.log('[App] 处理邀请码:', inviteCode);
+
+      // 检查是否是新用户
+      if (!loginState.isNewUser) {
+        console.log('[App] 非新用户，清除邀请码');
+        wx.removeStorageSync('pending_invite_code');
+        return;
+      }
+
+      // 调用后端接口绑定邀请关系（使用新接口）
+      const cloudbaseRequest = require('./utils/cloudbase-request');
+      const res = await cloudbaseRequest.post('/api/invite/bind', {
+        invite_code: inviteCode,
+        user_id: loginState.userId
+      });
+
+      if (res && res.success) {
+        console.log('[App] 邀请绑定成功，邀请人:', res.data.inviter_id);
+        
+        // 清除待处理的邀请码
+        wx.removeStorageSync('pending_invite_code');
+        
+        // 显示成功提示
+        wx.showToast({
+          title: '邀请成功，已获得奖励',
+          icon: 'success',
+          duration: 2000
+        });
+      } else {
+        console.warn('[App] 邀请绑定失败:', res?.message);
+        // 失败也清除邀请码，避免重复尝试
+        wx.removeStorageSync('pending_invite_code');
+      }
+    } catch (err) {
+      console.error('[App] 处理邀请码失败:', err);
+      // 失败也清除邀请码
+      wx.removeStorageSync('pending_invite_code');
+    }
+  },
+
+  /**
+   * 预加载邀请码（用于分享功能）
+   * @param {string} userId - 用户ID
+   */
+  async preloadInviteCode(userId) {
+    try {
+      if (!userId) {
+        return;
+      }
+
+      console.log('[App] 预加载邀请码...');
+      
+      const cloudbaseRequest = require('./utils/cloudbase-request');
+      const res = await cloudbaseRequest.get(`/api/invite/code/${userId}`);
+
+      if (res && res.success && res.data && res.data.invite_code) {
+        const inviteCode = res.data.invite_code;
+        // 保存到本地存储
+        wx.setStorageSync(`invite_code_${userId}`, inviteCode);
+        console.log('[App] 邀请码预加载成功');
+      }
+    } catch (err) {
+      console.error('[App] 预加载邀请码失败:', err);
+      // 预加载失败不影响主流程
     }
   },
 

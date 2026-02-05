@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "corner-background": "../../components/corner-background/corner-background",
+    "elder-mode-toggle": "../../components/elder-mode-toggle/elder-mode-toggle"
+  },
+  "navigationStyle": "custom"
+}

@@ -396,7 +396,7 @@
   align-items: center;
   gap: 8rpx;
   padding: 14rpx 32rpx;
-  background: rgba(255, 255, 255, 0.8);
+  /* background: rgba(255, 255, 255, 0.8); */
   backdrop-filter: blur(10px);
   border-radius: 32rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
@@ -413,8 +413,47 @@
 
 .history-text {
   font-size: 24rpx;
-  color: #8B4513;
+  color: wheat;
   font-weight: 500;
+}
+
+/* 获取更多次数按钮 */
+.get-more-btn {
+  display: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 32rpx;
+  /* background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%); */
+  backdrop-filter: blur(10px);
+  border: 2rpx solid rgba(212, 175, 55, 0.3);
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(212, 175, 55, 0.2);
+  opacity: 0;
+  transform: translateY(10rpx);
+  transition: all 0.3s ease;
+}
+
+.get-more-btn.show {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.get-more-btn-hover {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(255, 215, 0, 0.25) 100%);
+  transform: scale(0.98);
+  box-shadow: 0 6rpx 16rpx rgba(212, 175, 55, 0.3);
+}
+
+.get-more-icon {
+  font-size: 28rpx;
+}
+
+.get-more-text {
+  font-size: 24rpx;
+  color: wheat;
+  font-weight: 600;
 }
 
 /* ========================================
@@ -494,20 +533,31 @@
   font-size: 30rpx;
 }
 
-/* AI生成提示（合规要求） */
-.ai-notice {
-  width: 100%;
-  text-align: center;
-  margin-top: 24rpx;
-}
-
-.ai-notice-text {
-  font-size: 22rpx;
-  color: rgba(139, 0, 0, 0.6);
-  line-height: 1.5;
-}
-
 /* 老年模式 - AI提示 */
 .elder-mode .ai-notice-text {
   font-size: 26rpx;
+}
+
+.elder-mode .history-btn {
+  padding: 20rpx 40rpx;
+}
+
+.elder-mode .history-icon {
+  font-size: 34rpx;
+}
+
+.elder-mode .history-text {
+  font-size: 30rpx;
+}
+
+.elder-mode .get-more-btn {
+  padding: 20rpx 40rpx;
+}
+
+.elder-mode .get-more-icon {
+  font-size: 34rpx;
+}
+
+.elder-mode .get-more-text {
+  font-size: 30rpx;
 }

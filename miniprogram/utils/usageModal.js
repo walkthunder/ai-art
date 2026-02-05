@@ -59,16 +59,16 @@ function shouldShowModal(usageCount, userType, pageType = 'launch', paymentStatu
     return false;
   }
   
-  // exhausted 和 renewal 类型在 launch 页面显示
-  if (modalType === 'free_exhausted' || 
-      modalType === 'paid_renewal_basic' || 
-      modalType === 'paid_renewal_premium') {
-    return pageType === 'launch';
+  // ✅ 统一规则：所有次数不足的情况都在 Result 页面显示
+  // 目的：提醒后置，让用户先看到效果再付费（提高转化率）
+  if (pageType === 'result') {
+    // Result 页面：次数 <= 2 或次数用尽时显示
+    return usageCount <= 2;
   }
   
-  // reminder 类型在 launch 和 result 页面都显示
-  if (modalType === 'free_reminder') {
-    return true;
+  // Launch 页面：只在次数用尽时显示（阻止生成）
+  if (pageType === 'launch') {
+    return usageCount === 0;
   }
   
   return false;

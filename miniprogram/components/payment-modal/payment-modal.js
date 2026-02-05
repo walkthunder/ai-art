@@ -55,7 +55,9 @@ Component({
     error: null,
     outTradeNo: null,
     // 是否免费次数已用尽
-    isFreeExhausted: false
+    isFreeExhausted: false,
+    // 隐私协议勾选状态
+    privacyAgreed: false
   },
 
   observers: {
@@ -115,7 +117,8 @@ Component({
         selectedPackage: defaultSelected,
         isFreeExhausted: isFreeExhausted,
         paymentStatus: 'idle',
-        error: null
+        error: null,
+        privacyAgreed: false // 重置隐私协议勾选状态
       });
     },
 
@@ -154,13 +157,34 @@ Component({
       });
     },
     
+    // 隐私协议勾选变化
+    onPrivacyChange(e) {
+      this.setData({
+        privacyAgreed: e.detail.value
+      });
+    },
+
+    // 查看隐私政策
+    viewPrivacy() {
+      wx.navigateTo({
+        url: '/pages/privacy/privacy'
+      });
+    },
+
+    // 查看用户协议
+    viewAgreement() {
+      wx.navigateTo({
+        url: '/pages/agreement/agreement'
+      });
+    },
+
     // 处理支付
     async handlePay() {
       console.log('[PaymentModal] handlePay called, isPaying:', this.data.isPaying);
       if (this.data.isPaying) return;
       
       const app = getApp();
-      const { selectedPackage } = this.data;
+      const { selectedPackage, privacyAgreed } = this.data;
       
       console.log('[PaymentModal] selectedPackage:', selectedPackage);
       
@@ -171,6 +195,16 @@ Component({
         setTimeout(() => {
           this.triggerEvent('complete', { packageType: 'free' });
         }, 800);
+        return;
+      }
+
+      // 付费套餐需要勾选隐私协议
+      if (!privacyAgreed) {
+        wx.showToast({
+          title: '请先同意用户协议和隐私政策',
+          icon: 'none',
+          duration: 2000
+        });
         return;
       }
       

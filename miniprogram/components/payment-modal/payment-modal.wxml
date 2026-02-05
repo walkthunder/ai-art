@@ -61,12 +61,25 @@
         <text class="success-icon">✅</text>
         <text class="success-text">操作成功</text>
       </view>
+
+      <!-- 隐私协议勾选（仅付费套餐显示） -->
+      <view wx:if="{{selectedPackage !== 'free'}}" class="privacy-agreement">
+        <checkbox-group bindchange="onPrivacyChange">
+          <label class="privacy-label">
+            <checkbox value="agreed" checked="{{privacyAgreed}}" color="#DC143C" />
+            <text class="privacy-text">我已阅读并同意</text>
+            <text class="privacy-link" bindtap="viewAgreement">《用户协议》</text>
+            <text class="privacy-text">和</text>
+            <text class="privacy-link" bindtap="viewPrivacy">《隐私政策》</text>
+          </label>
+        </checkbox-group>
+      </view>
       
       <!-- 支付按钮 -->
       <button 
-        class="pay-btn {{isPaying || paymentStatus === 'success' ? 'disabled' : ''}} {{paymentStatus === 'failed' ? 'retry' : ''}} {{selectedPackage === 'free' ? 'free' : 'paid'}}"
+        class="pay-btn {{isPaying || paymentStatus === 'success' || (selectedPackage !== 'free' && !privacyAgreed) ? 'disabled' : ''}} {{paymentStatus === 'failed' ? 'retry' : ''}} {{selectedPackage === 'free' ? 'free' : 'paid'}}"
         bindtap="{{paymentStatus === 'failed' ? 'handleRetry' : 'handlePay'}}"
-        disabled="{{isPaying || paymentStatus === 'success'}}"
+        disabled="{{isPaying || paymentStatus === 'success' || (selectedPackage !== 'free' && !privacyAgreed)}}"
       >
         <view wx:if="{{paymentStatus === 'processing'}}" class="btn-loading">
           <view class="loading-spinner"></view>

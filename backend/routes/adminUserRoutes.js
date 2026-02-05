@@ -130,6 +130,36 @@ router.get('/:id', authenticate, authorize('super_admin', 'admin'), async (req, 
       
       const user = userRows[0];
       
+      // 获取用户余额信息
+      const [balances] = await connection.execute(
+        'SELECT balance_type, amount FROM user_balances WHERE user_id = ?',
+        [id]
+      );
+      
+      // 转换余额为对象格式
+      const balanceMap = {};
+      balances.forEach(b => {
+        balanceMap[b.balance_type] = b.amount;
+      });
+      
+      // 获取用户支付信息
+      const [paymentInfo] = await connection.execute(
+        'SELECT * FROM user_payments WHERE user_id = ?',
+        [id]
+      );
+      
+      // 获取生成次数统计
+      const [genCount] = await connection.execute(
+        'SELECT COUNT(*) as count FROM generation_history WHERE user_id = ?',
+        [id]
+      );
+      
+      // 获取订单数量统计
+      const [orderCount] = await connection.execute(
+        'SELECT COUNT(*) as count FROM payment_orders WHERE user_id = ?',
+        [id]
+      );
+      
       // 获取用户生成历史
       const [generations] = await connection.execute(
         `SELECT id, mode, template_url, status, selected_image_url, created_at 
@@ -150,8 +180,17 @@ router.get('/:id', authenticate, authorize('super_admin', 'admin'), async (req, 
         [id]
       );
       
+      // 组装完整的用户信息
+      const userDetail = {
+        ...user,
+        balances: balanceMap,
+        payment_info: paymentInfo[0] || null,
+        generation_count: genCount[0].count,
+        order_count: orderCount[0].count,
+      };
+      
       // 转换时区为 CST (UTC+8)
-      const userWithCST = convertObjectTimesToCST(user);
+      const userWithCST = convertObjectTimesToCST(userDetail);
       const generationsWithCST = convertArrayTimesToCST(generations);
       const ordersWithCST = convertArrayTimesToCST(orders);
       

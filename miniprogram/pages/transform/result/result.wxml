@@ -224,7 +224,7 @@
     modalType="{{usageModalType}}"
     usageCount="{{usageCount}}"
     bind:close="onUsageModalClose"
-    bind:share="onUsageModalShare"
-    bind:payment="onUsageModalPayment"
+    bind:share="onModalShare"
+    bind:payment="onModalPayment"
   />
 </view>

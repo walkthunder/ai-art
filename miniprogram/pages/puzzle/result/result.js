@@ -299,7 +299,7 @@ Page({
   /**
    * 使用次数模态框 - 分享按钮
    */
-  onUsageModalShare() {
+  onModalShare() {
     this.setData({ showUsageModal: false });
     // 跳转到邀请页面
     wx.navigateTo({
@@ -310,7 +310,7 @@ Page({
   /**
    * 使用次数模态框 - 购买按钮
    */
-  onUsageModalPayment() {
+  onModalPayment() {
     this.setData({ 
       showUsageModal: false,
       showPaymentModal: true 
@@ -585,14 +585,24 @@ Page({
       
       if (downloadRes.statusCode !== 200) throw new Error('下载图片失败');
       
-      let finalImagePath = downloadRes.tempFilePath;
+      // 处理临时文件路径：去掉 http:// 协议头
+      // 微信返回的临时文件路径可能是 http://tmp/ 格式
+      // saveImageToPhotosAlbum 需要去掉协议头
+      let tempFilePath = downloadRes.tempFilePath;
+      if (tempFilePath.startsWith('http://tmp/')) {
+        tempFilePath = tempFilePath.replace('http://', '');
+      } else if (tempFilePath.startsWith('http://usr/')) {
+        tempFilePath = tempFilePath.replace('http://', '');
+      }
+      
+      let finalImagePath = tempFilePath;
       
       // 免费用户添加水印
       if (!hasEverPaid) {
         try {
           wx.showLoading({ title: '添加水印中...', mask: true });
           const { addWatermark } = require('../../../utils/watermark');
-          finalImagePath = await addWatermark(downloadRes.tempFilePath, '团圆照相馆');
+          finalImagePath = await addWatermark(tempFilePath, '团圆照相馆');
           console.log('[PuzzleResult] 水印添加成功');
         } catch (watermarkErr) {
           console.error('[PuzzleResult] 水印添加失败，使用原图:', watermarkErr);

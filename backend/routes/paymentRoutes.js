@@ -16,6 +16,7 @@ const {
 const { executeWithRetry } = require('../utils/apiRetry');
 const { validateRequest, validateCreatePaymentParams, validateWechatPaymentParams } = require('../utils/validation');
 const errorLogService = require('../services/errorLogService');
+const monitorService = require('../services/monitorService');
 
 // 套餐价格配置 - 已迁移到数据库，保留作为降级方案
 const FALLBACK_PACKAGE_PRICES = { 'free': 0, 'basic': 0.01, 'premium': 29.9 };
@@ -78,6 +79,9 @@ router.post('/create', validateRequest(validateCreatePaymentParams), async (req,
       
       console.log(`创建${orderType === 'recharge' ? '充值' : '生成'}订单成功: ${orderId}, 用户: ${userId}, 金额: ${amount}`);
       
+      // 记录监控指标
+      monitorService.recordOrderCreated(true);
+      
       res.json({ 
         success: true, 
         data: { orderId, amount, packageType, orderType, status: 'pending' }
@@ -87,6 +91,10 @@ router.post('/create', validateRequest(validateCreatePaymentParams), async (req,
     }
   } catch (error) {
     console.error('创建支付订单失败:', error);
+    
+    // 记录监控指标
+    monitorService.recordOrderCreated(false);
+    
     await errorLogService.logError('PAYMENT_ORDER_CREATE_FAILED', error.message, {
       userId: req.body.userId, packageType: req.body.packageType
     });
@@ -363,6 +371,9 @@ router.post('/internal/order-created', async (req, res) => {
         orderId, outTradeNo, dbError, reason
       });
       
+      // 4. 记录监控指标
+      monitorService.recordDbBackup();
+      
       res.json({ success: true, message: '订单已备份', userId: effectiveUserId });
     } finally {
       connection.release();
@@ -435,6 +446,33 @@ router.post('/internal/notify', async (req, res) => {
           
           console.log(`订单 ${outTradeNo} 状态已更新为 ${status}`);
           
+          // 记录监控指标
+          monitorService.recordCallback(true);
+          
+          // ✅ 充值余额（关键修复）
+          if (order.user_id) {
+            const effectivePackageType = packageType || order.package_type;
+            try {
+              // 根据套餐类型确定充值次数
+              const rechargeAmount = await priceConfigService.getRechargeAmount(effectivePackageType, connection);
+              
+              await balanceService.addBalance(order.user_id, rechargeAmount, 'payment', order.id, balanceService.BALANCE_TYPES.PAID);
+              
+              console.log(`✅ 用户 ${order.user_id} 充值成功: ${effectivePackageType}, 次数: ${rechargeAmount}`);
+              
+              // 更新用户支付状态
+              await userServiceV2.updatePaymentStatus(order.user_id, effectivePackageType, order.amount);
+            } catch (rechargeError) {
+              console.error(`❌ 用户 ${order.user_id} 充值失败:`, rechargeError);
+              // 记录错误但不影响订单状态更新
+              await errorLogService.logError('BALANCE_RECHARGE_FAILED', rechargeError.message, {
+                userId: order.user_id,
+                orderId: order.id,
+                packageType: effectivePackageType
+              });
+            }
+          }
+          
           // 2. 触发业务逻辑（可选）
           // await triggerBusinessLogic({ orderId: order.id, userId: order.user_id, packageType });
           
@@ -453,6 +491,10 @@ router.post('/internal/notify', async (req, res) => {
     }
   } catch (error) {
     console.error('处理内部通知失败:', error);
+    
+    // 记录监控指标
+    monitorService.recordCallback(false);
+    
     await errorLogService.logError('INTERNAL_NOTIFY_FAILED', error.message, {
       outTradeNo: req.body.outTradeNo
     });
@@ -522,20 +564,20 @@ router.post('/callback', async (req, res) => {
             const { user_id, package_type, amount } = orderRows[0];
             
             // 使用 balanceService 处理付费充值
-            try {
-              // ✅ 从 priceConfigService 读取充值次数配置
-              const rechargeAmount = await priceConfigService.getRechargeAmount(package_type, connection);
-              
-              await balanceService.addBalance(user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
-              
-              // 更新用户支付状态
-              await userServiceV2.updatePaymentStatus(user_id, package_type, amount);
-              
-              console.log(`用户 ${user_id} 付费充值成功: ${package_type}, 金额: ${amount}, 次数: ${rechargeAmount}`);
-            } catch (upgradeError) {
-              console.error(`用户 ${user_id} 付费充值失败:`, upgradeError);
-              throw upgradeError;
+            // ✅ 从 priceConfigService 读取充值次数配置
+            const rechargeAmount = await priceConfigService.getRechargeAmount(package_type, connection);
+            
+            // 验证充值次数合理性
+            if (rechargeAmount <= 0 || rechargeAmount > 1000) {
+              throw new Error(`充值次数配置异常: ${rechargeAmount}`);
             }
+            
+            await balanceService.addBalance(user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
+            
+            // 更新用户支付状态
+            await userServiceV2.updatePaymentStatus(user_id, package_type, amount);
+            
+            console.log(`用户 ${user_id} 付费充值成功: ${package_type}, 金额: ${amount}, 次数: ${rechargeAmount}`);
           }
         }
         
@@ -641,20 +683,20 @@ router.put('/order/:orderId/status', async (req, res) => {
         const amount = orderDetails[0]?.amount || 0;
         const packageType = orderDetails[0]?.package_type || 'basic';
         
-        try {
-          // ✅ 从 priceConfigService 读取充值次数配置
-          const rechargeAmount = await priceConfigService.getRechargeAmount(packageType, connection);
-          
-          await balanceService.addBalance(order.user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
-          
-          // 更新用户支付状态
-          await userServiceV2.updatePaymentStatus(order.user_id, packageType, amount);
-          
-          console.log(`用户 ${order.user_id} 付费充值成功: ${packageType}`);
-        } catch (upgradeError) {
-          console.error(`用户 ${order.user_id} 付费充值失败:`, upgradeError);
-          throw upgradeError;
+        // ✅ 从 priceConfigService 读取充值次数配置
+        const rechargeAmount = await priceConfigService.getRechargeAmount(packageType, connection);
+        
+        // 验证充值次数合理性
+        if (rechargeAmount <= 0 || rechargeAmount > 1000) {
+          throw new Error(`充值次数配置异常: ${rechargeAmount}`);
         }
+        
+        await balanceService.addBalance(order.user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
+        
+        // 更新用户支付状态
+        await userServiceV2.updatePaymentStatus(order.user_id, packageType, amount);
+        
+        console.log(`用户 ${order.user_id} 付费充值成功: ${packageType}`);
       }
       
       await connection.commit();

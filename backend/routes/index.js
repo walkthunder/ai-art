@@ -23,6 +23,9 @@ const adminUserRoutes = require('./adminUserRoutes');
 const adminOrderRoutes = require('./adminOrderRoutes');
 const adminStatsRoutes = require('./adminStatsRoutes');
 const adminTemplateRoutes = require('./adminTemplateRoutes');
+const monitorRoutes = require('./monitorRoutes');
+const configRoutes = require('./configRoutes');
+const logRoutes = require('./logRoutes');
 
 /**
  * 注册所有路由
@@ -96,6 +99,16 @@ function registerRoutes(app) {
   
   // 统计数据接口（管理后台）
   app.use('/admin-api/stats', adminStatsRoutes);
+  
+  // 监控接口（公开API和管理后台都可访问）
+  app.use('/api/monitor', monitorRoutes);
+  app.use('/admin-api/monitor', monitorRoutes);
+  
+  // 系统配置接口（管理后台）
+  app.use('/admin-api/config', configRoutes);
+  
+  // 日志查询接口（管理后台）
+  app.use('/admin-api/logs', logRoutes);
 }
 
 module.exports = {
@@ -119,5 +132,8 @@ module.exports = {
   adminUserRoutes,
   adminOrderRoutes,
   adminStatsRoutes,
-  adminTemplateRoutes
+  adminTemplateRoutes,
+  monitorRoutes,
+  configRoutes,
+  logRoutes
 };

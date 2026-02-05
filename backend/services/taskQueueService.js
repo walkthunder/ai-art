@@ -288,6 +288,30 @@ async function persistTask(task) {
 }
 
 /**
+ * 将 ISO 8601 时间戳转换为 MySQL datetime 格式
+ * @param {string|null} isoString ISO 8601 格式时间戳
+ * @returns {string|null} MySQL datetime 格式 (YYYY-MM-DD HH:MM:SS)
+ */
+function toMySQLDatetime(isoString) {
+  if (!isoString) return null;
+  
+  try {
+    const date = new Date(isoString);
+    // 格式化为 MySQL datetime: YYYY-MM-DD HH:MM:SS
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
  * 持久化任务到数据库
  * @param {Object} task 任务对象
  */
@@ -295,6 +319,12 @@ async function persistTaskToDatabase(task) {
   let connection;
   try {
     connection = await db.pool.getConnection();
+    
+    // 转换时间格式为 MySQL datetime
+    const createdAt = toMySQLDatetime(task.createdAt);
+    const updatedAt = toMySQLDatetime(task.updatedAt);
+    const startedAt = toMySQLDatetime(task.startedAt);
+    const completedAt = toMySQLDatetime(task.completedAt);
     
     // 使用 INSERT ... ON DUPLICATE KEY UPDATE 实现 upsert
     await connection.execute(
@@ -324,10 +354,10 @@ async function persistTaskToDatabase(task) {
         task.error,
         task.retryCount,
         task.maxRetries,
-        task.createdAt,
-        task.updatedAt,
-        task.startedAt,
-        task.completedAt
+        createdAt,
+        updatedAt,
+        startedAt,
+        completedAt
       ]
     );
   } catch (error) {

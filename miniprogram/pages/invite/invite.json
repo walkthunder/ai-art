@@ -3,6 +3,8 @@
   "navigationBarBackgroundColor": "#D4AF37",
   "navigationBarTextStyle": "white",
   "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
   "usingComponents": {
     "corner-background": "/components/corner-background/corner-background",
     "elder-mode-toggle": "/components/elder-mode-toggle/elder-mode-toggle"

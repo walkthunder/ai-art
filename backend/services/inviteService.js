@@ -341,10 +341,14 @@ async function getInviteStats(userId) {
  */
 async function getInviteRecords(userId, page = 1, pageSize = 20) {
   try {
+    console.log('[InviteService] 获取邀请记录:', { userId, page, pageSize });
+    
     // 验证分页参数
     const validPage = Math.max(1, parseInt(page) || 1);
     const validPageSize = Math.min(100, Math.max(1, parseInt(pageSize) || 20));
     const offset = (validPage - 1) * validPageSize;
+    
+    console.log('[InviteService] 验证后的参数:', { validPage, validPageSize, offset });
     
     // 查询总记录数
     const countSql = `
@@ -356,30 +360,47 @@ async function getInviteRecords(userId, page = 1, pageSize = 20) {
     const countRows = await query(countSql, [userId]);
     const total = countRows[0].total;
     
-    // 查询分页记录
+    console.log('[InviteService] 总记录数:', total);
+    
+    // 如果没有记录，直接返回空结果
+    if (total === 0) {
+      return {
+        records: [],
+        total: 0,
+        page: validPage,
+        pageSize: validPageSize,
+        totalPages: 0
+      };
+    }
+    
+    // 查询分页记录 - 使用整数参数
     const recordsSql = `
       SELECT 
         ir.id,
         ir.invitee_id,
-        u.nickname as invitee_nickname,
+        COALESCE(u.nickname, '未知用户') as invitee_nickname,
         ir.created_at,
         ir.reward_granted
       FROM invite_records ir
       LEFT JOIN users u ON ir.invitee_id = u.id
       WHERE ir.inviter_id = ?
       ORDER BY ir.created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT ${validPageSize} OFFSET ${offset}
     `;
     
-    const records = await query(recordsSql, [userId, validPageSize, offset]);
+    console.log('[InviteService] 执行查询:', recordsSql);
+    
+    const records = await query(recordsSql, [userId]);
+    
+    console.log('[InviteService] 查询到记录数:', records.length);
     
     // 格式化记录
     const formattedRecords = records.map(record => ({
       id: record.id,
       invitee_id: record.invitee_id,
-      invitee_nickname: record.invitee_nickname || '未知用户',
+      invitee_nickname: record.invitee_nickname,
       created_at: record.created_at,
-      reward_granted: record.reward_granted
+      reward_granted: Boolean(record.reward_granted)
     }));
     
     return {
@@ -390,8 +411,119 @@ async function getInviteRecords(userId, page = 1, pageSize = 20) {
       totalPages: Math.ceil(total / validPageSize)
     };
   } catch (error) {
-    console.error('获取邀请记录失败:', error);
+    console.error('[InviteService] 获取邀请记录失败:', error);
+    console.error('[InviteService] 错误堆栈:', error.stack);
     throw new Error(`获取邀请记录失败: ${error.message}`);
+  }
+}
+
+/**
+ * 绑定邀请关系（用户已存在的情况）
+ * @param {string} inviteCode - 邀请码
+ * @param {string} userId - 用户ID
+ * @returns {Promise<Object>} { success, inviter_id, reward_granted }
+ */
+async function bindInviteRelation(inviteCode, userId) {
+  const pool = require('../db/connection').pool;
+  const connection = await pool.getConnection();
+  
+  try {
+    // 验证邀请码
+    const validation = await validateInviteCode(inviteCode);
+    if (!validation.valid) {
+      throw new Error(validation.error || '邀请码无效');
+    }
+    
+    const inviterId = validation.inviter_id;
+    
+    // 验证不是自我邀请
+    if (inviterId === userId) {
+      throw new Error('不能使用自己的邀请码');
+    }
+    
+    await connection.beginTransaction();
+    
+    // 验证用户存在
+    const [userRows] = await connection.execute(
+      'SELECT id FROM users WHERE id = ?',
+      [userId]
+    );
+    
+    if (userRows.length === 0) {
+      throw new Error('用户不存在');
+    }
+    
+    // 检查用户是否已被邀请
+    const [inviteCheckRows] = await connection.execute(
+      'SELECT invited_by FROM user_invites WHERE user_id = ?',
+      [userId]
+    );
+    
+    if (inviteCheckRows.length > 0 && inviteCheckRows[0].invited_by) {
+      throw new Error('该用户已被邀请过，不能重复绑定');
+    }
+    
+    // 更新用户的邀请关系
+    await connection.execute(
+      'UPDATE user_invites SET invited_by = ?, updated_at = NOW() WHERE user_id = ?',
+      [inviterId, userId]
+    );
+    
+    // 创建invite_records记录
+    const { v4: uuidv4 } = require('uuid');
+    const inviteRecordId = uuidv4();
+    await connection.execute(
+      `INSERT INTO invite_records (id, inviter_id, invitee_id, invite_code, reward_granted, created_at)
+       VALUES (?, ?, ?, ?, TRUE, NOW())`,
+      [inviteRecordId, inviterId, userId, inviteCode]
+    );
+    
+    // 增加inviter的付费次数（邀请奖励）
+    await balanceService.addBalance(inviterId, 1, 'invite_reward', inviteRecordId, balanceService.BALANCE_TYPES.PAID);
+    
+    // 更新或创建invite_stats
+    const [statsRows] = await connection.execute(
+      'SELECT user_id FROM invite_stats WHERE user_id = ?',
+      [inviterId]
+    );
+    
+    if (statsRows.length === 0) {
+      // 创建新的统计记录
+      await connection.execute(
+        `INSERT INTO invite_stats (user_id, total_invites, successful_invites, total_rewards, last_invite_at, updated_at)
+         VALUES (?, 1, 1, 1, NOW(), NOW())`,
+        [inviterId]
+      );
+    } else {
+      // 更新现有统计记录
+      await connection.execute(
+        `UPDATE invite_stats 
+         SET total_invites = total_invites + 1,
+             successful_invites = successful_invites + 1,
+             total_rewards = total_rewards + 1,
+             last_invite_at = NOW(),
+             updated_at = NOW()
+         WHERE user_id = ?`,
+        [inviterId]
+      );
+    }
+    
+    // 提交事务
+    await connection.commit();
+    
+    return {
+      success: true,
+      inviter_id: inviterId,
+      reward_granted: true
+    };
+  } catch (error) {
+    // 回滚事务
+    await connection.rollback();
+    
+    console.error('绑定邀请关系失败:', error);
+    throw error;
+  } finally {
+    connection.release();
   }
 }
 
@@ -399,6 +531,7 @@ module.exports = {
   generateInviteCode,
   validateInviteCode,
   processInviteRegistration,
+  bindInviteRelation,
   getInviteStats,
   getInviteRecords
 };

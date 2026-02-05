@@ -62,6 +62,12 @@
         <text class="history-text">我的记录</text>
       </view>
       
+      <!-- 获取更多次数按钮（次数不足时显示） -->
+      <view class="get-more-btn {{usageCount <= 2 ? 'show' : ''}}" bindtap="handleGetMore" hover-class="get-more-btn-hover">
+        <text class="get-more-icon">🎁</text>
+        <text class="get-more-text">获取更多次数</text>
+      </view>
+      
       <!-- AI生成提示 -->
       <view class="ai-notice">
         <text class="ai-notice-text">本服务为AI生成内容，结果仅供参考</text>

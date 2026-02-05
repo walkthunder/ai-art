@@ -233,6 +233,12 @@
   color: #999999;
 }
 
+.record-fail-reason {
+  font-size: 22rpx;
+  color: #DC143C;
+  margin-top: 4rpx;
+}
+
 .record-reward {
   display: flex;
   align-items: center;
@@ -250,6 +256,26 @@
 .reward-text {
   font-size: 22rpx;
   color: #228B22;
+  font-weight: 500;
+}
+
+.record-failed {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 8rpx 16rpx;
+  background: rgba(220, 20, 60, 0.1);
+  border-radius: 32rpx;
+}
+
+.failed-icon {
+  font-size: 24rpx;
+  color: #DC143C;
+}
+
+.failed-text {
+  font-size: 22rpx;
+  color: #DC143C;
   font-weight: 500;
 }
 

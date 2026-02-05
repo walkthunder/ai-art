@@ -229,14 +229,28 @@ const imageToBase64 = (filePath) => {
  * @returns {Promise<number>} 文件大小（字节）
  */
 const getFileSize = (filePath) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
+    // 处理微信小程序临时文件路径
+    // 微信返回的路径可能是 http://tmp/ 或 http://usr/ 格式
+    // getFileInfo 需要去掉 http:// 协议头
+    let normalizedPath = filePath;
+    if (filePath.startsWith('http://tmp/')) {
+      normalizedPath = filePath.replace('http://', '');
+    } else if (filePath.startsWith('http://usr/')) {
+      normalizedPath = filePath.replace('http://', '');
+    }
+    
     const fs = wx.getFileSystemManager();
     fs.getFileInfo({
-      filePath,
-      success: (res) => resolve(res.size),
+      filePath: normalizedPath,
+      success: (res) => {
+        console.log('[Upload] 文件大小获取成功:', (res.size / 1024 / 1024).toFixed(2), 'MB');
+        resolve(res.size);
+      },
       fail: (err) => {
         console.warn('[Upload] 获取文件大小失败:', err);
-        resolve(0); // 失败时返回 0，让后续逻辑使用云存储
+        // 失败时返回 0，让后续逻辑使用云存储
+        resolve(0);
       }
     });
   });

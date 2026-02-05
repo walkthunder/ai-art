@@ -74,6 +74,10 @@ app.listen(PORT, () => {
   // 启动定时清理任务
   cleanupService.startCleanupSchedule();
   
+  // 启动监控服务
+  const monitorService = require('./services/monitorService');
+  monitorService.startMetricsReset();
+  
   // 恢复未完成的任务
   console.log(`🔄 正在检查并恢复未完成的任务...`);
   recoverPendingTasks((taskId) => {

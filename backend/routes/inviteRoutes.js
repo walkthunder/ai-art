@@ -53,7 +53,7 @@ router.get('/code/:userId', async (req, res) => {
 
 /**
  * POST /api/invite/register
- * 处理邀请注册
+ * 处理邀请注册（已废弃，使用 /bind 代替）
  * Body: { invite_code: string, new_user_id: string, openid: string }
  */
 router.post('/register', async (req, res) => {
@@ -138,6 +138,87 @@ router.post('/register', async (req, res) => {
       success: false,
       error: 'INTERNAL_ERROR',
       message: '处理邀请注册失败',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/invite/bind
+ * 绑定邀请关系（新接口，用户已存在的情况）
+ * Body: { invite_code: string, user_id: string }
+ */
+router.post('/bind', async (req, res) => {
+  try {
+    const { invite_code, user_id } = req.body;
+
+    // 验证参数
+    if (!invite_code) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVITE_CODE_REQUIRED',
+        message: '邀请码不能为空'
+      });
+    }
+
+    if (!user_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'USER_ID_REQUIRED',
+        message: '用户ID不能为空'
+      });
+    }
+
+    const result = await inviteService.bindInviteRelation(invite_code, user_id);
+
+    res.json({
+      success: true,
+      data: {
+        inviter_id: result.inviter_id,
+        reward_granted: result.reward_granted
+      },
+      message: '邀请绑定成功'
+    });
+  } catch (error) {
+    console.error('绑定邀请关系失败:', error);
+
+    // 处理特定错误
+    if (error.message.includes('邀请码无效') || error.message.includes('邀请码不存在')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_INVITE_CODE',
+        message: '邀请码无效或已过期'
+      });
+    }
+
+    if (error.message.includes('不能使用自己的邀请码')) {
+      return res.status(400).json({
+        success: false,
+        error: 'SELF_INVITE_NOT_ALLOWED',
+        message: '不能使用自己的邀请码'
+      });
+    }
+
+    if (error.message.includes('已被邀请') || error.message.includes('已绑定')) {
+      return res.status(400).json({
+        success: false,
+        error: 'ALREADY_INVITED',
+        message: '该用户已被邀请过，不能重复绑定'
+      });
+    }
+
+    if (error.message.includes('用户不存在')) {
+      return res.status(404).json({
+        success: false,
+        error: 'USER_NOT_FOUND',
+        message: '用户不存在'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'INTERNAL_ERROR',
+      message: '绑定邀请关系失败',
       details: error.message
     });
   }

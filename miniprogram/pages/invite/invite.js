@@ -71,21 +71,35 @@ Page({
       }
       
       const cloudbaseRequest = require('../../utils/cloudbase-request');
-      const res = await cloudbaseRequest.request({
-        url: `/api/invite/code/${userId}`,
-        method: 'GET'
-      });
+      const res = await cloudbaseRequest.get(`/api/invite/code/${userId}`);
       
-      if (res.statusCode === 200 && res.data) {
+      // 后端返回格式：{ success: true, invite_code: "xxx" }
+      if (res && res.success && res.invite_code) {
+        const inviteCode = res.invite_code;
         this.setData({
-          inviteCode: res.data.invite_code
+          inviteCode: inviteCode
         });
+        
+        // 保存到本地存储，供分享使用
+        try {
+          wx.setStorageSync(`invite_code_${userId}`, inviteCode);
+        } catch (err) {
+          console.error('[Invite] 保存邀请码到本地存储失败:', err);
+        }
+      } else {
+        throw new Error('邀请码获取失败');
       }
     } catch (err) {
       console.error('[Invite] 加载邀请码失败:', err);
-      // 使用模拟数据
+      // 显示错误提示
+      wx.showToast({
+        title: '邀请码加载失败，请刷新重试',
+        icon: 'none',
+        duration: 2000
+      });
+      // 不设置假数据，保持为空
       this.setData({
-        inviteCode: 'DEMO1234'
+        inviteCode: ''
       });
     }
   },
@@ -104,12 +118,9 @@ Page({
       }
       
       const cloudbaseRequest = require('../../utils/cloudbase-request');
-      const res = await cloudbaseRequest.request({
-        url: `/api/invite/stats/${userId}`,
-        method: 'GET'
-      });
+      const res = await cloudbaseRequest.get(`/api/invite/stats/${userId}`);
       
-      if (res.statusCode === 200 && res.data) {
+      if (res && res.success && res.data) {
         this.setData({
           stats: res.data
         });
@@ -150,13 +161,9 @@ Page({
       const { page, pageSize } = this.data;
       
       const cloudbaseRequest = require('../../utils/cloudbase-request');
-      const res = await cloudbaseRequest.request({
-        url: `/api/invite/records/${userId}`,
-        method: 'GET',
-        data: { page, pageSize }
-      });
+      const res = await cloudbaseRequest.get(`/api/invite/records/${userId}?page=${page}&pageSize=${pageSize}`);
       
-      if (res.statusCode === 200 && res.data) {
+      if (res && res.success && res.data) {
         const newRecords = res.data.records || [];
         const total = res.data.total || 0;
         
@@ -172,6 +179,8 @@ Page({
           page: page + 1,
           loading: false
         });
+      } else {
+        this.setData({ loading: false });
       }
     } catch (err) {
       console.error('[Invite] 加载邀请记录失败:', err);
@@ -264,6 +273,19 @@ Page({
   onShareAppMessage() {
     const { inviteCode } = this.data;
     
+    // 如果邀请码为空，不分享邀请链接
+    if (!inviteCode) {
+      wx.showToast({
+        title: '邀请码加载中，请稍后再试',
+        icon: 'none'
+      });
+      return {
+        title: 'AI全家福·团圆照相馆',
+        path: '/pages/launch/launch',
+        imageUrl: '/assets/lantern.png'
+      };
+    }
+    
     return {
       title: '邀请你一起使用AI全家福·团圆照相馆',
       path: `/pages/launch/launch?invite_code=${inviteCode}`,
@@ -277,6 +299,14 @@ Page({
   onShareTimeline() {
     const { inviteCode } = this.data;
     
+    // 如果邀请码为空，不分享邀请链接
+    if (!inviteCode) {
+      return {
+        title: 'AI全家福·团圆照相馆',
+        imageUrl: '/assets/lantern.png'
+      };
+    }
+    
     return {
       title: 'AI全家福·团圆照相馆 - 邀请你一起制作全家福',
       query: `invite_code=${inviteCode}`,
@@ -289,5 +319,40 @@ Page({
    */
   onReachBottom() {
     this.loadInviteRecords();
+  },
+
+  /**
+   * 下拉刷新
+   */
+  async onPullDownRefresh() {
+    try {
+      // 重置分页
+      this.setData({
+        records: [],
+        page: 1,
+        hasMore: true
+      });
+      
+      // 重新加载所有数据
+      await Promise.all([
+        this.loadInviteCode(),
+        this.loadInviteStats(),
+        this.loadInviteRecords()
+      ]);
+      
+      wx.showToast({
+        title: '刷新成功',
+        icon: 'success',
+        duration: 1500
+      });
+    } catch (err) {
+      console.error('[Invite] 刷新失败:', err);
+      wx.showToast({
+        title: '刷新失败',
+        icon: 'none'
+      });
+    } finally {
+      wx.stopPullDownRefresh();
+    }
   }
 });

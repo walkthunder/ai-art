@@ -16,7 +16,9 @@
     "pages/transform/result/result",
     "pages/transform/history/history",
     "pages/card-editor/card-editor",
-    "pages/invite/invite"
+    "pages/invite/invite",
+    "pages/privacy/privacy",
+    "pages/agreement/agreement"
   ],
   "window": {
     "navigationBarBackgroundColor": "#8B0000",

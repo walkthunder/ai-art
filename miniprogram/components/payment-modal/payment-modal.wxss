@@ -365,6 +365,36 @@
   margin-top: 8rpx;
 }
 
+/* 隐私协议勾选 */
+.privacy-agreement {
+  margin: 24rpx 0;
+  padding: 0 16rpx;
+}
+
+.privacy-label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  line-height: 1.8;
+}
+
+.privacy-text {
+  font-size: 24rpx;
+  color: #666666;
+  margin: 0 4rpx;
+}
+
+.privacy-link {
+  font-size: 24rpx;
+  color: #DC143C;
+  text-decoration: underline;
+  margin: 0 4rpx;
+}
+
+checkbox {
+  margin-right: 8rpx;
+}
+
 /* 安全标识 */
 .security-badge {
   display: flex;

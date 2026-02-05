@@ -667,6 +667,20 @@ exports.main = async (event, context) => {
     result.warning = 'order_not_saved_to_db';
     result.warningMsg = '订单已创建但未保存到数据库，已通知后端备份';
     console.warn('[wxpay_order] ⚠️ 订单未保存到数据库，但支付流程正常');
+    
+    // 通知后端记录监控指标
+    try {
+      await notifyBackendMonitor('orderCreateFailed');
+    } catch (e) {
+      // 忽略监控通知失败
+    }
+  } else {
+    // 通知后端记录成功指标
+    try {
+      await notifyBackendMonitor('orderCreated');
+    } catch (e) {
+      // 忽略监控通知失败
+    }
   }
   
   return result;
@@ -700,5 +714,32 @@ async function notifyBackendOrderCreated(orderData) {
   } catch (error) {
     console.error('[wxpay_order] ❌ 通知后端失败！订单可能丢失！', error.message);
     console.error('[wxpay_order] 订单数据:', orderData);
+  }
+}
+
+/**
+ * 通知后端监控指标
+ */
+async function notifyBackendMonitor(event) {
+  const apiBaseUrl = process.env.API_BASE_URL;
+  if (!apiBaseUrl) {
+    return;
+  }
+  
+  try {
+    const axios = require('axios');
+    await axios.post(
+      `${apiBaseUrl}/api/monitor/record`, 
+      { event }, 
+      {
+        timeout: 2000,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Internal-Secret': process.env.INTERNAL_API_SECRET || ''
+        }
+      }
+    );
+  } catch (error) {
+    // 忽略监控通知失败
   }
 }

@@ -10,6 +10,7 @@ import {
   SettingOutlined,
   FileTextOutlined,
   LogoutOutlined,
+  MonitorOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { logout } from '@/services/auth';
@@ -29,6 +30,12 @@ function AdminLayout() {
       icon: <DashboardOutlined />,
       label: '数据看板',
       onClick: () => navigate('/dashboard'),
+    },
+    {
+      key: '/monitor',
+      icon: <MonitorOutlined />,
+      label: '系统监控',
+      onClick: () => navigate('/monitor'),
     },
     {
       key: '/users',
@@ -55,16 +62,16 @@ function AdminLayout() {
       onClick: () => navigate('/templates'),
     },
     {
+      key: '/logs',
+      icon: <FileTextOutlined />,
+      label: '日志查询',
+      onClick: () => navigate('/logs'),
+    },
+    {
       key: '/config',
       icon: <SettingOutlined />,
       label: '系统配置',
       onClick: () => navigate('/config'),
-    },
-    {
-      key: '/logs',
-      icon: <FileTextOutlined />,
-      label: '日志监控',
-      onClick: () => navigate('/logs'),
     },
   ];
 

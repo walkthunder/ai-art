@@ -1,0 +1,182 @@
+<!--用户协议页面-->
+<view class="agreement-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+  <!-- 四角装饰背景 -->
+  <corner-background />
+  
+  <!-- 背景渐变 -->
+  <view class="agreement-bg"></view>
+  
+  <!-- 大小字切换按钮 -->
+  <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
+    <elder-mode-toggle />
+  </view>
+  
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;">
+    <view class="nav-left">
+      <view class="back-btn" bindtap="goBack">
+        <text class="back-icon">‹</text>
+      </view>
+    </view>
+    <text class="nav-title">用户协议</text>
+    <view class="nav-right"></view>
+  </view>
+  
+  <!-- 主内容区 -->
+  <scroll-view class="agreement-content" scroll-y style="padding-top: {{statusBarHeight + navBarHeight}}px;">
+    <view class="content-card">
+      <view class="update-time">更新日期：2026年2月5日</view>
+      
+      <view class="section">
+        <text class="section-title">欢迎使用AI全家福·团圆照相馆</text>
+        <text class="section-text">在使用本服务前，请您仔细阅读并充分理解本协议。您使用本服务即表示您已阅读、理解并同意接受本协议的全部内容。</text>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">一、服务说明</text>
+        <text class="section-text">AI全家福·团圆照相馆（以下简称"本服务"）是一款基于人工智能技术的照片生成服务，为用户提供：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">时空拼图：将多张照片合成为全家福</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">富贵变身：将照片转换为特定风格</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">历史记录管理和分享功能</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">二、账号注册与使用</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">您需要通过微信授权登录使用本服务</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">您应妥善保管账号信息，对账号下的所有行为负责</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">禁止将账号转让、出售或出借给他人使用</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">三、使用规范</text>
+        <text class="section-text">在使用本服务时，您承诺：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">上传的照片内容合法，不侵犯他人权益</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">不上传违法、暴力、色情等不良内容</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">不利用本服务从事违法犯罪活动</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">不恶意攻击或破坏服务系统</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">四、知识产权</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">本服务的所有技术、软件、程序等知识产权归我们所有</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">您上传的原始照片知识产权归您所有</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">生成的照片供您个人使用，不得用于商业用途</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">五、付费服务</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">本服务提供免费和付费两种使用方式</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">付费套餐一经购买，不支持退款</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">使用次数不设有效期，可长期使用</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">我们保留调整价格的权利，但不影响已购买的套餐</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">六、服务变更与中断</text>
+        <text class="section-text">我们保留以下权利：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">因系统维护需要暂停服务</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">根据业务需要调整服务内容</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">对违规用户限制或终止服务</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">七、免责声明</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">AI生成结果可能存在瑕疵，我们不保证完美效果</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">因不可抗力导致的服务中断，我们不承担责任</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">用户因违规使用导致的后果由用户自行承担</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">八、争议解决</text>
+        <text class="section-text">本协议的解释、效力及纠纷的解决，适用中华人民共和国法律。如发生争议，双方应友好协商解决；协商不成的，任何一方可向我方所在地人民法院提起诉讼。</text>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">九、协议修改</text>
+        <text class="section-text">我们有权随时修改本协议。修改后的协议将在小程序内公布，继续使用服务即视为接受修改后的协议。</text>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">十、联系我们</text>
+        <text class="section-text">如对本协议有任何疑问，请通过以下方式联系我们：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">小程序内反馈功能</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">客服邮箱：support@example.com</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

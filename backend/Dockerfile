@@ -1,15 +1,13 @@
 # 使用官方 Node.js 轻量级镜像
-# Build: 2026-01-15 (使用 Alpine 系统包，无需编译)
+# Build: 2026-02-05 (优化网络依赖)
 FROM node:18-alpine
 
-# 设置时区
-RUN apk add --no-cache tzdata \
-    && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
-    && echo Asia/Shanghai > /etc/timezone \
-    && apk del tzdata
+# 设置时区（使用环境变量，避免网络依赖）
+ENV TZ=Asia/Shanghai
 
-# 安装 Python 和系统依赖
-RUN apk add --no-cache \
+# 安装 Python 和系统依赖（使用国内镜像加速）
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache \
     python3 \
     py3-pip \
     py3-numpy \
@@ -22,8 +20,9 @@ RUN mkdir -p /usr/share/opencv4/haarcascades && \
     wget -q https://raw.githubusercontent.com/opencv/opencv/4.x/data/haarcascades/haarcascade_frontalface_default.xml \
     -O /usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml
 
-# 安装 Python 包（只安装不需要编译的包）
+# 安装 Python 包（使用国内镜像加速）
 RUN pip3 install --no-cache-dir --break-system-packages \
+    -i https://mirrors.aliyun.com/pypi/simple/ \
     qrcode==7.4.2 \
     openpyxl==3.1.2 \
     requests==2.31.0
@@ -31,8 +30,10 @@ RUN pip3 install --no-cache-dir --break-system-packages \
 # 定义工作目录
 WORKDIR /app
 
-# 安装 pnpm (指定版本以确保兼容性)
-RUN npm install -g pnpm@8.15.3
+# 安装 pnpm (使用国内镜像加速)
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm install -g pnpm@8.15.3 && \
+    pnpm config set registry https://registry.npmmirror.com
 
 # 复制依赖文件
 COPY package.json pnpm-lock.yaml ./

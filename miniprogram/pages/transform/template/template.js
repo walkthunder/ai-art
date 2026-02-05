@@ -356,9 +356,6 @@ Page({
       } catch (err) {
         console.error('[TransformTemplate] 刷新使用次数失败:', err);
       }
-        });
-        return; // 阻止继续执行
-      }
       
       // 存储任务信息
       app.globalData.transformData = {

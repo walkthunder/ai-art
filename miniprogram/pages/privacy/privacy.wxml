@@ -1,0 +1,164 @@
+<!--隐私政策页面-->
+<view class="privacy-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+  <!-- 四角装饰背景 -->
+  <corner-background />
+  
+  <!-- 背景渐变 -->
+  <view class="privacy-bg"></view>
+  
+  <!-- 大小字切换按钮 -->
+  <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
+    <elder-mode-toggle />
+  </view>
+  
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;">
+    <view class="nav-left">
+      <view class="back-btn" bindtap="goBack">
+        <text class="back-icon">‹</text>
+      </view>
+    </view>
+    <text class="nav-title">隐私政策</text>
+    <view class="nav-right"></view>
+  </view>
+  
+  <!-- 主内容区 -->
+  <scroll-view class="privacy-content" scroll-y style="padding-top: {{statusBarHeight + navBarHeight}}px;">
+    <view class="content-card">
+      <view class="update-time">更新日期：2026年2月5日</view>
+      
+      <view class="section">
+        <text class="section-title">引言</text>
+        <text class="section-text">欢迎使用AI全家福·团圆照相馆（以下简称"本服务"）。我们非常重视您的隐私保护和个人信息安全。本隐私政策将帮助您了解我们如何收集、使用、存储和保护您的个人信息。</text>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">一、我们收集的信息</text>
+        <text class="section-text">为了向您提供服务，我们可能会收集以下信息：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">微信授权信息：包括您的微信昵称、头像等基本信息</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">上传的照片：您主动上传用于生成全家福的照片</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">使用记录：包括生成记录、模板选择等操作日志</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">支付信息：订单信息和支付状态（不包含支付密码）</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">二、信息的使用</text>
+        <text class="section-text">我们收集的信息将用于：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">提供AI照片生成服务</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">改进和优化服务质量</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">处理您的订单和支付</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">提供客户支持和售后服务</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">遵守法律法规要求</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">三、信息的存储和保护</text>
+        <text class="section-text">我们采取以下措施保护您的信息安全：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">使用加密技术传输和存储敏感信息</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">严格限制数据访问权限</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">定期进行安全审计和漏洞扫描</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">您上传的照片仅用于生成服务，不会用于其他用途</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">四、信息的共享</text>
+        <text class="section-text">我们不会向第三方出售、出租或交易您的个人信息。仅在以下情况下可能共享：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">获得您的明确同意</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">为提供服务所必需（如支付服务商）</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">法律法规要求或政府部门要求</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">五、您的权利</text>
+        <text class="section-text">您对自己的个人信息享有以下权利：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">访问和查看您的个人信息</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">更正不准确的信息</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">删除您的个人信息</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">撤回授权同意</text>
+        </view>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">六、未成年人保护</text>
+        <text class="section-text">我们非常重视未成年人的个人信息保护。如果您是未成年人，请在监护人的陪同下使用本服务。</text>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">七、政策更新</text>
+        <text class="section-text">我们可能会不时更新本隐私政策。更新后的政策将在本页面发布，重大变更会通过小程序通知您。</text>
+      </view>
+      
+      <view class="section">
+        <text class="section-title">八、联系我们</text>
+        <text class="section-text">如果您对本隐私政策有任何疑问、意见或建议，请通过以下方式联系我们：</text>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">小程序内反馈功能</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">客服邮箱：support@example.com</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

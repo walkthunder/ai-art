@@ -159,7 +159,7 @@ const signInWithUnionId = async () => {
         throw new Error(result.message || '登录失败');
       }
       
-      const { userId, openid, token, paymentStatus } = result.data;
+      const { userId, openid, token, paymentStatus, isNewUser } = result.data;
       
       // 构建登录状态对象
       const loginState = {
@@ -167,6 +167,7 @@ const signInWithUnionId = async () => {
         openid,
         token,
         paymentStatus: paymentStatus || 'free',
+        isNewUser: isNewUser || false,
         loginTime: Date.now(),
         expireTime: Date.now() + LOGIN_EXPIRE_TIME
       };

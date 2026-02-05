@@ -257,6 +257,35 @@ Page({
   },
 
   /**
+   * 获取更多次数按钮点击
+   * 显示使用次数模态框，引导用户付费或邀请好友
+   */
+  handleGetMore() {
+    console.log('[TransformLaunch] 点击获取更多次数');
+    
+    const { usageCount, userType, paymentStatus } = this.data;
+    
+    // 确定模态框类型
+    const modalType = usageModal.determineModalType(usageCount, userType, paymentStatus);
+    
+    if (modalType) {
+      this.setData({
+        showModal: true,
+        modalType: modalType
+      });
+      
+      // 震动反馈
+      wx.vibrateShort({ type: 'light' });
+    } else {
+      // 如果没有合适的模态框类型，显示默认提醒
+      this.setData({
+        showModal: true,
+        modalType: 'free_reminder'
+      });
+    }
+  },
+
+  /**
    * 模态框关闭
    */
   onModalClose() {
@@ -310,24 +339,6 @@ Page({
    */
   closePaymentModal() {
     this.setData({ showPaymentModal: false });
-  },
-
-  /**
-   * 模态框分享按钮点击
-   */
-  onModalShare() {
-    console.log('[TransformLaunch] 触发分享');
-    // 跳转到邀请页面
-    wx.navigateTo({
-      url: '/pages/invite/invite',
-      fail: (err) => {
-        console.error('跳转邀请页面失败:', err);
-        wx.showToast({
-          title: '功能开发中',
-          icon: 'none'
-        });
-      }
-    });
   },
 
   /**

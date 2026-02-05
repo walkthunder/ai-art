@@ -5,6 +5,9 @@ import Prices from './pages/Prices';
 import Templates from './pages/Templates';
 import Users from './pages/Users';
 import Orders from './pages/Orders';
+import Monitor from './pages/Monitor';
+import Config from './pages/Config';
+import Logs from './pages/Logs';
 import AuthGuard from './components/AuthGuard';
 import AdminLayout from './components/AdminLayout';
 
@@ -26,8 +29,9 @@ function App() {
         <Route path="orders" element={<Orders />} />
         <Route path="prices" element={<Prices />} />
         <Route path="templates" element={<Templates />} />
-        <Route path="config" element={<div>系统配置开发中...</div>} />
-        <Route path="logs" element={<div>日志监控开发中...</div>} />
+        <Route path="monitor" element={<Monitor />} />
+        <Route path="config" element={<Config />} />
+        <Route path="logs" element={<Logs />} />
       </Route>
     </Routes>
   );

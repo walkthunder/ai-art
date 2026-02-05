@@ -5,9 +5,9 @@
  * 执行所有待执行的数据库迁移
  */
 
-require('dotenv').config();
-const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const fs = require('fs');
 const db = require('../db/connection');
 
 const MIGRATIONS_DIR = path.join(__dirname, '../db/migrations');
@@ -48,9 +48,16 @@ async function runMigrations() {
         try {
           await connection.query(statement);
         } catch (error) {
-          // 如果是表已存在的错误，忽略
-          if (error.code === 'ER_TABLE_EXISTS_ERROR') {
-            console.log(`   ⚠️  表已存在，跳过`);
+          // 忽略常见的"已存在"错误
+          if (
+            error.code === 'ER_TABLE_EXISTS_ERROR' ||
+            error.code === 'ER_DUP_FIELDNAME' ||
+            error.code === 'ER_DUP_KEYNAME' ||
+            error.code === 'ER_CANT_DROP_FIELD_OR_KEY' ||
+            error.sqlMessage?.includes('already exists') ||
+            error.sqlMessage?.includes('Duplicate')
+          ) {
+            console.log(`   ⚠️  已存在，跳过: ${error.sqlMessage}`);
           } else {
             throw error;
           }

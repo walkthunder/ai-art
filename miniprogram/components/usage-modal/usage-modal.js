@@ -71,11 +71,23 @@ Component({
     },
 
     /**
-     * 点击分享按钮
+     * 点击分享按钮（跳转到邀请页面）
      */
     onShare() {
-      console.log('[UsageModal] 触发分享事件');
-      this.triggerEvent('share');
+      console.log('[UsageModal] 跳转到邀请页面');
+      // 关闭模态框
+      this.triggerEvent('close');
+      // 跳转到邀请页面
+      wx.navigateTo({
+        url: '/pages/invite/invite',
+        fail: (err) => {
+          console.error('[UsageModal] 跳转邀请页面失败:', err);
+          wx.showToast({
+            title: '跳转失败，请重试',
+            icon: 'none'
+          });
+        }
+      });
     }
   },
 

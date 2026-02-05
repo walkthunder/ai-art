@@ -20,7 +20,7 @@ Page({
     menuRight: 0
   },
 
-  onLoad() {
+  onLoad(options) {
     const app = getApp();
     const menuButtonInfo = app.globalData.menuButtonInfo;
     
@@ -43,6 +43,35 @@ Page({
     
     // 获取统计数据（可从后端获取）
     this.fetchStats();
+
+    // 处理邀请码（如果有）
+    this.handleInviteCode(options);
+  },
+
+  /**
+   * 处理邀请码
+   * 从 URL 参数中获取邀请码并保存到本地存储
+   */
+  handleInviteCode(options) {
+    try {
+      // 从 URL 参数获取邀请码
+      const inviteCode = options?.invite_code;
+      
+      if (inviteCode) {
+        console.log('[Launch] 收到邀请码:', inviteCode);
+        // 保存到本地存储，等待用户登录后处理
+        wx.setStorageSync('pending_invite_code', inviteCode);
+        
+        // 显示提示
+        wx.showToast({
+          title: '已接受邀请',
+          icon: 'success',
+          duration: 2000
+        });
+      }
+    } catch (err) {
+      console.error('[Launch] 处理邀请码失败:', err);
+    }
   },
 
   onShow() {
@@ -102,9 +131,32 @@ Page({
    * Requirements: 8.1
    */
   onShareAppMessage() {
+    // 获取当前用户的邀请码
+    const app = getApp();
+    const userId = app.globalData.userId;
+    
+    // 如果有用户ID，尝试从本地存储获取邀请码
+    let inviteCode = '';
+    if (userId) {
+      try {
+        inviteCode = wx.getStorageSync(`invite_code_${userId}`) || '';
+      } catch (err) {
+        console.error('[Launch] 获取邀请码失败:', err);
+      }
+    }
+    
+    // 如果没有邀请码，异步加载（不阻塞分享）
+    if (!inviteCode && userId) {
+      this.loadInviteCodeForShare(userId);
+    }
+    
+    const path = inviteCode 
+      ? `/pages/launch/launch?invite_code=${inviteCode}`
+      : '/pages/launch/launch';
+    
     return {
       title: 'AI全家福·团圆照相馆 - 这个春节，让爱没有距离',
-      path: '/pages/launch/launch',
+      path: path,
       imageUrl: '/assets/images/share-default.png'
     };
   },
@@ -114,9 +166,48 @@ Page({
    * Requirements: 8.1
    */
   onShareTimeline() {
+    // 获取当前用户的邀请码
+    const app = getApp();
+    const userId = app.globalData.userId;
+    
+    let inviteCode = '';
+    if (userId) {
+      try {
+        inviteCode = wx.getStorageSync(`invite_code_${userId}`) || '';
+      } catch (err) {
+        console.error('[Launch] 获取邀请码失败:', err);
+      }
+    }
+    
+    // 如果没有邀请码，异步加载（不阻塞分享）
+    if (!inviteCode && userId) {
+      this.loadInviteCodeForShare(userId);
+    }
+    
+    const query = inviteCode ? `invite_code=${inviteCode}` : '';
+    
     return {
       title: 'AI全家福·团圆照相馆',
+      query: query,
       imageUrl: '/assets/images/share-default.png'
     };
+  },
+
+  /**
+   * 异步加载邀请码（用于分享）
+   * @param {string} userId - 用户ID
+   */
+  async loadInviteCodeForShare(userId) {
+    try {
+      const cloudbaseRequest = require('../../utils/cloudbase-request');
+      const res = await cloudbaseRequest.get(`/api/invite/code/${userId}`);
+      
+      if (res && res.success && res.data && res.data.invite_code) {
+        wx.setStorageSync(`invite_code_${userId}`, res.data.invite_code);
+        console.log('[Launch] 邀请码已加载，下次分享将包含邀请码');
+      }
+    } catch (err) {
+      console.error('[Launch] 加载邀请码失败:', err);
+    }
   }
 });
