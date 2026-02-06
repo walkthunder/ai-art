@@ -165,20 +165,27 @@ async function processInviteRegistration(inviteCode, newUserId, openid) {
   const connection = await pool.getConnection();
   
   try {
-    // 验证邀请码
-    const validation = await validateInviteCode(inviteCode);
-    if (!validation.valid) {
-      throw new Error(validation.error || '邀请码无效');
+    await connection.beginTransaction();
+    
+    // 在事务中验证邀请码
+    const [inviterRows] = await connection.execute(
+      `SELECT ui.user_id as id, u.nickname
+       FROM user_invites ui
+       LEFT JOIN users u ON ui.user_id = u.id
+       WHERE ui.invite_code = ?`,
+      [inviteCode]
+    );
+    
+    if (inviterRows.length === 0) {
+      throw new Error('邀请码不存在');
     }
     
-    const inviterId = validation.inviter_id;
+    const inviterId = inviterRows[0].id;
     
     // 验证不是自我邀请
     if (inviterId === newUserId) {
       throw new Error('SELF_INVITE_NOT_ALLOWED');
     }
-    
-    await connection.beginTransaction();
     
     // 验证invitee是新用户（不存在记录）
     const [existingUserRows] = await connection.execute(
@@ -237,8 +244,21 @@ async function processInviteRegistration(inviteCode, newUserId, openid) {
       [inviteRecordId, inviterId, newUserId, inviteCode]
     );
     
-    // 增加inviter的付费次数（邀请奖励）- 使用 balanceService
-    await balanceService.addBalance(inviterId, 1, 'invite_reward', inviteRecordId, balanceService.BALANCE_TYPES.PAID);
+    // 增加inviter的付费次数（邀请奖励）- 在事务中执行
+    await connection.execute(
+      `UPDATE user_balances 
+       SET amount = amount + ?, updated_at = NOW()
+       WHERE user_id = ? AND balance_type = 'paid'`,
+      [1, inviterId]
+    );
+    
+    // 记录余额变动日志
+    const balanceLogId = uuidv4();
+    await connection.execute(
+      `INSERT INTO balance_logs (id, user_id, amount, balance_type, reason, reference_id, created_at)
+       VALUES (?, ?, ?, 'paid', 'invite_reward', ?, NOW())`,
+      [balanceLogId, inviterId, 1, inviteRecordId]
+    );
     
     // 更新或创建invite_stats
     // 先检查是否存在
@@ -428,20 +448,27 @@ async function bindInviteRelation(inviteCode, userId) {
   const connection = await pool.getConnection();
   
   try {
-    // 验证邀请码
-    const validation = await validateInviteCode(inviteCode);
-    if (!validation.valid) {
-      throw new Error(validation.error || '邀请码无效');
+    await connection.beginTransaction();
+    
+    // 在事务中验证邀请码
+    const [inviterRows] = await connection.execute(
+      `SELECT ui.user_id as id, u.nickname
+       FROM user_invites ui
+       LEFT JOIN users u ON ui.user_id = u.id
+       WHERE ui.invite_code = ?`,
+      [inviteCode]
+    );
+    
+    if (inviterRows.length === 0) {
+      throw new Error('邀请码不存在');
     }
     
-    const inviterId = validation.inviter_id;
+    const inviterId = inviterRows[0].id;
     
     // 验证不是自我邀请
     if (inviterId === userId) {
       throw new Error('不能使用自己的邀请码');
     }
-    
-    await connection.beginTransaction();
     
     // 验证用户存在
     const [userRows] = await connection.execute(
@@ -478,8 +505,21 @@ async function bindInviteRelation(inviteCode, userId) {
       [inviteRecordId, inviterId, userId, inviteCode]
     );
     
-    // 增加inviter的付费次数（邀请奖励）
-    await balanceService.addBalance(inviterId, 1, 'invite_reward', inviteRecordId, balanceService.BALANCE_TYPES.PAID);
+    // 增加inviter的付费次数（邀请奖励）- 在事务中执行
+    await connection.execute(
+      `UPDATE user_balances 
+       SET amount = amount + ?, updated_at = NOW()
+       WHERE user_id = ? AND balance_type = 'paid'`,
+      [1, inviterId]
+    );
+    
+    // 记录余额变动日志
+    const balanceLogId = uuidv4();
+    await connection.execute(
+      `INSERT INTO balance_logs (id, user_id, amount, balance_type, reason, reference_id, created_at)
+       VALUES (?, ?, ?, 'paid', 'invite_reward', ?, NOW())`,
+      [balanceLogId, inviterId, 1, inviteRecordId]
+    );
     
     // 更新或创建invite_stats
     const [statsRows] = await connection.execute(

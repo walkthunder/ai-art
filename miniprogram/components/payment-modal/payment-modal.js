@@ -388,6 +388,17 @@ Component({
     handleClose() {
       console.log('[PaymentModal] handleClose called, isPaying:', this.data.isPaying);
       if (this.data.isPaying) return;
+      
+      // 重置所有状态
+      this.setData({
+        selectedPackage: 'free',
+        isPaying: false,
+        paymentStatus: 'idle',
+        error: null,
+        outTradeNo: null,
+        privacyAgreed: true
+      });
+      
       this.triggerEvent('close');
     },
     

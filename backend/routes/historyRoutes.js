@@ -55,7 +55,7 @@ router.get('/all', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { limit, mode } = req.query;
+    const { limit, mode, page } = req.query;
     
     if (!userId) {
       return res.status(400).json({ error: '缺少必要参数', message: '需要提供 userId 参数' });
@@ -66,27 +66,44 @@ router.get('/user/:userId', async (req, res) => {
       return res.status(400).json({ error: '参数错误', message: 'mode 参数必须是 transform 或 puzzle' });
     }
     
-    const historyRecords = await generationService.getGenerationHistoryByUserId(
+    const result = await generationService.getGenerationHistoryByUserId(
       userId, 
-      limit ? parseInt(limit) : 10,
-      mode || null
+      limit ? parseInt(limit) : 20,
+      mode || null,
+      page ? parseInt(page) : 1
     );
     
-    const formattedRecords = historyRecords.map(record => ({
-      id: record.id,
-      user_id: record.userId,
-      task_ids: record.taskIds,
-      original_image_urls: record.originalImageUrls,
-      template_url: record.templateUrl,
-      generated_image_urls: record.generatedImageUrls,
-      selected_image_url: record.selectedImageUrl,
-      status: record.status,
-      mode: record.mode,
-      created_at: record.createdAt,
-      updated_at: record.updatedAt
-    }));
-    
-    res.json({ success: true, data: formattedRecords });
+    // 兼容旧版本API（返回数组）和新版本API（返回分页对象）
+    if (result.records) {
+      // 新版本：返回分页信息
+      const formattedRecords = result.records.map(record => ({
+        id: record.id,
+        user_id: record.userId,
+        task_ids: record.taskIds,
+        original_image_urls: record.originalImageUrls,
+        template_url: record.templateUrl,
+        generated_image_urls: record.generatedImageUrls,
+        selected_image_url: record.selectedImageUrl,
+        status: record.status,
+        mode: record.mode,
+        created_at: record.createdAt,
+        updated_at: record.updatedAt
+      }));
+      
+      res.json({ 
+        success: true, 
+        data: formattedRecords,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          pageSize: result.pageSize,
+          totalPages: result.totalPages
+        }
+      });
+    } else {
+      // 兼容旧版本（不应该到这里）
+      res.json({ success: true, data: [] });
+    }
   } catch (error) {
     console.error('获取用户历史记录失败:', error);
     res.status(500).json({ error: '获取用户历史记录失败', message: error.message });

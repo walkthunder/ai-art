@@ -248,33 +248,53 @@ async function getGenerationHistoryByTaskId(taskId) {
 /**
  * 根据用户ID获取生成历史记录列表
  * @param {string} userId 用户ID
- * @param {number} limit 返回记录数量限制(默认10)
+ * @param {number} limit 返回记录数量限制(默认20)
  * @param {string} mode 生成模式(可选: 'transform'/'puzzle')
- * @returns {Promise<Array<Object>>} 生成历史记录列表
+ * @param {number} page 页码(从1开始，默认1)
+ * @returns {Promise<Object>} { records: Array, total: number, page: number, pageSize: number, totalPages: number }
  */
-async function getGenerationHistoryByUserId(userId, limit = 10, mode = null) {
+async function getGenerationHistoryByUserId(userId, limit = 20, mode = null, page = 1) {
   if (!userId) {
     throw new Error('缺少必要参数: userId 是必需的');
   }
 
   const connection = await db.pool.getConnection();
   try {
-    // 确保limit是整数
-    const limitInt = parseInt(limit);
+    // 验证分页参数
+    const validPage = Math.max(1, parseInt(page) || 1);
+    const validPageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (validPage - 1) * validPageSize;
     
     // 构建查询条件
-    let query = 'SELECT * FROM generation_history WHERE user_id = ?';
+    let whereClause = 'WHERE user_id = ?';
     const params = [userId];
     
     // 如果指定了 mode，添加过滤条件
     if (mode) {
-      query += ' AND mode = ?';
+      whereClause += ' AND mode = ?';
       params.push(mode);
     }
     
-    query += ` ORDER BY created_at DESC LIMIT ${limitInt}`;
+    // 查询总记录数
+    const countQuery = `SELECT COUNT(*) as total FROM generation_history ${whereClause}`;
+    const [countRows] = await connection.execute(countQuery, params);
+    const total = countRows[0].total;
     
-    const [rows] = await connection.execute(query, params);
+    // 如果没有记录，直接返回空结果
+    if (total === 0) {
+      return {
+        records: [],
+        total: 0,
+        page: validPage,
+        pageSize: validPageSize,
+        totalPages: 0
+      };
+    }
+    
+    // 查询分页数据 - 使用参数化查询避免 SQL 注入
+    const dataQuery = `SELECT * FROM generation_history ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    const dataParams = [...params, validPageSize, offset];
+    const [rows] = await connection.execute(dataQuery, dataParams);
 
     // 解析JSON字段 - 处理可能是字符串或已解析的JSON
     const parseJsonField = (field) => {
@@ -285,7 +305,7 @@ async function getGenerationHistoryByUserId(userId, limit = 10, mode = null) {
       return field;
     };
 
-    return rows.map(record => ({
+    const records = rows.map(record => ({
       id: record.id,
       userId: record.user_id,
       taskIds: parseJsonField(record.task_ids),
@@ -298,6 +318,14 @@ async function getGenerationHistoryByUserId(userId, limit = 10, mode = null) {
       createdAt: convertToCST(record.created_at),
       updatedAt: convertToCST(record.updated_at)
     }));
+    
+    return {
+      records,
+      total,
+      page: validPage,
+      pageSize: validPageSize,
+      totalPages: Math.ceil(total / validPageSize)
+    };
   } finally {
     connection.release();
   }

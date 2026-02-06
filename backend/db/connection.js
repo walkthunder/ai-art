@@ -71,7 +71,15 @@ function initMysqlPool() {
     console.log('📡 使用 DATABASE_URL 连接数据库');
     mysqlPool = mysql.createPool({
       uri: process.env.DATABASE_URL,
-      timezone: '+08:00' // 设置为中国标准时间
+      timezone: '+08:00', // 设置为中国标准时间
+      waitForConnections: true,
+      connectionLimit: 20, // 增加连接池大小
+      queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
+      maxIdle: 10, // 最大空闲连接数
+      idleTimeout: 60000, // 空闲连接超时时间（60秒）
+      connectTimeout: 10000
     });
   } 
   // 其次使用远程数据库配置
@@ -85,10 +93,12 @@ function initMysqlPool() {
         uri: process.env.REMOTE_DB_HOST,
         timezone: '+08:00',
         waitForConnections: true,
-        connectionLimit: 10,
+        connectionLimit: 20, // 增加连接池大小
         queueLimit: 0,
         enableKeepAlive: true,
         keepAliveInitialDelay: 0,
+        maxIdle: 10,
+        idleTimeout: 60000,
         connectTimeout: 10000
       });
     } else {
@@ -100,10 +110,12 @@ function initMysqlPool() {
         password: process.env.REMOTE_DB_PASSWORD || '',
         database: process.env.REMOTE_DB_NAME || process.env.DB_NAME || 'ai_family_photo',
         waitForConnections: true,
-        connectionLimit: 10,
+        connectionLimit: 20, // 增加连接池大小
         queueLimit: 0,
         enableKeepAlive: true,
         keepAliveInitialDelay: 0,
+        maxIdle: 10,
+        idleTimeout: 60000,
         timezone: '+08:00', // 设置为中国标准时间
         // 远程数据库连接超时设置
         connectTimeout: 10000,
@@ -124,10 +136,12 @@ function initMysqlPool() {
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'ai_family_photo',
       waitForConnections: true,
-      connectionLimit: 10,
+      connectionLimit: 15, // 本地开发环境适中的连接数
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0,
+      maxIdle: 8,
+      idleTimeout: 60000,
       timezone: '+08:00' // 设置为中国标准时间
     });
   }
