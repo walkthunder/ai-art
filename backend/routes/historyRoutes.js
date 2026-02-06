@@ -55,14 +55,21 @@ router.get('/all', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { limit } = req.query;
+    const { limit, mode } = req.query;
     
     if (!userId) {
       return res.status(400).json({ error: '缺少必要参数', message: '需要提供 userId 参数' });
     }
     
+    // 验证 mode 参数（如果提供）
+    if (mode && !['transform', 'puzzle'].includes(mode)) {
+      return res.status(400).json({ error: '参数错误', message: 'mode 参数必须是 transform 或 puzzle' });
+    }
+    
     const historyRecords = await generationService.getGenerationHistoryByUserId(
-      userId, limit ? parseInt(limit) : 10
+      userId, 
+      limit ? parseInt(limit) : 10,
+      mode || null
     );
     
     const formattedRecords = historyRecords.map(record => ({
@@ -74,6 +81,7 @@ router.get('/user/:userId', async (req, res) => {
       generated_image_urls: record.generatedImageUrls,
       selected_image_url: record.selectedImageUrl,
       status: record.status,
+      mode: record.mode,
       created_at: record.createdAt,
       updated_at: record.updatedAt
     }));
@@ -286,25 +294,38 @@ router.post('/batch-delete', async (req, res) => {
 router.delete('/user/:userId/all', async (req, res) => {
   try {
     const { userId } = req.params;
+    const { mode } = req.query;
     
     if (!userId) {
       return res.status(400).json({ error: '缺少必要参数', message: '需要提供 userId 参数' });
     }
     
+    // 验证 mode 参数（如果提供）
+    if (mode && !['transform', 'puzzle'].includes(mode)) {
+      return res.status(400).json({ error: '参数错误', message: 'mode 参数必须是 transform 或 puzzle' });
+    }
+    
     const connection = await db.pool.getConnection();
     try {
-      const [result] = await connection.execute(
-        'DELETE FROM generation_history WHERE user_id = ?',
-        [userId]
-      );
+      let query = 'DELETE FROM generation_history WHERE user_id = ?';
+      const params = [userId];
       
-      console.log(`[History] 清空用户历史记录: userId=${userId}, 删除${result.affectedRows}条`);
+      // 如果指定了 mode，只删除该模式的记录
+      if (mode) {
+        query += ' AND mode = ?';
+        params.push(mode);
+      }
+      
+      const [result] = await connection.execute(query, params);
+      
+      console.log(`[History] 清空用户历史记录: userId=${userId}, mode=${mode || 'all'}, 删除${result.affectedRows}条`);
       
       res.json({ 
         success: true, 
         message: '历史记录已清空', 
         data: { 
           userId,
+          mode: mode || 'all',
           deleted: result.affectedRows 
         } 
       });

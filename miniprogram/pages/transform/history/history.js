@@ -76,9 +76,9 @@ Page({
       
       if (userId) {
         try {
-          // 使用 cloudRequest 获取历史记录
+          // 使用 cloudRequest 获取历史记录，指定 mode=transform
           const result = await cloudRequest({
-            path: `/api/history/user/${userId}?limit=20`,
+            path: `/api/history/user/${userId}?limit=20&mode=transform`,
             method: 'GET',
             showError: false
           });
@@ -92,7 +92,7 @@ Page({
               generatedImages: r.generated_image_urls || [],
               createdAt: r.created_at,
               status: r.status,
-              mode: 'transform',
+              mode: r.mode || 'transform',
               isServerRecord: true // 标记为服务端记录
             }));
             
@@ -278,11 +278,11 @@ Page({
     const userId = await app.getUserId(false); // 不强制登录
     
     try {
-      // 清空服务端记录
+      // 清空服务端记录，指定 mode=transform
       if (userId) {
         try {
           await cloudRequest({
-            path: `/api/history/user/${userId}/all`,
+            path: `/api/history/user/${userId}/all?mode=transform`,
             method: 'DELETE',
             showError: false
           });

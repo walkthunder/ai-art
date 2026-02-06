@@ -17,6 +17,7 @@ const { convertToCST } = require('../utils/timezone');
  * @param {Array<string>} data.generatedImageUrls 生成的图片URL数组(可选)
  * @param {string} data.selectedImageUrl 选中的图片URL(可选)
  * @param {string} data.status 状态(pending/processing/completed/failed)
+ * @param {string} data.mode 生成模式(transform/puzzle，默认transform)
  * @returns {Promise<Object>} 保存的记录
  */
 async function saveGenerationHistory(data) {
@@ -27,7 +28,8 @@ async function saveGenerationHistory(data) {
     templateUrl,
     generatedImageUrls = null,
     selectedImageUrl = null,
-    status = 'pending'
+    status = 'pending',
+    mode = 'transform'
   } = data;
 
   // 参数校验
@@ -56,12 +58,12 @@ async function saveGenerationHistory(data) {
   try {
     await connection.execute(
       `INSERT INTO generation_history 
-      (id, user_id, task_ids, original_image_urls, template_url, generated_image_urls, selected_image_url, status, created_at, updated_at) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [recordId, userId, taskIdsJson, originalImageUrlsJson, templateUrl, generatedImageUrlsJson, selectedImageUrl, status]
+      (id, user_id, task_ids, original_image_urls, template_url, generated_image_urls, selected_image_url, status, mode, created_at, updated_at) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [recordId, userId, taskIdsJson, originalImageUrlsJson, templateUrl, generatedImageUrlsJson, selectedImageUrl, status, mode]
     );
 
-    console.log(`生成历史记录已保存: ${recordId}, 用户: ${userId}, 任务数: ${taskIds.length}`);
+    console.log(`生成历史记录已保存: ${recordId}, 用户: ${userId}, 模式: ${mode}, 任务数: ${taskIds.length}`);
 
     // 返回保存的记录
     return {
@@ -73,6 +75,7 @@ async function saveGenerationHistory(data) {
       generatedImageUrls,
       selectedImageUrl,
       status,
+      mode,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -246,9 +249,10 @@ async function getGenerationHistoryByTaskId(taskId) {
  * 根据用户ID获取生成历史记录列表
  * @param {string} userId 用户ID
  * @param {number} limit 返回记录数量限制(默认10)
+ * @param {string} mode 生成模式(可选: 'transform'/'puzzle')
  * @returns {Promise<Array<Object>>} 生成历史记录列表
  */
-async function getGenerationHistoryByUserId(userId, limit = 10) {
+async function getGenerationHistoryByUserId(userId, limit = 10, mode = null) {
   if (!userId) {
     throw new Error('缺少必要参数: userId 是必需的');
   }
@@ -258,13 +262,19 @@ async function getGenerationHistoryByUserId(userId, limit = 10) {
     // 确保limit是整数
     const limitInt = parseInt(limit);
     
-    const [rows] = await connection.execute(
-      `SELECT * FROM generation_history 
-       WHERE user_id = ? 
-       ORDER BY created_at DESC 
-       LIMIT ${limitInt}`,
-      [userId]
-    );
+    // 构建查询条件
+    let query = 'SELECT * FROM generation_history WHERE user_id = ?';
+    const params = [userId];
+    
+    // 如果指定了 mode，添加过滤条件
+    if (mode) {
+      query += ' AND mode = ?';
+      params.push(mode);
+    }
+    
+    query += ` ORDER BY created_at DESC LIMIT ${limitInt}`;
+    
+    const [rows] = await connection.execute(query, params);
 
     // 解析JSON字段 - 处理可能是字符串或已解析的JSON
     const parseJsonField = (field) => {
@@ -284,6 +294,7 @@ async function getGenerationHistoryByUserId(userId, limit = 10) {
       generatedImageUrls: parseJsonField(record.generated_image_urls),
       selectedImageUrl: record.selected_image_url,
       status: record.status,
+      mode: record.mode || 'transform', // 默认为 transform
       createdAt: convertToCST(record.created_at),
       updatedAt: convertToCST(record.updated_at)
     }));

@@ -66,24 +66,22 @@ Page({
       if (userId) {
         try {
           const result = await cloudRequest({
-            path: `/api/history/user/${userId}?limit=20`,
+            path: `/api/history/user/${userId}?limit=20&mode=puzzle`,
             method: 'GET',
             showError: false
           });
           
           if (result.success && result.data && result.data.length > 0) {
-            const serverRecords = result.data
-              .filter(r => r.mode === 'puzzle' || !r.mode)
-              .map(r => ({
-                id: r.id,
-                originalImages: r.original_image_urls || [],
-                generatedImage: r.selected_image_url || (r.generated_image_urls && r.generated_image_urls[0]) || '',
-                generatedImages: r.generated_image_urls || [],
-                createdAt: r.created_at,
-                status: r.status,
-                mode: 'puzzle',
-                isServerRecord: true
-              }));
+            const serverRecords = result.data.map(r => ({
+              id: r.id,
+              originalImages: r.original_image_urls || [],
+              generatedImage: r.selected_image_url || (r.generated_image_urls && r.generated_image_urls[0]) || '',
+              generatedImages: r.generated_image_urls || [],
+              createdAt: r.created_at,
+              status: r.status,
+              mode: r.mode || 'puzzle',
+              isServerRecord: true
+            }));
             
             const allRecords = [...serverRecords];
             localRecords.forEach(local => {
@@ -242,7 +240,7 @@ Page({
       if (userId) {
         try {
           await cloudRequest({
-            path: `/api/history/user/${userId}/all`,
+            path: `/api/history/user/${userId}/all?mode=puzzle`,
             method: 'DELETE',
             showError: false
           });

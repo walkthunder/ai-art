@@ -776,24 +776,9 @@ Page({
   },
 
   goBack() {
-    // 手动触发 Launch 页面刷新使用次数
-    const pages = getCurrentPages();
-    if (pages.length >= 2) {
-      const prevPage = pages[pages.length - 2];
-      // 检查上一个页面是否是 Launch 页面
-      if (prevPage && prevPage.route && prevPage.route.includes('launch')) {
-        console.log('[PuzzleResult] 触发 Launch 页面刷新');
-        // 延迟执行，确保页面切换完成后再刷新
-        setTimeout(() => {
-          if (typeof prevPage.loadUsageCount === 'function') {
-            prevPage.loadUsageCount();
-          }
-        }, 300);
-      }
-    }
-    
-    wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/puzzle/launch/launch' })
+    // 直接返回到 puzzle 模式的 launch 页面
+    wx.redirectTo({
+      url: '/pages/puzzle/launch/launch'
     });
   },
 

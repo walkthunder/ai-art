@@ -325,13 +325,41 @@ Page({
     // 缓存到本地存储
     wx.setStorageSync('hasEverPaid', true);
     
-    // 刷新使用次数
-    this.loadUsageCount();
-    
-    wx.showToast({
-      title: '购买成功',
-      icon: 'success'
+    // ✅ 刷新使用次数，即使失败也跳转（降级方案）
+    this.loadUsageCount().then(() => {
+      console.log('[TransformLaunch] 余额刷新成功，准备跳转');
+      this.navigateToUpload();
+    }).catch((err) => {
+      console.error('[TransformLaunch] 余额刷新失败，但仍然跳转', err);
+      // ✅ 即使刷新失败也跳转，让用户可以继续使用
+      this.navigateToUpload();
     });
+  },
+
+  /**
+   * 跳转到上传页（支付成功后）
+   */
+  navigateToUpload() {
+    wx.showToast({
+      title: '购买成功，开始制作',
+      icon: 'success',
+      duration: 1500
+    });
+    
+    // 延迟跳转，让用户看到成功提示
+    setTimeout(() => {
+      wx.navigateTo({
+        url: '/pages/transform/upload/upload',
+        fail: (err) => {
+          console.error('[TransformLaunch] 跳转上传页失败:', err);
+          wx.showToast({
+            title: '页面跳转失败，请重试',
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      });
+    }, 1500);
   },
 
   /**

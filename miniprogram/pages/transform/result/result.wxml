@@ -106,6 +106,7 @@
         class="action-btn make-same-btn"
         bindtap="handleMakeSame"
       >
+        <image class="btn-bg-image" src="{{makeBtnBg}}" mode="aspectFill" />
         <view class="btn-inner primary">
           <text class="btn-icon">✨</text>
           <text class="btn-text">制作同款</text>

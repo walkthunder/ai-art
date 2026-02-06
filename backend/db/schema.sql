@@ -47,10 +47,13 @@ CREATE TABLE IF NOT EXISTS generation_history (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   status ENUM('pending','processing','completed','failed') DEFAULT 'pending' COMMENT '生成状态',
+  mode VARCHAR(20) DEFAULT 'transform' COMMENT '生成模式：transform/puzzle',
   PRIMARY KEY (id),
   KEY idx_user_id (user_id),
   KEY idx_status (status),
   KEY idx_created_at (created_at),
+  KEY idx_mode (mode),
+  KEY idx_user_mode (user_id, mode, created_at),
   CONSTRAINT generation_history_ibfk_1 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='生成历史表';
 

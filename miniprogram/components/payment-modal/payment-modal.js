@@ -150,27 +150,32 @@ Component({
       
       console.log('[PaymentModal] currentLevel:', currentLevel, 'allPackages count:', allPackages.length);
       
-      // 只显示比当前等级更高或相等的套餐
-      const filteredPackages = allPackages.filter(pkg => {
-        const pkgLevel = PACKAGE_LEVEL[pkg.id] || 0;
-        return pkgLevel >= currentLevel;
-      });
-      
-      console.log('[PaymentModal] filteredPackages count:', filteredPackages.length);
-      
       // 检查是否免费次数已用尽（剩余次数为0）
       const isFreeExhausted = this.data.usageCount === 0;
       
       console.log('[PaymentModal] isFreeExhausted:', isFreeExhausted, '(usageCount:', this.data.usageCount, ')');
       
+      // ✅ 优化过滤逻辑
+      let filteredPackages;
+      
+      if (isFreeExhausted) {
+        // 次数为0时，隐藏免费版，只显示付费套餐
+        filteredPackages = allPackages.filter(pkg => pkg.id !== 'free');
+      } else {
+        // 次数 > 0时，显示所有套餐
+        filteredPackages = allPackages.filter(pkg => {
+          const pkgLevel = PACKAGE_LEVEL[pkg.id] || 0;
+          return pkgLevel >= currentLevel;
+        });
+      }
+      
+      console.log('[PaymentModal] filteredPackages count:', filteredPackages.length);
+      
       // 默认选中第一个付费套餐（如果免费次数已用尽）或第一个可用套餐
       let defaultSelected = 'free';
-      if (isFreeExhausted && filteredPackages.length > 1) {
-        // 选择第一个非免费套餐
-        const paidPackage = filteredPackages.find(pkg => pkg.id !== 'free');
-        if (paidPackage) {
-          defaultSelected = paidPackage.id;
-        }
+      if (isFreeExhausted && filteredPackages.length > 0) {
+        // 选择第一个付费套餐（basic 或 premium）
+        defaultSelected = filteredPackages[0].id;
       } else if (filteredPackages.length > 0) {
         defaultSelected = filteredPackages[0].id;
       }
@@ -205,11 +210,12 @@ Component({
           return;
         }
         
-        // 付费用户：不能选择免费版和尝鲜版
-        if (this.data.hasEverPaid && (id === 'free' || id === 'basic')) {
-          console.log('[PaymentModal] 付费用户次数为0，禁止选择免费版和尝鲜版');
+        // ✅ 移除付费用户的限制，允许选择任何付费套餐
+        // 付费用户也不能选择免费版（次数为0时）
+        if (this.data.hasEverPaid && id === 'free') {
+          console.log('[PaymentModal] 付费用户次数为0，禁止选择免费版');
           wx.showToast({
-            title: '次数已用尽，请选择高级套餐',
+            title: '次数已用尽，请选择付费套餐',
             icon: 'none'
           });
           return;
@@ -294,8 +300,24 @@ Component({
         });
         
         if (result.success) {
-          // 支付成功
-          wx.showToast({ title: '支付成功', icon: 'success' });
+          // ✅ 支付成功，显示详细提示
+          if (result.warning) {
+            // 支付成功但订单确认超时
+            wx.showModal({
+              title: '支付成功',
+              content: '支付已完成，但订单确认需要一些时间。如果次数未更新，请稍后查看历史记录或联系客服。',
+              showCancel: false,
+              confirmText: '我知道了'
+            });
+          } else {
+            // 支付成功且订单已确认
+            wx.showToast({ 
+              title: '支付成功', 
+              icon: 'success',
+              duration: 1500
+            });
+          }
+          
           this.setData({
             isPaying: false,
             paymentStatus: 'success',
@@ -305,9 +327,10 @@ Component({
           setTimeout(() => {
             this.triggerEvent('complete', { 
               packageType: selectedPackage,
-              outTradeNo: result.data.outTradeNo
+              outTradeNo: result.data.outTradeNo,
+              warning: result.warning || false
             });
-          }, 1000);
+          }, result.warning ? 2000 : 1000);
         } else if (result.cancelled) {
           // 用户取消支付
           this.setData({
