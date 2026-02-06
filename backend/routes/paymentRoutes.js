@@ -663,21 +663,34 @@ router.post('/callback', async (req, res) => {
           if (orderRows.length > 0) {
             const { user_id, package_type, amount } = orderRows[0];
             
-            // 使用 balanceService 处理付费充值
-            // ✅ 从 priceConfigService 读取充值次数配置
-            const rechargeAmount = await priceConfigService.getRechargeAmount(package_type, connection);
+            // 🔒 幂等性检查：检查是否已经充值过
+            const [logRows] = await connection.execute(
+              `SELECT id FROM usage_logs 
+               WHERE user_id = ? AND reference_id = ? AND action_type = 'increment' AND reason = 'payment'
+               LIMIT 1`,
+              [user_id, orderId]
+            );
             
-            // 验证充值次数合理性
-            if (rechargeAmount <= 0 || rechargeAmount > 1000) {
-              throw new Error(`充值次数配置异常: ${rechargeAmount}`);
+            if (logRows.length === 0) {
+              // 还没充值，立即充值
+              // 使用 balanceService 处理付费充值
+              // ✅ 从 priceConfigService 读取充值次数配置
+              const rechargeAmount = await priceConfigService.getRechargeAmount(package_type, connection);
+              
+              // 验证充值次数合理性
+              if (rechargeAmount <= 0 || rechargeAmount > 1000) {
+                throw new Error(`充值次数配置异常: ${rechargeAmount}`);
+              }
+              
+              await balanceService.addBalance(user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
+              
+              // 更新用户支付状态
+              await userServiceV2.updatePaymentStatus(user_id, package_type, amount);
+              
+              console.log(`用户 ${user_id} 付费充值成功: ${package_type}, 金额: ${amount}, 次数: ${rechargeAmount}`);
+            } else {
+              console.log(`订单 ${orderId} 已充值过，跳过（幂等性保护）`);
             }
-            
-            await balanceService.addBalance(user_id, rechargeAmount, 'payment', orderId, balanceService.BALANCE_TYPES.PAID);
-            
-            // 更新用户支付状态
-            await userServiceV2.updatePaymentStatus(user_id, package_type, amount);
-            
-            console.log(`用户 ${user_id} 付费充值成功: ${package_type}, 金额: ${amount}, 次数: ${rechargeAmount}`);
           }
         }
         

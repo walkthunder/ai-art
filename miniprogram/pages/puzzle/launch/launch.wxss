@@ -255,11 +255,14 @@
   border-radius: 12rpx;
   padding: 14rpx 24rpx;
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .guide-text {
   font-size: 24rpx;
   color: #9CA3AF;
+  white-space: nowrap;
 }
 
 /* 操作按钮区域 */

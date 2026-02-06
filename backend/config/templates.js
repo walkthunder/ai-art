@@ -102,22 +102,35 @@ const TRANSFORM_TEMPLATES = {
 
 /**
  * Puzzle模式（时空拼图）模板配置
- * TODO: 需要上传puzzle模式的模板图片
+ * 
+ * Puzzle 模式特点：
+ * - 不使用模板图片，纯粹基于用户上传的多张照片进行合成
+ * - 第一张照片作为背景基准，其他人物合并到第一张照片中
+ * - 保持每个人的面部特征和自然姿态
  */
 const PUZZLE_TEMPLATES = {
-  'puzzle-1': {
-    id: 'puzzle-1',
-    name: '中国风全家福',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/template1.jpeg`,
-    prompt: '参考图分工：图1-N为人物参考图，最后一张为风格参考图。要求：1:1还原每个人物的面部特征，严格复刻风格参考图的姿势、风格、场景氛围和光影逻辑，生成中国风全家福艺术照，色彩过渡均匀，背景禁用高饱和色，分辨率超高清，确保细节清晰',
-    category: 'chinese'
-  },
-  'puzzle-2': {
-    id: 'puzzle-2',
-    name: '节日喜庆',
-    imageUrl: `https://${OSS_DOMAIN}/art-photos/template2.jpeg`,
-    prompt: '参考图分工：图1-N为人物参考图，最后一张为风格参考图。要求：1:1还原每个人物的面部特征，严格复刻风格参考图的节日喜庆氛围，生成春节主题全家福艺术照，红色喜庆基调，分辨率超高清，确保细节清晰',
-    category: 'festive'
+  'puzzle-default': {
+    id: 'puzzle-default',
+    name: '智能合成全家福',
+    imageUrl: null, // puzzle 模式不需要模板图片
+    prompt: `你将收到2-5张不同人物的照片，请按照以下规则将这些人物智能合成为一张温馨和谐的全家福照片。
+
+【图片分工说明】
+- 图1（第一张照片）：作为背景基准图，保留其完整的场景、环境、光线和构图
+- 图2-图N（后续照片）：提取其中的人物，将这些人物自然地合并到图1的场景中
+
+【核心要求】
+1. 【关键】以图1作为背景基准，完整保留图1的场景环境、背景元素、光线氛围和整体构图
+2. 从图2-图N中提取人物，将这些人物自然地融入到图1的场景中
+3. 完整保留每个人物的面部特征、表情神态、肢体姿势和原始服装，不做任何修改
+4. 确保所有人物的光影效果与图1的环境光线保持一致（光线方向、强度、色温）
+5. 合理安排人物在图1场景中的位置，确保大小比例协调，前后景深自然
+6. 人物与图1背景的边缘过渡要自然柔和，避免生硬的拼接感
+7. 保持画面整体色调和谐统一，所有元素自然融合
+
+【画面效果】
+生成一张真实自然的全家福合影，以图1的场景为基础，所有人物完整呈现在图1的环境中，姿态自然，表情温馨，光影协调，整体画面和谐统一，呈现温馨团圆的家庭氛围，高清画质，细节清晰`,
+    category: 'default'
   }
 };
 
@@ -159,7 +172,7 @@ function getDefaultTemplate(mode) {
   if (mode === 'transform') {
     return TRANSFORM_TEMPLATES['transform-custom-1'];
   } else if (mode === 'puzzle') {
-    return PUZZLE_TEMPLATES['puzzle-1'];
+    return PUZZLE_TEMPLATES['puzzle-default'];
   }
   return null;
 }

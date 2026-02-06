@@ -75,9 +75,10 @@
     <!-- 提示文字 -->
     <view class="upload-tips">
       <text class="tips-hint">{{uploadedCount === 0 ? '点击上传照片（可多选）' : '点击框内上传或更换照片'}}</text>
+      <text class="tips-hint" wx:if="{{uploadedCount > 0}}">💡 第一张照片将作为背景基准</text>
     </view>
     
-    <!-- 下一步按钮 - 根据上传数量显示不同文案 -->
+    <!-- 开始生成按钮 - 根据上传数量显示不同文案 -->
     <view class="action-buttons">
       <view 
         class="start-btn {{uploadedCount < 2 || isProcessing ? 'disabled' : ''}}" 
@@ -85,7 +86,7 @@
         hover-class="{{uploadedCount < 2 || isProcessing ? '' : 'start-btn-hover'}}"
       >
         <view class="btn-inner">
-          <text class="btn-text">{{uploadedCount < 2 ? '还需添加 ' + (2 - uploadedCount) + ' 人' : '下一步：选择模板'}}</text>
+          <text class="btn-text">{{uploadedCount < 2 ? '还需添加 ' + (2 - uploadedCount) + ' 人' : '开始合成全家福'}}</text>
         </view>
         <!-- 光效动画 -->
         <view class="btn-shine" wx:if="{{uploadedCount >= 2 && !isProcessing}}"></view>
@@ -96,7 +97,11 @@
     <view class="example-tips">
       <view class="tip-item">
         <text class="tip-icon">✓</text>
-        <text class="tip-text">可上传不同年代的照片</text>
+        <text class="tip-text">第一张照片作为背景基准</text>
+      </view>
+      <view class="tip-item">
+        <text class="tip-icon">✓</text>
+        <text class="tip-text">其他人物将合并到第一张照片中</text>
       </view>
       <view class="tip-item">
         <text class="tip-icon">✓</text>
@@ -106,7 +111,7 @@
     
     <!-- 底部提示 -->
     <view class="bottom-tips">
-      <text class="tips-text">💡 提示：上传不同年代的家人照片，AI将合成穿越时空的全家福</text>
+      <text class="tips-text">💡 提示：第一张照片将作为背景基准，其他人物会自然融入到第一张照片的场景中</text>
     </view>
     
     <!-- AI生成提示（合规要求） -->

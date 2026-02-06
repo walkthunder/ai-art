@@ -251,7 +251,20 @@ exports.main = async (event, context) => {
     }
     
     if (order.status === 'paid') {
-      console.log('[wxpay_order_callback] 订单已处理:', outTradeNo);
+      // ✅ 增加：检查后端通知结果，确保充值完成
+      console.log('[wxpay_order_callback] 订单状态已是paid，重新通知后端确保充值');
+      
+      // 尝试再次通知后端（后端有幂等性保护）
+      const retryNotify = await notifyBackend({
+        outTradeNo,
+        transactionId: order.transaction_id,
+        status: 'paid',
+        packageType: order.package_type,
+        generationId: order.generation_id,
+        openid: payer?.openid
+      });
+      
+      console.log('[wxpay_order_callback] 重新通知结果:', retryNotify);
       return { code: 'SUCCESS', message: '订单已处理' };
     }
     
@@ -284,6 +297,25 @@ exports.main = async (event, context) => {
       openid: payer?.openid
     });
     
+    // ✅ 检查通知结果
+    if (!notifyResult.success) {
+      console.error('[wxpay_order_callback] ❌ 后端通知失败，但订单已更新为paid');
+      
+      // 记录失败日志
+      await logCallback('process_failed', {
+        outTradeNo,
+        transactionId,
+        eventType,
+        errorMessage: '后端通知失败',
+        errorCode: 'BACKEND_NOTIFY_FAILED',
+        responseData: notifyResult
+      });
+      
+      // ⚠️ 仍然返回SUCCESS，避免微信无限重试
+      // 依赖定时任务修复
+      return { code: 'SUCCESS', message: '订单已处理，充值待确认' };
+    }
+    
     // 记录成功日志（包含后端通知结果）
     await logCallback('success', {
       outTradeNo,
@@ -314,9 +346,10 @@ exports.main = async (event, context) => {
 };
 
 /**
- * 通知后端服务器
+ * 通知后端服务器（带重试机制）
  */
-async function notifyBackend(paymentData) {
+async function notifyBackend(paymentData, retryCount = 0) {
+  const maxRetries = 3;
   const apiBaseUrl = process.env.API_BASE_URL;
   const internalSecret = process.env.INTERNAL_API_SECRET;
   
@@ -335,23 +368,37 @@ async function notifyBackend(paymentData) {
       headers['X-Internal-Secret'] = internalSecret;
     }
     
-    console.log('[wxpay_order_callback] 通知后端:', url);
+    console.log(`[wxpay_order_callback] 通知后端 (尝试 ${retryCount + 1}/${maxRetries}):`, url);
     
     const response = await axios.post(url, paymentData, {
-      timeout: 5000,
+      timeout: 10000,  // ✅ 增加到10秒
       headers
     });
     
     console.log('[wxpay_order_callback] 后端通知成功:', response.data);
     return { success: true, data: response.data };
+    
   } catch (error) {
-    if (error.code === 'ECONNREFUSED') {
-      console.error('[wxpay_order_callback] 后端服务器连接被拒绝');
-    } else if (error.code === 'ETIMEDOUT') {
-      console.error('[wxpay_order_callback] 后端服务器响应超时');
-    } else {
-      console.error('[wxpay_order_callback] 通知后端失败:', error.message);
+    console.error(`[wxpay_order_callback] 后端通知失败 (尝试 ${retryCount + 1}/${maxRetries}):`, error.message);
+    
+    // ✅ 重试逻辑
+    if (retryCount < maxRetries - 1) {
+      const delay = Math.pow(2, retryCount) * 1000;  // 指数退避: 1s, 2s, 4s
+      console.log(`[wxpay_order_callback] ${delay}ms 后重试...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return notifyBackend(paymentData, retryCount + 1);
     }
-    return { success: false, message: error.message };
+    
+    // ✅ 所有重试都失败，记录到callback_logs
+    await logCallback('process_failed', {
+      outTradeNo: paymentData.outTradeNo,
+      transactionId: paymentData.transactionId,
+      eventType: 'TRANSACTION.SUCCESS',
+      errorMessage: `后端通知失败，已重试${maxRetries}次: ${error.message}`,
+      errorCode: 'BACKEND_NOTIFY_FAILED',
+      requestData: paymentData
+    });
+    
+    return { success: false, message: error.message, retriesExhausted: true };
   }
 }

@@ -2,11 +2,13 @@
  * 定时清理服务
  * 负责清理超过30天的未付费记录
  * 以及关闭超时的支付订单
+ * 以及修复未充值的已支付订单
  */
 
 const cron = require('node-cron');
 const generationService = require('./generationService');
 const db = require('../db/connection');
+const { fixUnpaidOrders } = require('../scripts/fix-unpaid-orders');
 
 /**
  * 关闭超时订单
@@ -43,6 +45,7 @@ async function closeTimeoutOrders() {
  * 启动定时清理任务
  * 每天凌晨2点执行清理任务
  * 每6小时关闭超时订单
+ * 每小时修复未充值订单
  */
 function startCleanupSchedule() {
   // 使用cron表达式: 0 2 * * * 表示每天凌晨2点执行
@@ -75,11 +78,28 @@ function startCleanupSchedule() {
     timezone: "Asia/Shanghai"
   });
 
+  // ✅ 每小时修复未充值的已支付订单
+  const fixUnpaidTask = cron.schedule('0 * * * *', async () => {
+    console.log('开始执行未充值订单修复任务...');
+    try {
+      const result = await fixUnpaidOrders();
+      if (result.success && result.fixed > 0) {
+        console.log(`未充值订单修复任务完成，修复了 ${result.fixed} 个订单`);
+      }
+    } catch (error) {
+      console.error('未充值订单修复任务执行失败:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: "Asia/Shanghai"
+  });
+
   console.log('定时清理任务已启动：');
   console.log('- 每天凌晨2点清理旧记录');
   console.log('- 每6小时关闭超时订单');
+  console.log('- 每小时修复未充值订单');
   
-  return { cleanupTask, timeoutTask };
+  return { cleanupTask, timeoutTask, fixUnpaidTask };
 }
 
 /**

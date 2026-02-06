@@ -232,7 +232,7 @@ Page({
   },
 
   /**
-   * 进入模板选择页
+   * 直接开始生成（跳过模板选择）
    * Requirements: 6.2-6.5
    */
   async goToTemplate() {
@@ -240,7 +240,7 @@ Page({
     
     const validImages = this.data.selectedImages.filter(img => img !== null);
     
-    console.log('[PuzzleUpload] 进入模板选择，图片数量:', validImages.length);
+    console.log('[PuzzleUpload] 开始生成，图片数量:', validImages.length);
     
     // 必须上传2张照片
     if (validImages.length < 2) {
@@ -251,7 +251,7 @@ Page({
       return;
     }
     
-    // 如果有图片，先上传和检测人脸
+    // 上传图片并直接开始生成
     this.setData({
       isProcessing: true,
       statusText: '正在上传图片...',
@@ -260,13 +260,15 @@ Page({
     });
     
     try {
+      const app = getApp();
+      
       // 1. 上传所有图片
       const uploadedUrls = [];
       for (let i = 0; i < validImages.length; i++) {
         const imagePath = validImages[i];
         this.setData({
           statusText: `正在上传第 ${i + 1}/${validImages.length} 张...`,
-          uploadProgress: Math.round((i / validImages.length) * 50)
+          uploadProgress: Math.round((i / validImages.length) * 40)
         });
         
         const url = await uploadImage(imagePath);
@@ -275,22 +277,73 @@ Page({
       
       console.log('[PuzzleUpload] 所有图片上传成功:', uploadedUrls.length);
       
-      // 2. 直接跳转到模板选择页
+      // 2. 确保获取到有效的 userId
       this.setData({
-        statusText: '上传成功，正在跳转...',
+        statusText: '正在启动生成...',
+        uploadProgress: 50
+      });
+      
+      const userId = await app.getUserId(true);
+      
+      if (!userId) {
+        throw new Error('用户未登录，请先登录');
+      }
+      
+      console.log('[PuzzleUpload] 开始生成请求:', {
+        mode: 'puzzle',
+        imageCount: uploadedUrls.length,
+        userId
+      });
+      
+      // 3. 调用生成API（不需要模板ID）
+      const { generationAPI } = require('../../../utils/api');
+      const result = await generationAPI.generateArtPhoto({
+        imageUrls: uploadedUrls,
+        templateId: null, // puzzle 模式不需要模板
+        mode: 'puzzle',
+        userId: userId,
+        facePositions: null
+      });
+      
+      console.log('[PuzzleUpload] 生成API响应:', result);
+      
+      if (!result.success || !result.data?.taskId) {
+        throw new Error(result.message || '未获取到任务ID');
+      }
+      
+      const taskId = result.data.taskId;
+      const recordId = result.data.recordId;
+      
+      // 4. 刷新使用次数
+      this.setData({
+        statusText: '生成已启动...',
+        uploadProgress: 80
+      });
+      
+      try {
+        await app.updateUsageCount(true);
+        console.log('[PuzzleUpload] 使用次数已刷新');
+      } catch (err) {
+        console.error('[PuzzleUpload] 刷新使用次数失败:', err);
+      }
+      
+      // 5. 存储数据到全局
+      app.globalData.puzzleData = {
+        mode: 'puzzle',
+        uploadedImages: uploadedUrls,
+        taskId,
+        recordId
+      };
+      
+      this.setData({
+        statusText: '跳转中...',
         uploadProgress: 100
       });
       
-      // 存储数据到全局
-      const app = getApp();
-      app.globalData.puzzleData = {
-        mode: 'puzzle',
-        uploadedImages: uploadedUrls
-      };
-      
+      // 6. 直接跳转到生成页面
       setTimeout(() => {
-        wx.navigateTo({
-          url: '/pages/puzzle/template/template',
+        wx.redirectTo({
+          url: `/pages/puzzle/generating/generating?taskId=${taskId}&recordId=${recordId || ''}`,
           fail: (err) => {
             console.error('[PuzzleUpload] 跳转失败:', err);
             this.setData({
@@ -304,9 +357,44 @@ Page({
       
     } catch (err) {
       console.error('[PuzzleUpload] 处理失败:', err);
+      
+      // 检查是否是余额不足错误
+      if (err.errorCode === 'INSUFFICIENT_USAGE' || 
+          err.errorCode === 'INSUFFICIENT_MODE_USAGE' || 
+          err.errorCode === 'DECREMENT_FAILED' || 
+          err.errorCode === 'BALANCE_CHECK_FAILED') {
+        console.log('[PuzzleUpload] 余额不足，显示充值引导');
+        
+        wx.showModal({
+          title: '使用次数不足',
+          content: '请购买套餐或邀请好友获取次数',
+          confirmText: '去充值',
+          cancelText: '取消',
+          success: (res) => {
+            if (res.confirm) {
+              // 显示支付弹窗
+              this.setData({
+                showPaymentModal: true,
+                isProcessing: false,
+                statusText: '',
+                uploadProgress: 0
+              });
+            } else {
+              this.setData({
+                isProcessing: false,
+                statusText: '',
+                uploadProgress: 0
+              });
+            }
+          }
+        });
+        return;
+      }
+      
       this.setData({
         isProcessing: false,
         statusText: '',
+        uploadProgress: 0,
         errorMessage: err.message || '处理失败，请重试'
       });
     }

@@ -25,7 +25,7 @@ Page({
       icon: '🧩',
       slogan: '跨越时空，团圆相聚',
       description: '多张照片 → AI合成全家福',
-      uploadGuide: '上传2-5张家人照片，AI将为您合成一张完美全家福',
+      uploadGuide: '上传家人照片，第一张作为背景基准，其他人物将自然融入',
       buttonText: '立即制作全家福'
     },
     // OSS 资源

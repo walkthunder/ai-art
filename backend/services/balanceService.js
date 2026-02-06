@@ -418,6 +418,34 @@ async function addBalance(userId, amount, reason, referenceId = null, balanceTyp
     
     await connection.beginTransaction();
     
+    // 🔒 幂等性检查：如果是支付充值，检查是否已经充值过
+    if (reason === 'payment' && referenceId) {
+      const [existingLogs] = await connection.execute(
+        `SELECT id FROM usage_logs 
+         WHERE user_id = ? AND reference_id = ? AND action_type = 'increment' AND reason = 'payment'
+         LIMIT 1`,
+        [userId, referenceId]
+      );
+      
+      if (existingLogs.length > 0) {
+        await connection.rollback();
+        console.log(`[BalanceService] 订单 ${referenceId} 已充值过，跳过（幂等性保护）`);
+        
+        // 返回当前余额
+        const [rows] = await connection.execute(
+          'SELECT amount FROM user_balances WHERE user_id = ? AND balance_type = ?',
+          [userId, balanceType]
+        );
+        
+        return {
+          success: true,
+          new_count: rows[0]?.amount || 0,
+          skipped: true,
+          message: '订单已充值过'
+        };
+      }
+    }
+    
     // 使用 INSERT ... ON DUPLICATE KEY UPDATE 保证原子性
     // 依赖 UNIQUE(user_id, balance_type) 约束
     const balanceId = uuidv4();

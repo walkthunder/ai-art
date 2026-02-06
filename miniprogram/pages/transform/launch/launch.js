@@ -331,8 +331,19 @@ Page({
       this.navigateToUpload();
     }).catch((err) => {
       console.error('[TransformLaunch] 余额刷新失败，但仍然跳转', err);
-      // ✅ 即使刷新失败也跳转，让用户可以继续使用
-      this.navigateToUpload();
+      
+      // ✅ 显示友好提示
+      wx.showModal({
+        title: '提示',
+        content: '支付成功！次数正在更新中，如未显示请稍后刷新页面',
+        showCancel: false,
+        confirmText: '继续制作',
+        success: (res) => {
+          if (res.confirm) {
+            this.navigateToUpload();
+          }
+        }
+      });
     });
   },
 
