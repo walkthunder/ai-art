@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI全家福·团圆照相馆 - 让爱没有距离，AI智能生成全家福照片，支持时空拼图和富贵变身">
+    <title>AI全家福·团圆照相馆 🏮 让爱没有距离</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="public/logo.png">
+    <link rel="apple-touch-icon" href="public/logo.png">
+    
+    <!-- Tailwind CSS - 本地文件 -->
+    <script src="public/tailwind.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+                        serif: ['Songti SC', 'SimSun', 'STSong', 'serif']
+                    },
+                    colors: {
+                        'festive-red': '#8B0000',
+                        'festive-gold': '#D4AF37',
+                        'festive-light': '#FFF8F0',
+                        'festive-dark': '#4A0000'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* 使用系统中文字体，无需加载外部字体 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+    </style>
+    
+    <style>
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #8B0000 0%, #D4AF37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-pattern {
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 0, 0, 0.1) 0%, transparent 50%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(139, 0, 0, 0.15);
+        }
+        
+        .lantern-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* QR Code Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(139, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: #e2e8f0;
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body class="font-sans bg-festive-light text-slate-900">
+
+    <!-- Floating Navigation -->
+    <nav class="fixed top-4 left-4 right-4 z-50 fade-in">
+        <div class="max-w-7xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-3xl lantern-float">🏮</span>
+                    <h1 class="text-xl font-bold gradient-text">AI全家福·团圆照相馆</h1>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-slate-600 hover:text-festive-red transition-colors duration-200 cursor-pointer">功能特色</a>
+                    <a href="#pricing" class="text-slate-600 hover:text-festive-red transition-colors duration-200 cursor-pointer">套餐价格</a>
+                    <a href="#how-it-works" class="text-slate-600 hover:text-festive-red transition-colors duration-200 cursor-pointer">使用流程</a>
+                    <a href="#testimonials" class="text-slate-600 hover:text-festive-red transition-colors duration-200 cursor-pointer">用户评价</a>
+                </div>
+                <button onclick="openQRModal()" class="bg-gradient-to-r from-festive-red to-festive-dark text-white px-6 py-2.5 rounded-xl font-medium hover:shadow-lg transition-all duration-200 cursor-pointer">
+                    立即体验
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 px-4 hero-pattern overflow-hidden">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center fade-in">
+                <div class="inline-block mb-6">
+                    <span class="bg-gradient-to-r from-festive-red/10 to-festive-gold/10 text-festive-red px-6 py-2 rounded-full text-sm font-medium border border-festive-red/20">
+                        🎊 春节特惠 · 限时优惠中
+                    </span>
+                </div>
+                <h2 class="text-5xl md:text-7xl font-black font-serif mb-6 leading-tight">
+                    这个春节<br/>
+                    <span class="gradient-text">让爱没有距离</span>
+                </h2>
+                <p class="text-xl md:text-2xl text-slate-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+                    AI智能生成全家福照片，无论家人身在何处<br/>
+                    都能拥有一张温馨的团圆照
+                </p>
+                
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+                    <button onclick="openQRModal()" class="bg-gradient-to-r from-festive-red to-festive-dark text-white px-10 py-4 rounded-2xl text-lg font-bold hover:shadow-2xl transition-all duration-200 cursor-pointer transform hover:scale-105">
+                        免费生成全家福
+                    </button>
+                    <button onclick="openQRModal()" class="bg-white text-festive-red px-10 py-4 rounded-2xl text-lg font-medium border-2 border-festive-red hover:bg-festive-red hover:text-white transition-all duration-200 cursor-pointer">
+                        查看案例效果
+                    </button>
+                </div>
+                
+                <!-- Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-md">
+                        <div class="text-3xl font-black text-festive-red mb-2">50万+</div>
+                        <div class="text-slate-600 text-sm">用户使用</div>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-md">
+                        <div class="text-3xl font-black text-festive-red mb-2">100万+</div>
+                        <div class="text-slate-600 text-sm">照片生成</div>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-md">
+                        <div class="text-3xl font-black text-festive-red mb-2">4.9分</div>
+                        <div class="text-slate-600 text-sm">用户评分</div>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-md">
+                        <div class="text-3xl font-black text-festive-red mb-2">99.8%</div>
+                        <div class="text-slate-600 text-sm">满意度</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 px-4 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h3 class="text-4xl md:text-5xl font-black font-serif mb-4 gradient-text">两大核心功能</h3>
+                <p class="text-xl text-slate-600">满足不同场景的全家福需求</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Feature 1: 时空拼图 -->
+                <div class="bg-gradient-to-br from-festive-light to-white rounded-3xl p-8 shadow-xl border border-gray-200 card-hover cursor-pointer">
+                    <div class="text-5xl mb-6">🧩</div>
+                    <h4 class="text-3xl font-bold mb-4 text-festive-red">时空拼图</h4>
+                    <p class="text-slate-600 text-lg mb-6 leading-relaxed">
+                        将分散各地的家人照片智能合成为完美全家福。无论家人身在何处，都能拥有一张温馨的团圆照。
+                    </p>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">支持2-10人智能合成</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">AI自动调整光线和色温</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">自然边缘融合，无拼接痕迹</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">多种节日主题模板可选</span>
+                        </li>
+                    </ul>
+                    <div class="bg-festive-red/5 rounded-xl p-4 border border-festive-red/20">
+                        <p class="text-sm text-festive-red font-medium">💡 适合：异地家庭、留学生、海外工作者</p>
+                    </div>
+                </div>
+
+                <!-- Feature 2: 富贵变身 -->
+                <div class="bg-gradient-to-br from-festive-light to-white rounded-3xl p-8 shadow-xl border border-gray-200 card-hover cursor-pointer">
+                    <div class="text-5xl mb-6">✨</div>
+                    <h4 class="text-3xl font-bold mb-4 text-festive-red">富贵变身</h4>
+                    <p class="text-slate-600 text-lg mb-6 leading-relaxed">
+                        一键更换照片背景和服饰，让普通照片瞬间变身豪门大片。多种风格模板，满足不同审美需求。
+                    </p>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">豪华背景一键替换</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">传统服饰智能换装</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">微动态视频生成</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">Live Photo动态照片</span>
+                        </li>
+                    </ul>
+                    <div class="bg-festive-red/5 rounded-xl p-4 border border-festive-red/20">
+                        <p class="text-sm text-festive-red font-medium">💡 适合：节日祝福、社交分享、个性化礼物</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-20 px-4 bg-gradient-to-b from-white to-festive-light">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h3 class="text-4xl md:text-5xl font-black font-serif mb-4 gradient-text">三步生成全家福</h3>
+                <p class="text-xl text-slate-600">简单操作，快速出片</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="bg-gradient-to-br from-festive-red to-festive-dark text-white w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-6 shadow-lg">
+                        1
+                    </div>
+                    <h4 class="text-2xl font-bold mb-4">上传照片</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        上传家人的单人照片，支持2-10人。AI会自动检测人脸，确保照片质量。
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gradient-to-br from-festive-red to-festive-dark text-white w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-6 shadow-lg">
+                        2
+                    </div>
+                    <h4 class="text-2xl font-bold mb-4">选择模板</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        从多种节日主题模板中选择，包括春节、中秋、国庆等传统节日风格。
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gradient-to-br from-festive-red to-festive-dark text-white w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-6 shadow-lg">
+                        3
+                    </div>
+                    <h4 class="text-2xl font-bold mb-4">AI生成</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        AI智能合成4张效果图供您选择，30秒即可完成，高清无水印下载。
+                    </p>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12">
+                <button onclick="openQRModal()" class="bg-gradient-to-r from-festive-red to-festive-dark text-white px-10 py-4 rounded-2xl text-lg font-bold hover:shadow-2xl transition-all duration-200 cursor-pointer transform hover:scale-105">
+                    立即免费体验
+                </button>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-20 px-4 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h3 class="text-4xl md:text-5xl font-black font-serif mb-4 gradient-text">灵活套餐选择</h3>
+                <p class="text-xl text-slate-600">满足不同需求，物超所值</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Free Plan -->
+                <div class="bg-white rounded-3xl p-8 shadow-lg border-2 border-gray-200 card-hover">
+                    <div class="text-center mb-6">
+                        <h4 class="text-2xl font-bold mb-2">免费体验</h4>
+                        <div class="text-4xl font-black text-festive-red mb-2">¥0</div>
+                        <p class="text-slate-500">标清画质 + 水印</p>
+                    </div>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">标清2K画质</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">带品牌水印</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">最多2人合成</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">基础3个模板</span>
+                        </li>
+                    </ul>
+                    <button onclick="openQRModal()" class="w-full bg-gray-100 text-slate-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors duration-200 cursor-pointer">
+                        免费试用
+                    </button>
+                </div>
+
+                
+                <!-- Basic Plan -->
+                <div class="bg-white rounded-3xl p-8 shadow-lg border-2 border-festive-gold card-hover">
+                    <div class="inline-block bg-festive-gold text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
+                        🔥 最受欢迎
+                    </div>
+                    <div class="text-center mb-6">
+                        <h4 class="text-2xl font-bold mb-2">尝鲜包</h4>
+                        <div class="text-4xl font-black text-festive-red mb-2">¥9.9</div>
+                        <p class="text-slate-500">高清无水印</p>
+                    </div>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700"><strong>高清无水印</strong></span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">4选1生成</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">最多5人合成</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">热门10个模板</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-red mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-slate-700">实体产品9折</span>
+                        </li>
+                    </ul>
+                    <button onclick="openQRModal()" class="w-full bg-gradient-to-r from-festive-red to-festive-dark text-white py-3 rounded-xl font-bold hover:shadow-xl transition-all duration-200 cursor-pointer">
+                        立即购买
+                    </button>
+                </div>
+
+                
+                <!-- Premium Plan -->
+                <div class="bg-gradient-to-br from-festive-red to-festive-dark text-white rounded-3xl p-8 shadow-2xl card-hover transform scale-105">
+                    <div class="inline-block bg-festive-gold text-festive-dark px-4 py-1 rounded-full text-sm font-bold mb-4">
+                        👑 尊享版
+                    </div>
+                    <div class="text-center mb-6">
+                        <h4 class="text-2xl font-bold mb-2">尊享包</h4>
+                        <div class="text-4xl font-black mb-2">¥29.9</div>
+                        <p class="text-white/80">超清4K + 全功能</p>
+                    </div>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-gold mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong>超清4K画质</strong></span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-gold mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>无限人数合成</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-gold mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>全部模板解锁</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-gold mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong>微动态视频</strong></span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-gold mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong>Live Photo</strong></span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-gold mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong>电子贺卡</strong></span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-festive-gold mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>实体产品8折</span>
+                        </li>
+                    </ul>
+                    <button onclick="openQRModal()" class="w-full bg-festive-gold text-festive-dark py-3 rounded-xl font-bold hover:bg-yellow-400 transition-colors duration-200 cursor-pointer">
+                        立即升级
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-20 px-4 bg-gradient-to-b from-white to-festive-light">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h3 class="text-4xl md:text-5xl font-black font-serif mb-4 gradient-text">用户真实评价</h3>
+                <p class="text-xl text-slate-600">50万+用户的共同选择</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-festive-red to-festive-dark rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
+                            张
+                        </div>
+                        <div>
+                            <div class="font-bold">张女士</div>
+                            <div class="text-sm text-slate-500">留学生家长</div>
+                        </div>
+                    </div>
+                    <div class="text-festive-gold mb-3">★★★★★</div>
+                    <p class="text-slate-600 leading-relaxed italic">
+                        "女儿在国外读书，今年春节回不来。用这个小程序生成了全家福，效果太好了！妈妈看到照片都哭了，感觉女儿就在身边一样。"
+                    </p>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-festive-red to-festive-dark rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
+                            李
+                        </div>
+                        <div>
+                            <div class="font-bold">李先生</div>
+                            <div class="text-sm text-slate-500">企业高管</div>
+                        </div>
+                    </div>
+                    <div class="text-festive-gold mb-3">★★★★★</div>
+                    <p class="text-slate-600 leading-relaxed italic">
+                        "工作太忙，很少有机会全家一起拍照。这个AI全家福帮我实现了愿望，还能换不同的背景和服装，太方便了！"
+                    </p>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-festive-red to-festive-dark rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
+                            王
+                        </div>
+                        <div>
+                            <div class="font-bold">王女士</div>
+                            <div class="text-sm text-slate-500">自由职业者</div>
+                        </div>
+                    </div>
+                    <div class="text-festive-gold mb-3">★★★★★</div>
+                    <p class="text-slate-600 leading-relaxed italic">
+                        "操作超级简单，30秒就生成了4张照片让我选。画质很清晰，发朋友圈收到好多赞！已经推荐给身边的朋友了。"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- CTA Section -->
+    <section class="py-20 px-4 bg-gradient-to-br from-festive-red to-festive-dark text-white">
+        <div class="max-w-4xl mx-auto text-center">
+            <h3 class="text-4xl md:text-5xl font-black font-serif mb-6">
+                这个春节，让爱没有距离
+            </h3>
+            <p class="text-xl mb-10 text-white/90 leading-relaxed">
+                无论家人身在何处，都能拥有一张温馨的团圆照<br/>
+                立即体验，3次免费生成机会
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button onclick="openQRModal()" class="bg-white text-festive-red px-10 py-4 rounded-2xl text-lg font-bold hover:bg-festive-light transition-all duration-200 cursor-pointer transform hover:scale-105 shadow-2xl">
+                    微信扫码体验
+                </button>
+                <button onclick="openQRModal()" class="bg-festive-gold text-festive-dark px-10 py-4 rounded-2xl text-lg font-bold hover:bg-yellow-400 transition-all duration-200 cursor-pointer transform hover:scale-105">
+                    查看更多案例
+                </button>
+            </div>
+            <p class="mt-8 text-white/70 text-sm">
+                ✓ 隐私安全保护 · 24小时自动删除原图 · 符合《个人信息保护法》
+            </p>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-20 px-4 bg-white">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-16">
+                <h3 class="text-4xl md:text-5xl font-black font-serif mb-4 gradient-text">常见问题</h3>
+                <p class="text-xl text-slate-600">解答您的疑问</p>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="bg-festive-light rounded-2xl p-6 border border-gray-200">
+                    <h4 class="text-xl font-bold mb-3 text-festive-red">Q: 生成一张全家福需要多长时间？</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        A: 通常只需30秒左右。我们的AI会同时生成4张不同效果的照片供您选择，确保您能找到最满意的那一张。
+                    </p>
+                </div>
+                
+                <div class="bg-festive-light rounded-2xl p-6 border border-gray-200">
+                    <h4 class="text-xl font-bold mb-3 text-festive-red">Q: 照片质量如何？会不会很假？</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        A: 我们使用先进的AI技术，会自动调整光线、色温，确保人物融合自然。付费版本提供4K超清画质，效果媲美专业摄影。
+                    </p>
+                </div>
+                
+                <div class="bg-festive-light rounded-2xl p-6 border border-gray-200">
+                    <h4 class="text-xl font-bold mb-3 text-festive-red">Q: 我的照片安全吗？</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        A: 绝对安全。所有原始照片会在24小时后自动删除，生成的照片仅您本人可见。我们严格遵守《个人信息保护法》，采用HTTPS加密传输。
+                    </p>
+                </div>
+                
+                <div class="bg-festive-light rounded-2xl p-6 border border-gray-200">
+                    <h4 class="text-xl font-bold mb-3 text-festive-red">Q: 支持多少人合成？</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        A: 免费版支持最多2人，尝鲜包支持最多5人，尊享包支持无限人数。建议每张照片只包含一个人，效果最佳。
+                    </p>
+                </div>
+                
+                <div class="bg-festive-light rounded-2xl p-6 border border-gray-200">
+                    <h4 class="text-xl font-bold mb-3 text-festive-red">Q: 可以定制实体产品吗？</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        A: 可以！我们提供晶瓷画、亚克力摆台、丝绸卷轴挂画等实体产品定制服务。付费用户享受8-9折优惠，7-15天发货。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-12 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <span class="text-2xl">🏮</span>
+                        <h4 class="text-lg font-bold">AI全家福</h4>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        让爱没有距离<br/>
+                        AI智能生成全家福照片
+                    </p>
+                </div>
+                
+                <div>
+                    <h5 class="font-bold mb-4">产品功能</h5>
+                    <ul class="space-y-2 text-slate-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">时空拼图</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">富贵变身</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">微动态视频</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">实体产品</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h5 class="font-bold mb-4">帮助中心</h5>
+                    <ul class="space-y-2 text-slate-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">使用教程</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">常见问题</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">联系客服</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">意见反馈</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h5 class="font-bold mb-4">关于我们</h5>
+                    <ul class="space-y-2 text-slate-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">隐私政策</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">用户协议</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">关于我们</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors cursor-pointer">商务合作</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-slate-800 pt-8 text-center text-slate-400 text-sm">
+                <p class="mb-2">© 2026 AI全家福·团圆照相馆 版权所有</p>
+                <p>基于先进AI技术 · 隐私安全保护 · 符合《个人信息保护法》</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollTop" class="fixed bottom-8 right-8 bg-festive-red text-white w-12 h-12 rounded-full shadow-lg hover:bg-festive-dark transition-all duration-200 cursor-pointer opacity-0 pointer-events-none" aria-label="返回顶部">
+        <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+        </svg>
+    </button>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="modal-overlay" onclick="closeQRModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeQRModal()" aria-label="关闭">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            
+            <div class="text-5xl mb-4">🏮</div>
+            <h3 class="text-2xl font-bold mb-2 gradient-text">微信扫码体验</h3>
+            <p class="text-slate-600 mb-6">打开微信扫一扫，立即生成全家福</p>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-inner mb-6 inline-block">
+                <img src="public/mini_icon.jpg" alt="小程序二维码" class="w-64 h-64 mx-auto">
+            </div>
+            
+            <div class="bg-festive-light rounded-xl p-4 border border-festive-red/20">
+                <p class="text-sm text-festive-red font-medium">🎁 新用户免费体验3次</p>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // QR Code Modal Functions
+        function openQRModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQRModal(event) {
+            if (!event || event.target.id === 'qrModal') {
+                const modal = document.getElementById('qrModal');
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeQRModal();
+            }
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    const offset = 100;
+                    const targetPosition = target.offsetTop - offset;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Scroll to top button
+        const scrollTopBtn = document.getElementById('scrollTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollTopBtn.style.opacity = '1';
+                scrollTopBtn.style.pointerEvents = 'auto';
+            } else {
+                scrollTopBtn.style.opacity = '0';
+                scrollTopBtn.style.pointerEvents = 'none';
+            }
+        });
+
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Fade in animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all sections
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>

@@ -199,6 +199,40 @@ backend/config/
 - ❌ 禁止使用 `cat << 'EOF'` 命令
 - ✅ 使用 `fsWrite` 或 `strReplace` 工具
 
+## 落地页
+
+### 文件位置
+- 落地页：`ui-ux-pro-max.html`
+- Logo图标：`public/logo.png`
+- 小程序二维码：`public/mini_icon.jpg`
+
+### 功能特性
+- 响应式设计，完全适配移动端、平板和桌面设备
+- 二维码弹窗，所有 CTA 按钮都会触发小程序二维码展示
+- 中国传统节日风格设计（红金配色）
+- 平滑滚动、卡片悬停、渐入动画等交互效果
+- 支持无障碍访问（prefers-reduced-motion）
+
+### 使用方法
+```bash
+# 直接在浏览器中打开
+open ui-ux-pro-max.html
+
+# 或使用本地服务器（推荐）
+python3 -m http.server 8000
+# 访问 http://localhost:8000/ui-ux-pro-max.html
+```
+
+### 页面结构
+- 浮动导航栏（毛玻璃效果）
+- Hero区域（核心价值主张 + 数据展示）
+- 功能特色（时空拼图 & 富贵变身）
+- 使用流程（三步生成全家福）
+- 套餐价格（三档价格展示）
+- 用户评价（真实用户反馈）
+- FAQ（常见问题解答）
+- 页脚（完整导航和法律信息）
+
 ## 部署
 
 ### 前端构建
