@@ -127,6 +127,22 @@ Page({
   },
 
   /**
+   * 进入财神变身模式
+   */
+  goToCaishen() {
+    wx.navigateTo({
+      url: '/pages/caishen/launch/launch',
+      fail: (err) => {
+        console.error('跳转财神变身失败:', err);
+        wx.showToast({
+          title: '页面跳转失败',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  /**
    * 分享给好友
    * Requirements: 8.1
    */

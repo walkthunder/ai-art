@@ -1,0 +1,166 @@
+.launch-container {
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-color: #FFF8F0;
+}
+
+.custom-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: linear-gradient(180deg, rgba(139, 0, 0, 0.95) 0%, rgba(139, 0, 0, 0.8) 100%);
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 16rpx;
+}
+
+.back-button {
+  width: 80rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  font-size: 48rpx;
+  color: #FFD700;
+  font-weight: bold;
+}
+
+.navbar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #FFD700;
+}
+
+.navbar-right {
+  width: 80rpx;
+}
+
+.content-wrapper {
+  padding: 200rpx 40rpx 40rpx;
+}
+
+.mode-header {
+  text-align: center;
+  margin-bottom: 60rpx;
+}
+
+.mode-icon {
+  font-size: 120rpx;
+  margin-bottom: 20rpx;
+}
+
+.mode-name {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #8B0000;
+  margin-bottom: 16rpx;
+}
+
+.mode-slogan {
+  font-size: 32rpx;
+  color: #D4AF37;
+  font-weight: 500;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 8rpx 24rpx rgba(139, 0, 0, 0.1);
+}
+
+.feature-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #8B0000;
+  margin-bottom: 20rpx;
+}
+
+.feature-desc {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 16rpx;
+}
+
+.feature-guide {
+  font-size: 24rpx;
+  color: #999;
+  line-height: 1.5;
+  padding: 20rpx;
+  background: #FFF8F0;
+  border-radius: 12rpx;
+  border-left: 4rpx solid #D4AF37;
+}
+
+.action-buttons {
+  margin-top: 40rpx;
+}
+
+.primary-button {
+  width: 100%;
+  height: 96rpx;
+  background: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%);
+  color: #8B0000;
+  font-size: 32rpx;
+  font-weight: bold;
+  border-radius: 48rpx;
+  border: none;
+  box-shadow: 0 8rpx 24rpx rgba(212, 175, 55, 0.4);
+  margin-bottom: 24rpx;
+}
+
+.primary-button.disabled {
+  background: #CCC;
+  color: #999;
+  box-shadow: none;
+}
+
+.secondary-button {
+  width: 100%;
+  height: 88rpx;
+  background: rgba(255, 255, 255, 0.9);
+  color: #8B0000;
+  font-size: 28rpx;
+  border-radius: 44rpx;
+  border: 2rpx solid #D4AF37;
+  margin-bottom: 24rpx;
+}
+
+.invite-button {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #8B0000;
+  font-size: 28rpx;
+  font-weight: bold;
+  border-radius: 44rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  box-shadow: 0 4rpx 16rpx rgba(255, 165, 0, 0.3);
+}
+
+.invite-icon {
+  font-size: 32rpx;
+}
+
+.invite-text {
+  font-size: 28rpx;
+}

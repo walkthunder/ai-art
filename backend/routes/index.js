@@ -27,6 +27,8 @@ const monitorRoutes = require('./monitorRoutes');
 const configRoutes = require('./configRoutes');
 const logRoutes = require('./logRoutes');
 const callbackLogRoutes = require('./callbackLogRoutes');
+const caishenRoutes = require('./caishenRoutes');
+const adminCaishenRoutes = require('./adminCaishenRoutes');
 
 /**
  * 注册所有路由
@@ -35,6 +37,9 @@ const callbackLogRoutes = require('./callbackLogRoutes');
 function registerRoutes(app) {
   // 用户管理
   app.use('/api/user', userRoutes);
+  
+  // 财神变身
+  app.use('/api/caishen', caishenRoutes);
   
   // 任务管理 (包含生成艺术照)
   app.use('/api', taskRoutes);
@@ -116,6 +121,9 @@ function registerRoutes(app) {
   
   // 支付回调日志接口（管理后台）
   app.use('/admin-api/callback-logs', callbackLogRoutes);
+  
+  // 财神模板管理接口（管理后台）
+  app.use('/admin-api/caishen', adminCaishenRoutes);
 }
 
 module.exports = {
@@ -143,5 +151,7 @@ module.exports = {
   monitorRoutes,
   configRoutes,
   logRoutes,
-  callbackLogRoutes
+  callbackLogRoutes,
+  caishenRoutes,
+  adminCaishenRoutes
 };

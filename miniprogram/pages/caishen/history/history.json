@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "我的记录",
+  "navigationBarBackgroundColor": "#FFF8DC",
+  "navigationBarTextStyle": "black",
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "corner-background": "/components/corner-background/corner-background",
+    "loading": "/components/loading/loading"
+  }
+}

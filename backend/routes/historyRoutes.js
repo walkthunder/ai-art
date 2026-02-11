@@ -62,8 +62,8 @@ router.get('/user/:userId', async (req, res) => {
     }
     
     // 验证 mode 参数（如果提供）
-    if (mode && !['transform', 'puzzle'].includes(mode)) {
-      return res.status(400).json({ error: '参数错误', message: 'mode 参数必须是 transform 或 puzzle' });
+    if (mode && !['transform', 'puzzle', 'caishen'].includes(mode)) {
+      return res.status(400).json({ error: '参数错误', message: 'mode 参数必须是 transform、puzzle 或 caishen' });
     }
     
     const result = await generationService.getGenerationHistoryByUserId(
@@ -318,8 +318,8 @@ router.delete('/user/:userId/all', async (req, res) => {
     }
     
     // 验证 mode 参数（如果提供）
-    if (mode && !['transform', 'puzzle'].includes(mode)) {
-      return res.status(400).json({ error: '参数错误', message: 'mode 参数必须是 transform 或 puzzle' });
+    if (mode && !['transform', 'puzzle', 'caishen'].includes(mode)) {
+      return res.status(400).json({ error: '参数错误', message: 'mode 参数必须是 transform、puzzle 或 caishen' });
     }
     
     const connection = await db.pool.getConnection();

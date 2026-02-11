@@ -56,7 +56,7 @@ router.post('/usage/set', checkDevMode, async (req, res) => {
       });
     }
 
-    const validModes = ['puzzle', 'transform', 'paid'];
+    const validModes = ['puzzle', 'transform', 'caishen', 'paid'];
     if (!validModes.includes(mode)) {
       return res.status(400).json({
         success: false,
@@ -128,7 +128,7 @@ router.post('/usage/add', checkDevMode, async (req, res) => {
       });
     }
 
-    const validModes = ['puzzle', 'transform', 'paid'];
+    const validModes = ['puzzle', 'transform', 'caishen', 'paid'];
     if (!validModes.includes(mode)) {
       return res.status(400).json({
         success: false,
@@ -140,6 +140,7 @@ router.post('/usage/add', checkDevMode, async (req, res) => {
     // 将 mode 转换为 balance_type
     const balanceType = mode === 'puzzle' ? balanceService.BALANCE_TYPES.PUZZLE_FREE :
                         mode === 'transform' ? balanceService.BALANCE_TYPES.TRANSFORM_FREE :
+                        mode === 'caishen' ? balanceService.BALANCE_TYPES.CAISHEN_FREE :
                         balanceService.BALANCE_TYPES.PAID;
     
     const result = await balanceService.addBalance(

@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "上传照片",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "payment-modal": "/components/payment-modal/payment-modal"
+  }
+}

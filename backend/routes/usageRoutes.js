@@ -85,7 +85,7 @@ router.post('/decrement', async (req, res) => {
       });
     }
 
-    const validModes = ['puzzle', 'transform'];
+    const validModes = ['puzzle', 'transform', 'caishen'];
     if (!validModes.includes(mode)) {
       return res.status(400).json({
         success: false,

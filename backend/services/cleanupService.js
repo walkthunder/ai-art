@@ -7,8 +7,65 @@
 
 const cron = require('node-cron');
 const generationService = require('./generationService');
+const balanceService = require('./balanceService');
 const db = require('../db/connection');
 const { fixUnpaidOrders } = require('../scripts/fix-unpaid-orders');
+
+/**
+ * 恢复失败任务的余额
+ * 查询24小时内失败的任务，如果余额未恢复则自动恢复
+ * @returns {Promise<number>} 恢复的任务数
+ */
+async function restoreFailedTaskBalance() {
+  const connection = await db.pool.getConnection();
+  
+  try {
+    // 查询24小时内失败的任务，且余额未恢复
+    const [failedTasks] = await connection.execute(
+      `SELECT gh.id, gh.user_id, gh.mode
+       FROM generation_history gh
+       WHERE gh.status = 'failed'
+       AND gh.created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+       AND NOT EXISTS (
+         SELECT 1 FROM usage_logs ul
+         WHERE ul.reference_id = gh.id AND ul.action_type = 'restore'
+       )
+       LIMIT 100`
+    );
+    
+    let restoredCount = 0;
+    
+    for (const task of failedTasks) {
+      try {
+        const result = await balanceService.restoreBalance(task.user_id, task.id, task.mode);
+        
+        if (result.success) {
+          restoredCount++;
+          console.log(`[CleanupService] 恢复失败任务余额: taskId=${task.id}, userId=${task.user_id}, mode=${task.mode}`);
+        } else if (result.error === 'ALREADY_RESTORED') {
+          // 已经恢复过，跳过
+          console.log(`[CleanupService] 任务已恢复过: taskId=${task.id}`);
+        } else if (result.error === 'NO_DECREMENT_FOUND') {
+          // 没有扣减记录，可能是测试数据，跳过
+          console.log(`[CleanupService] 任务无扣减记录: taskId=${task.id}`);
+        }
+      } catch (error) {
+        console.error(`[CleanupService] 恢复任务余额失败: taskId=${task.id}, error:`, error.message);
+      }
+    }
+    
+    if (restoredCount > 0) {
+      console.log(`[CleanupService] 恢复了 ${restoredCount} 个失败任务的余额`);
+    }
+    
+    return restoredCount;
+  } catch (error) {
+    console.error('[CleanupService] 恢复失败任务余额失败:', error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
 
 /**
  * 关闭超时订单
@@ -94,12 +151,29 @@ function startCleanupSchedule() {
     timezone: "Asia/Shanghai"
   });
 
+  // ✅ 每30分钟恢复失败任务的余额
+  const restoreBalanceTask = cron.schedule('*/30 * * * *', async () => {
+    console.log('开始执行失败任务余额恢复任务...');
+    try {
+      const restoredCount = await restoreFailedTaskBalance();
+      if (restoredCount > 0) {
+        console.log(`失败任务余额恢复任务完成，恢复了 ${restoredCount} 个任务`);
+      }
+    } catch (error) {
+      console.error('失败任务余额恢复任务执行失败:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: "Asia/Shanghai"
+  });
+
   console.log('定时清理任务已启动：');
   console.log('- 每天凌晨2点清理旧记录');
   console.log('- 每6小时关闭超时订单');
   console.log('- 每小时修复未充值订单');
+  console.log('- 每30分钟恢复失败任务余额');
   
-  return { cleanupTask, timeoutTask, fixUnpaidTask };
+  return { cleanupTask, timeoutTask, fixUnpaidTask, restoreBalanceTask };
 }
 
 /**
@@ -122,5 +196,6 @@ async function manualCleanup(days = 30) {
 module.exports = {
   startCleanupSchedule,
   closeTimeoutOrders,
+  restoreFailedTaskBalance,
   manualCleanup
 };

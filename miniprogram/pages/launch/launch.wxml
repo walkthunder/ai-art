@@ -76,6 +76,23 @@
           </view>
         </view>
       </view>
+
+      <!-- 财神变身 -->
+      <view class="mode-card caishen-card" bindtap="goToCaishen" hover-class="mode-card-hover">
+        <view class="mode-card-inner">
+          <view class="mode-icon-wrapper caishen-icon">
+            <text class="mode-icon">💰</text>
+          </view>
+          <view class="mode-info">
+            <text class="mode-name caishen-name">财神变身</text>
+            <text class="mode-slogan caishen-slogan">财神附体，财运亨通</text>
+            <text class="mode-desc">1张照片 → 财神发钱视频</text>
+          </view>
+          <view class="mode-arrow caishen-arrow">
+            <text class="arrow-icon">›</text>
+          </view>
+        </view>
+      </view>
     </view>
     
     <!-- 底部提示 -->

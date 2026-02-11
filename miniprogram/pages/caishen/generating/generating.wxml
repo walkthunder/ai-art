@@ -1,0 +1,78 @@
+<!--
+  时空拼图模式生成中页面 - 复用原网页 GeneratingPage 样式
+  Requirements: 2.2, 14.1-14.5
+-->
+<view class="generating-page {{isElderMode ? 'elder-mode' : ''}}">
+  <!-- 四角装饰背景 -->
+  <corner-background />
+  
+  <!-- 背景 -->
+  <view class="generating-bg"></view>
+  
+  <!-- 主内容区 -->
+  <view class="generating-content">
+    <!-- 主灯笼动画 -->
+    <view class="lantern-wrapper animate-bounce">
+      <view class="lantern-glow"></view>
+      <image 
+        class="main-lantern"
+        src="{{lanternImageUrl}}"
+        mode="aspectFit"
+      ></image>
+    </view>
+    
+    <!-- 标题 -->
+    <text class="title">AI全家福生成中</text>
+    
+    <!-- 进度条 -->
+    <view class="progress-wrapper" wx:if="{{!error}}">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{progress}}%">
+          <view class="progress-shine"></view>
+        </view>
+      </view>
+      
+      <!-- 进度信息 -->
+      <view class="progress-info">
+        <text class="progress-percent">{{progress}}%</text>
+        <view class="stage-info">
+          <text class="stage-text">{{currentStage}}...</text>
+          <text class="blessing-text">{{blessing}}</text>
+        </view>
+        <text class="task-message" wx:if="{{taskMessage}}">{{taskMessage}}</text>
+      </view>
+    </view>
+    
+    <!-- 状态提示卡片 -->
+    <view class="status-card" wx:if="{{!error && progress < 100}}">
+      <text class="status-title">正在生成中</text>
+      <text class="status-desc">AI正在为您合成全家福，请耐心等待...</text>
+      <text class="retry-info" wx:if="{{retryCount > 0}}">已重试 {{retryCount}} 次</text>
+    </view>
+    
+    <!-- 错误提示 -->
+    <view class="error-card" wx:if="{{error}}">
+      <text class="error-icon">⚠️</text>
+      <text class="error-title">生成失败</text>
+      <text class="error-message">{{error}}</text>
+      <view 
+        class="retry-btn {{isRetrying ? 'loading' : ''}} {{!canRetry ? 'disabled' : ''}}"
+        bindtap="handleRetry"
+        wx:if="{{canRetry}}"
+      >
+        <text class="retry-btn-text">{{isRetrying ? '重试中...' : '点击重试'}}</text>
+      </view>
+      <view class="home-btn" bindtap="goHome" wx:if="{{!canRetry}}">
+        <text class="home-btn-text">返回首页</text>
+      </view>
+    </view>
+    
+    <!-- 温馨提示 -->
+    <text class="tip-text" wx:if="{{!error}}">页面刷新后可通过历史记录查看结果</text>
+    
+    <!-- AI生成提示（合规要求） -->
+    <view class="ai-notice">
+      <text class="ai-notice-text">本服务为AI生成内容，结果仅供参考</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,57 @@
+<view class="upload-container" style="background-image: url('{{commonBgUrl}}');">
+  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
+    <view class="navbar-content">
+      <view class="back-button" bindtap="goBack">
+        <text class="back-icon">‹</text>
+      </view>
+      <view class="navbar-title">上传照片</view>
+      <view class="navbar-right" style="width: {{menuRight}}px;"></view>
+    </view>
+  </view>
+
+  <view class="content-wrapper">
+    <view class="upload-tip">
+      <text class="tip-icon">💡</text>
+      <text class="tip-text">上传一张清晰的人物照片，AI将为您生成财神发钱视频</text>
+    </view>
+
+    <view class="upload-area">
+      <view class="image-box" bindtap="handleUploadClick">
+        <image wx:if="{{selectedImage}}" src="{{selectedImage}}" class="uploaded-image" mode="aspectFill" />
+        <view wx:else class="upload-placeholder">
+          <image src="{{cameraUploadUrl}}" class="camera-icon" mode="aspectFit" />
+          <text class="upload-text">点击上传照片</text>
+        </view>
+        <view wx:if="{{selectedImage}}" class="remove-button" catchtap="removeImage">
+          <text class="remove-icon">×</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{errorMessage}}" class="error-message" bindtap="clearError">
+      <text>{{errorMessage}}</text>
+    </view>
+
+    <view wx:if="{{isProcessing}}" class="processing-status">
+      <view class="status-text">{{statusText}}</view>
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{uploadProgress}}%;"></view>
+      </view>
+    </view>
+
+    <button 
+      class="generate-button {{!selectedImage || isProcessing ? 'disabled' : ''}}" 
+      bindtap="startGeneration"
+      disabled="{{!selectedImage || isProcessing}}"
+    >
+      {{isProcessing ? '处理中...' : '开始生成'}}
+    </button>
+  </view>
+
+  <payment-modal
+    show="{{showPaymentModal}}"
+    currentPaymentStatus="{{currentPaymentStatus}}"
+    bind:complete="handlePaymentComplete"
+    bind:close="handlePaymentClose"
+  />
+</view>

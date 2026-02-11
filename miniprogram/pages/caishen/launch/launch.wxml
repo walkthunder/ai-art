@@ -1,0 +1,85 @@
+<view class="launch-container" style="background-image: url('{{commonBgUrl}}');">
+  <!-- 自定义导航栏 -->
+  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;" bindtap="onNavBarTap">
+    <view class="navbar-content">
+      <view class="back-button" bindtap="goBack">
+        <text class="back-icon">‹</text>
+      </view>
+      <view class="navbar-title">{{modeConfig.name}}</view>
+      <view class="navbar-right" style="width: {{menuRight}}px;"></view>
+    </view>
+  </view>
+
+  <!-- 主内容区 -->
+  <view class="content-wrapper">
+    <!-- 模式图标和标题 -->
+    <view class="mode-header">
+      <view class="mode-icon">{{modeConfig.icon}}</view>
+      <view class="mode-name">{{modeConfig.name}}</view>
+      <view class="mode-slogan">{{modeConfig.slogan}}</view>
+    </view>
+
+    <!-- 功能说明 -->
+    <view class="feature-card">
+      <view class="feature-title">功能介绍</view>
+      <view class="feature-desc">{{modeConfig.description}}</view>
+      <view class="feature-guide">{{modeConfig.uploadGuide}}</view>
+    </view>
+
+    <!-- 使用次数显示 -->
+    <usage-display 
+      usageCount="{{usageCount}}" 
+      userType="{{userType}}"
+      paymentStatus="{{paymentStatus}}"
+      bind:getmore="handleGetMore"
+    />
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button 
+        class="primary-button {{buttonDisabled ? 'disabled' : ''}}" 
+        bindtap="handleStart"
+        disabled="{{buttonDisabled}}"
+      >
+        {{buttonText}}
+      </button>
+      
+      <button class="secondary-button" bindtap="viewHistory">
+        查看历史记录
+      </button>
+      
+      <button class="invite-button" bindtap="viewInvite">
+        <text class="invite-icon">🎁</text>
+        <text class="invite-text">邀请好友得次数</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 使用次数模态框 -->
+  <usage-modal
+    show="{{showModal}}"
+    modalType="{{modalType}}"
+    usageCount="{{usageCount}}"
+    userType="{{userType}}"
+    paymentStatus="{{paymentStatus}}"
+    bind:close="onModalClose"
+    bind:payment="onModalPayment"
+  />
+
+  <!-- 支付模态框 -->
+  <payment-modal
+    show="{{showPaymentModal}}"
+    currentPaymentStatus="{{paymentStatus}}"
+    bind:complete="onPaymentComplete"
+    bind:close="closePaymentModal"
+  />
+
+  <!-- 开发者面板 -->
+  <dev-mode-panel
+    wx:if="{{devModeActive && showDevPanel}}"
+    show="{{showDevPanel}}"
+    usageCount="{{usageCount}}"
+    bind:close="closeDevPanel"
+    bind:update="onDevPanelUpdate"
+  />
+</view>

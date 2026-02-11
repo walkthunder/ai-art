@@ -135,8 +135,72 @@ const PUZZLE_TEMPLATES = {
 };
 
 /**
+ * Caishen模式（财神变身）模板配置
+ * 
+ * Caishen 模式特点：
+ * - 用户上传1张人物照片
+ * - 生成财神发钱的视频
+ * - 将财神的脸替换成用户的脸
+ * 
+ * 注意：
+ * - imageUrl 用于前端展示模板预览图
+ * - 实际视频生成使用 prompt 描述，由火山引擎AI生成
+ * - 免费用户的视频会自动添加火山引擎的水印
+ */
+const CAISHEN_TEMPLATES = {
+  'caishen-default': {
+    id: 'caishen-default',
+    name: '财神发钱',
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/caishen/caishen-default.jpg`,
+    prompt: `生成一段财神爷发钱的喜庆视频，要求如下：
+
+【核心要求】
+1. 将用户上传的人物照片中的面部特征完整保留，替换到财神爷的脸上
+2. 保持财神爷的传统形象：红色官袍、金色装饰、慈祥笑容
+3. 财神爷手持金元宝，向四周撒金币
+4. 金币飞舞，财源滚滚，喜庆热闹
+5. 背景为中国传统喜庆场景：红色背景、金色祥云、福字装饰
+
+【动作设计】
+- 财神爷面带笑容，向观众招手
+- 双手捧着金元宝，向四周撒金币
+- 金币从天而降，闪闪发光
+- 背景有烟花、祥云等喜庆元素
+
+【画面效果】
+高清视频，流畅自然，喜庆热闹，财源滚滚，寓意吉祥如意、财运亨通`,
+    category: 'default',
+    duration: 5 // 视频时长（秒）
+  },
+  'caishen-luxury': {
+    id: 'caishen-luxury',
+    name: '豪华财神',
+    imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/caishen/caishen-luxury.jpg`,
+    prompt: `生成一段豪华版财神爷发钱的视频，要求如下：
+
+【核心要求】
+1. 将用户上传的人物照片中的面部特征完整保留，替换到财神爷的脸上
+2. 豪华财神形象：金色龙袍、珠宝装饰、威严慈祥
+3. 财神爷坐在金色宝座上，手持如意和金元宝
+4. 金币、钻石、珠宝从天而降
+5. 背景为金碧辉煌的宫殿场景
+
+【动作设计】
+- 财神爷端坐宝座，威严慈祥
+- 挥动如意，金币钻石从天而降
+- 金光闪闪，珠光宝气
+- 背景有金龙、凤凰等祥瑞元素
+
+【画面效果】
+超高清视频，金碧辉煌，豪华大气，寓意财运亨通、富贵吉祥`,
+    category: 'luxury',
+    duration: 5
+  }
+};
+
+/**
  * 根据模式和模板ID获取模板配置
- * @param {string} mode 模式ID (transform/puzzle)
+ * @param {string} mode 模式ID (transform/puzzle/caishen)
  * @param {string} templateId 模板ID
  * @returns {Object|null} 模板配置
  */
@@ -145,6 +209,8 @@ function getTemplateConfig(mode, templateId) {
     return TRANSFORM_TEMPLATES[templateId] || null;
   } else if (mode === 'puzzle') {
     return PUZZLE_TEMPLATES[templateId] || null;
+  } else if (mode === 'caishen') {
+    return CAISHEN_TEMPLATES[templateId] || null;
   }
   return null;
 }
@@ -159,8 +225,19 @@ function getTemplateList(mode) {
     return Object.values(TRANSFORM_TEMPLATES);
   } else if (mode === 'puzzle') {
     return Object.values(PUZZLE_TEMPLATES);
+  } else if (mode === 'caishen') {
+    return Object.values(CAISHEN_TEMPLATES);
   }
   return [];
+}
+
+/**
+ * 根据模式获取模板列表（别名方法）
+ * @param {string} mode 模式ID
+ * @returns {Array} 模板列表
+ */
+function getTemplatesByMode(mode) {
+  return getTemplateList(mode);
 }
 
 /**
@@ -173,6 +250,8 @@ function getDefaultTemplate(mode) {
     return TRANSFORM_TEMPLATES['transform-custom-1'];
   } else if (mode === 'puzzle') {
     return PUZZLE_TEMPLATES['puzzle-default'];
+  } else if (mode === 'caishen') {
+    return CAISHEN_TEMPLATES['caishen-default'];
   }
   return null;
 }
@@ -180,7 +259,9 @@ function getDefaultTemplate(mode) {
 module.exports = {
   TRANSFORM_TEMPLATES,
   PUZZLE_TEMPLATES,
+  CAISHEN_TEMPLATES,
   getTemplateConfig,
   getTemplateList,
+  getTemplatesByMode,
   getDefaultTemplate
 };

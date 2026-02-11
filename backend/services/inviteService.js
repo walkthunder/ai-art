@@ -79,7 +79,7 @@ async function generateInviteCode(userId) {
     }
     
     // 插入或更新用户的邀请码（使用 INSERT ... ON DUPLICATE KEY UPDATE）
-    const inviteId = `${userId}-invite`;
+    const inviteId = uuidv4();
     const upsertSql = `
       INSERT INTO user_invites (id, user_id, invite_code, created_at, updated_at)
       VALUES (?, ?, ?, NOW(), NOW())
@@ -205,21 +205,23 @@ async function processInviteRegistration(inviteCode, newUserId, openid) {
     );
     
     // 初始化新用户的余额（在 user_balances 表中）
-    const balanceIdPuzzle = `${newUserId}-puzzle`;
-    const balanceIdTransform = `${newUserId}-transform`;
-    const balanceIdPaid = `${newUserId}-paid`;
+    const balanceIdPuzzle = uuidv4();
+    const balanceIdTransform = uuidv4();
+    const balanceIdCaishen = uuidv4();
+    const balanceIdPaid = uuidv4();
     
     await connection.execute(
       `INSERT INTO user_balances (id, user_id, balance_type, amount, created_at, updated_at)
        VALUES 
          (?, ?, 'free_puzzle', 3, NOW(), NOW()),
          (?, ?, 'free_transform', 3, NOW(), NOW()),
+         (?, ?, 'free_caishen', 3, NOW(), NOW()),
          (?, ?, 'paid', 0, NOW(), NOW())`,
-      [balanceIdPuzzle, newUserId, balanceIdTransform, newUserId, balanceIdPaid, newUserId]
+      [balanceIdPuzzle, newUserId, balanceIdTransform, newUserId, balanceIdCaishen, newUserId, balanceIdPaid, newUserId]
     );
     
     // 初始化新用户的付费信息
-    const paymentId = `${newUserId}-payment`;
+    const paymentId = uuidv4();
     await connection.execute(
       `INSERT INTO user_payments (id, user_id, has_ever_paid, current_tier, created_at, updated_at)
        VALUES (?, ?, FALSE, 'free', NOW(), NOW())`,
@@ -228,7 +230,7 @@ async function processInviteRegistration(inviteCode, newUserId, openid) {
     
     // 生成并存储新用户的邀请码（在 user_invites 表中）
     const newUserInviteCode = generateRandomCode();
-    const inviteIdNew = `${newUserId}-invite`;
+    const inviteIdNew = uuidv4();
     
     await connection.execute(
       `INSERT INTO user_invites (id, user_id, invite_code, invited_by, created_at, updated_at)
@@ -252,11 +254,11 @@ async function processInviteRegistration(inviteCode, newUserId, openid) {
       [1, inviterId]
     );
     
-    // 记录余额变动日志
+    // 记录余额变动日志到 usage_logs
     const balanceLogId = uuidv4();
     await connection.execute(
-      `INSERT INTO balance_logs (id, user_id, amount, balance_type, reason, reference_id, created_at)
-       VALUES (?, ?, ?, 'paid', 'invite_reward', ?, NOW())`,
+      `INSERT INTO usage_logs (id, user_id, action_type, amount, remaining_count, reason, reference_id, mode, created_at)
+       VALUES (?, ?, 'increment', ?, 1, 'invite_reward', ?, 'paid', NOW())`,
       [balanceLogId, inviterId, 1, inviteRecordId]
     );
     
@@ -513,11 +515,11 @@ async function bindInviteRelation(inviteCode, userId) {
       [1, inviterId]
     );
     
-    // 记录余额变动日志
+    // 记录余额变动日志到 usage_logs
     const balanceLogId = uuidv4();
     await connection.execute(
-      `INSERT INTO balance_logs (id, user_id, amount, balance_type, reason, reference_id, created_at)
-       VALUES (?, ?, ?, 'paid', 'invite_reward', ?, NOW())`,
+      `INSERT INTO usage_logs (id, user_id, action_type, amount, remaining_count, reason, reference_id, mode, created_at)
+       VALUES (?, ?, 'increment', ?, 1, 'invite_reward', ?, 'paid', NOW())`,
       [balanceLogId, inviterId, 1, inviteRecordId]
     );
     

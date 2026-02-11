@@ -379,3 +379,33 @@
 .elder-mode .ai-notice {
   font-size: 26rpx;
 }
+
+/* 财神变身卡片样式 */
+.caishen-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.15) 0%, 
+    rgba(212, 175, 55, 0.1) 100%
+  );
+  border: 3rpx solid rgba(212, 175, 55, 0.4);
+}
+
+.caishen-icon {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  box-shadow: 0 4rpx 12rpx rgba(255, 215, 0, 0.3);
+}
+
+.caishen-name {
+  color: #D4AF37;
+}
+
+.caishen-slogan {
+  color: #8B0000;
+}
+
+.caishen-arrow .arrow-icon {
+  color: #D4AF37;
+}
+
+.transform-arrow .arrow-icon {
+  color: var(--color-festival-gold);
+}

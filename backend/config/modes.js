@@ -58,10 +58,38 @@ const TRANSFORM_MODE_CONFIG = {
   // 每个模板有独立的 prompt，不在此处定义
 };
 
+const CAISHEN_MODE_CONFIG = {
+  id: 'caishen',
+  name: '财神变身',
+  
+  // 模型参数
+  modelParams: {
+    mode: 'caishen',
+    video_generation: true,
+    face_swap: true,
+    preserve_face: true,
+    duration: 5 // 视频时长（秒）
+  },
+  
+  // 验证规则
+  validation: {
+    minImages: 1,
+    maxImages: 1, // 只需要1张用户照片
+    requireFaceDetection: true,
+    supportMultipleFaces: false // 只支持单人照片
+  },
+  
+  // 提示词模板
+  promptTemplates: {
+    default: '财神爷发钱视频，喜庆热闹，金币飞舞，财源滚滚'
+  }
+};
+
 // 所有模式配置
 const MODES = {
   puzzle: PUZZLE_MODE_CONFIG,
-  transform: TRANSFORM_MODE_CONFIG
+  transform: TRANSFORM_MODE_CONFIG,
+  caishen: CAISHEN_MODE_CONFIG
 };
 
 /**

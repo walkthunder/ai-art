@@ -1,0 +1,16 @@
+{
+  "navigationBarTitleText": "生成结果",
+  "navigationBarBackgroundColor": "#8B0000",
+  "navigationBarTextStyle": "white",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "corner-background": "/components/corner-background/corner-background",
+    "loading": "/components/loading/loading",
+    "product-recommendation": "/components/product-recommendation/product-recommendation",
+    "share-modal": "/components/share-modal/share-modal",
+    "payment-modal": "/components/payment-modal/payment-modal",
+    "usage-modal": "/components/usage-modal/usage-modal",
+    "usage-display": "/components/usage-display/usage-display",
+    "elder-mode-toggle": "/components/elder-mode-toggle/elder-mode-toggle"
+  }
+}

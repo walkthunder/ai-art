@@ -221,12 +221,54 @@ async function uploadVideoToOSS(base64Video, mimeType = 'video/mp4') {
   });
 }
 
+/**
+ * 上传文件到腾讯云OSS（通用方法）
+ * @param buffer 文件Buffer
+ * @param fileName 文件名（包含路径）
+ * @param contentType 文件MIME类型
+ * @returns 上传后的文件URL
+ */
+async function uploadFileToOSS(buffer, fileName, contentType) {
+  return new Promise((resolve, reject) => {
+    try {
+      const cosInstance = initCOS();
+      
+      if (!cosInstance || !COS_BUCKET || !COS_REGION || !COS_DOMAIN) {
+        throw new Error('腾讯云OSS配置未设置');
+      }
+      
+      console.log(`[OSS] 上传文件: ${fileName}, 大小: ${buffer.length} 字节`);
+      
+      cosInstance.putObject({
+        Bucket: COS_BUCKET,
+        Region: COS_REGION,
+        Key: fileName,
+        Body: buffer,
+        ContentType: contentType
+      }, function(err, data) {
+        if (err) {
+          console.error('[OSS] 上传文件失败:', err);
+          reject(new Error('文件上传失败'));
+        } else {
+          const url = `https://${COS_DOMAIN}/${fileName}`;
+          console.log('[OSS] 上传文件成功:', url);
+          resolve(url);
+        }
+      });
+    } catch (error) {
+      console.error('[OSS] 上传文件失败:', error);
+      reject(error);
+    }
+  });
+}
+
 module.exports = {
   initCOS,
   uploadImageToOSS,
   uploadImageFromUrlToOSS,
   uploadImagesFromUrlsToOSS,
   uploadVideoToOSS,
+  uploadFileToOSS,
   COS_BUCKET,
   COS_REGION,
   COS_DOMAIN

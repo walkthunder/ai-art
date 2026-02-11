@@ -1,0 +1,314 @@
+/**
+ * 时空拼图生成中页面样式 - 复用原网页 GeneratingPage 设计
+ * Requirements: 2.2, 14.1-14.5, 10.1-10.3
+ */
+
+.generating-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #8B0000 0%, #6B0000 50%, #4B0000 100%);
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.generating-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 装饰元素 */
+.decorations {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.decoration {
+  position: absolute;
+  opacity: 0.2;
+}
+
+.lantern-1 { top: 160rpx; left: 60rpx; font-size: 64rpx; }
+.lantern-2 { bottom: 320rpx; right: 60rpx; font-size: 64rpx; }
+.sparkle { top: 33%; right: 25%; font-size: 48rpx; }
+
+/* 动画 */
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float-delay { animation: float 8s ease-in-out infinite; animation-delay: 1s; }
+.animate-twinkle { animation: twinkle 4s ease-in-out infinite; }
+.animate-bounce { animation: bounce 2.5s ease-in-out infinite; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-30rpx) rotate(5deg); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.2); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16rpx); }
+}
+
+
+/* 主内容区 */
+.generating-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* 主灯笼 */
+.lantern-wrapper {
+  position: relative;
+  margin-bottom: 48rpx;
+  width: 120rpx;
+  height: 120rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.lantern-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180rpx;
+  height: 180rpx;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.5; }
+}
+
+.main-lantern {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+}
+
+/* 标题 */
+.title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: var(--color-festival-gold);
+  margin-bottom: 48rpx;
+  text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
+}
+
+/* 进度条 */
+.progress-wrapper {
+  width: 100%;
+  max-width: 600rpx;
+  margin-bottom: 32rpx;
+}
+
+.progress-bar {
+  position: relative;
+  height: 24rpx;
+  background: rgba(139, 0, 0, 0.8);
+  border-radius: 12rpx;
+  overflow: hidden;
+  border: 4rpx solid var(--color-festival-gold);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-festival-gold), #FFC700, #D4AF37);
+  border-radius: 12rpx;
+  position: relative;
+  transition: width 0.3s ease;
+}
+
+.progress-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shine 1s linear infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+
+/* 进度信息 */
+.progress-info {
+  margin-top: 32rpx;
+  text-align: center;
+}
+
+.progress-percent {
+  display: block;
+  font-size: 72rpx;
+  font-weight: bold;
+  color: var(--color-festival-gold);
+  margin-bottom: 16rpx;
+}
+
+.stage-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.stage-text {
+  font-size: 32rpx;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.blessing-text {
+  font-size: 32rpx;
+  color: var(--color-festival-gold);
+}
+
+.task-message {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 16rpx;
+}
+
+/* 状态卡片 */
+.status-card {
+  width: 100%;
+  max-width: 600rpx;
+  padding: 32rpx;
+  background: rgba(139, 0, 0, 0.9);
+  border-radius: 24rpx;
+  border: 2rpx solid rgba(255, 215, 0, 0.3);
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.status-title {
+  display: block;
+  font-size: 32rpx;
+  color: var(--color-festival-gold);
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.status-desc {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.retry-info {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255, 215, 0, 0.8);
+  margin-top: 16rpx;
+}
+
+/* 错误卡片 */
+.error-card {
+  width: 100%;
+  max-width: 600rpx;
+  padding: 48rpx 32rpx;
+  background: linear-gradient(135deg, #8B0000, #6B0000);
+  border-radius: 32rpx;
+  border: 4rpx solid var(--color-festival-gold);
+  text-align: center;
+}
+
+.error-icon { display: block; font-size: 80rpx; margin-bottom: 24rpx; }
+.error-title { display: block; font-size: 40rpx; font-weight: bold; color: var(--color-festival-gold); margin-bottom: 16rpx; }
+.error-message { display: block; font-size: 28rpx; color: rgba(255, 255, 255, 0.9); margin-bottom: 32rpx; line-height: 1.5; }
+
+.retry-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, var(--color-festival-gold), #D4AF37);
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.retry-btn.loading, .retry-btn.disabled { opacity: 0.5; }
+.retry-btn-text { font-size: 32rpx; font-weight: bold; color: #8B0000; }
+
+.home-btn {
+  width: 100%;
+  height: 88rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16rpx;
+}
+
+.home-btn-text { font-size: 32rpx; color: rgba(255, 255, 255, 0.9); }
+
+.tip-text { font-size: 24rpx; color: rgba(255, 255, 255, 0.5); margin-top: 48rpx; }
+
+/* 老年模式适配 */
+.elder-mode .title { font-size: 56rpx; }
+.elder-mode .lantern-wrapper { width: 160rpx; height: 160rpx; }
+.elder-mode .progress-percent { font-size: 88rpx; }
+.elder-mode .stage-text, .elder-mode .blessing-text { font-size: 38rpx; }
+.elder-mode .status-title { font-size: 38rpx; }
+.elder-mode .status-desc { font-size: 32rpx; }
+.elder-mode .error-title { font-size: 48rpx; }
+.elder-mode .error-message { font-size: 34rpx; }
+.elder-mode .retry-btn-text, .elder-mode .home-btn-text { font-size: 38rpx; }
+.elder-mode .tip-text { font-size: 30rpx; }
+
+/* AI生成提示（合规要求） */
+.ai-notice {
+  width: 100%;
+  text-align: center;
+  margin-top: 32rpx;
+  padding-bottom: 32rpx;
+}
+
+.ai-notice-text {
+  font-size: 22rpx;
+  color: #fff2b3;
+  line-height: 1.5;
+}
+
+/* 老年模式 - AI提示 */
+.elder-mode .ai-notice-text {
+  font-size: 26rpx;
+}

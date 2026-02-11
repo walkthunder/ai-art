@@ -187,6 +187,7 @@ async function getGenerationHistoryById(recordId) {
       generatedImageUrls: parseJsonField(record.generated_image_urls),
       selectedImageUrl: record.selected_image_url,
       status: record.status,
+      mode: record.mode || 'transform',
       createdAt: record.created_at,
       updatedAt: record.updated_at
     };
@@ -332,6 +333,41 @@ async function getGenerationHistoryByUserId(userId, limit = 20, mode = null, pag
 }
 
 /**
+ * 更新生成记录的任务ID列表
+ * @param {string} recordId 记录ID
+ * @param {Array<string>} taskIds 任务ID数组
+ * @returns {Promise<Object>} 更新后的记录
+ */
+async function updateTaskIds(recordId, taskIds) {
+  if (!recordId) {
+    throw new Error('缺少必要参数: recordId 是必需的');
+  }
+
+  if (!taskIds || !Array.isArray(taskIds)) {
+    throw new Error('taskIds 必须是数组');
+  }
+
+  const connection = await db.pool.getConnection();
+  try {
+    const [result] = await connection.execute(
+      'UPDATE generation_history SET task_ids = ?, updated_at = NOW() WHERE id = ?',
+      [JSON.stringify(taskIds), recordId]
+    );
+
+    if (result.affectedRows === 0) {
+      throw new Error(`未找到记录: ${recordId}`);
+    }
+
+    console.log(`生成记录的任务ID已更新: ${recordId}`);
+
+    // 查询并返回更新后的记录
+    return await getGenerationHistoryById(recordId);
+  } finally {
+    connection.release();
+  }
+}
+
+/**
  * 删除超过指定天数的未付费记录
  * @param {number} days 天数(默认30天)
  * @returns {Promise<number>} 删除的记录数
@@ -363,5 +399,6 @@ module.exports = {
   getGenerationHistoryById,
   getGenerationHistoryByTaskId,
   getGenerationHistoryByUserId,
+  updateTaskIds,
   deleteOldUnpaidRecords
 };

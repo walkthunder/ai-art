@@ -1,0 +1,105 @@
+<!--
+  财神变身模式结果页 - 视频播放
+  Requirements: 4.5
+-->
+<view class="caishen-result-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+  <!-- 四角装饰背景 -->
+  <corner-background />
+  
+  <!-- 背景 -->
+  <image class="result-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
+  
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;">
+    <view class="nav-left">
+      <view class="back-btn" bindtap="goBack">
+        <text class="back-icon">‹</text>
+      </view>
+    </view>
+    <text class="nav-title">财神变身</text>
+    <view class="nav-right"></view>
+  </view>
+  
+  <!-- 主内容区 -->
+  <scroll-view class="result-content" scroll-y style="top: {{statusBarHeight + navBarHeight}}px;">
+    <!-- 视频展示区 -->
+    <view class="video-section">
+      <view class="video-frame">
+        <!-- 加载状态 -->
+        <view class="loading-state" wx:if="{{!videoLoaded}}">
+          <loading />
+          <text class="loading-text">视频加载中...</text>
+        </view>
+        
+        <!-- 视频播放器 -->
+        <video 
+          wx:if="{{videoUrl}}"
+          class="caishen-video"
+          src="{{videoUrl}}"
+          autoplay
+          loop
+          show-center-play-btn="{{true}}"
+          controls="{{true}}"
+          object-fit="contain"
+          bindloadeddata="onVideoLoad"
+          binderror="onVideoError"
+        />
+        
+        <!-- AI标识 -->
+        <view class="ai-badge">
+          <text class="badge-icon">✓</text>
+          <text class="badge-text">AI财神变身</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 功能按钮区 -->
+    <view class="action-section">
+      <!-- 保存视频按钮 -->
+      <view 
+        class="action-btn save-btn {{isSaving ? 'loading' : ''}}"
+        bindtap="handleSaveVideo"
+      >
+        <view class="btn-inner gold">
+          <text class="btn-icon">💾</text>
+          <text class="btn-text">{{isSaving ? '保存中...' : '保存至相册'}}</text>
+        </view>
+        <view class="btn-shine"></view>
+      </view>
+      
+      <!-- 分享按钮 -->
+      <button 
+        class="action-btn share-btn"
+        open-type="share"
+        bindtap="handleShare"
+      >
+        <view class="btn-inner red">
+          <text class="btn-icon">📤</text>
+          <text class="btn-text">分享好友</text>
+        </view>
+      </button>
+      
+      <!-- 返回首页 -->
+      <view class="action-btn home-btn" bindtap="goHome">
+        <view class="btn-inner transparent">
+          <text class="btn-icon">🏠</text>
+          <text class="btn-text">返回首页</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- AI生成提示（合规要求） -->
+    <view class="ai-notice">
+      <text class="ai-notice-text">本服务为AI生成内容，结果仅供娱乐参考</text>
+    </view>
+  </scroll-view>
+  
+  <!-- 支付弹窗 -->
+  <payment-modal 
+    visible="{{showPaymentModal}}"
+    currentPaymentStatus="{{paymentStatus}}"
+    hasEverPaid="{{hasEverPaid}}"
+    bind:complete="onPaymentComplete"
+    bind:close="closePaymentModal"
+  />
+</view>

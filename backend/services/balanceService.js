@@ -7,12 +7,16 @@
 const { query } = require('../db/connection');
 const { v4: uuidv4 } = require('uuid');
 
+// 用户初始余额配置（可通过环境变量配置）
+const DEFAULT_FREE_BALANCE = parseInt(process.env.DEFAULT_FREE_BALANCE) || 3;
+
 /**
  * 余额类型映射
  */
 const BALANCE_TYPES = {
   PUZZLE_FREE: 'free_puzzle',
   TRANSFORM_FREE: 'free_transform',
+  CAISHEN_FREE: 'free_caishen',
   PAID: 'paid'
 };
 
@@ -29,6 +33,8 @@ function getBalanceType(mode, isPaid = false) {
       return BALANCE_TYPES.PUZZLE_FREE;
     case 'transform':
       return BALANCE_TYPES.TRANSFORM_FREE;
+    case 'caishen':
+      return BALANCE_TYPES.CAISHEN_FREE;
     default:
       throw new Error(`未知的模式: ${mode}`);
   }
@@ -76,12 +82,14 @@ async function checkBalance(userId, mode = null, retryCount = 0) {
         await connection.execute(`
           INSERT INTO user_balances (id, user_id, balance_type, amount, created_at, updated_at)
           VALUES 
-            (?, ?, 'free_puzzle', 3, NOW(), NOW()),
-            (?, ?, 'free_transform', 3, NOW(), NOW()),
+            (?, ?, 'free_puzzle', ?, NOW(), NOW()),
+            (?, ?, 'free_transform', ?, NOW(), NOW()),
+            (?, ?, 'free_caishen', ?, NOW(), NOW()),
             (?, ?, 'paid', 0, NOW(), NOW())
         `, [
-          uuidv4(), userId,
-          uuidv4(), userId,
+          uuidv4(), userId, DEFAULT_FREE_BALANCE,
+          uuidv4(), userId, DEFAULT_FREE_BALANCE,
+          uuidv4(), userId, DEFAULT_FREE_BALANCE,
           uuidv4(), userId
         ]);
         
@@ -142,6 +150,10 @@ async function checkBalance(userId, mode = null, retryCount = 0) {
         free_count: balances[BALANCE_TYPES.TRANSFORM_FREE] || 0,
         remaining: balances[BALANCE_TYPES.TRANSFORM_FREE] || 0
       },
+      caishen: {
+        free_count: balances[BALANCE_TYPES.CAISHEN_FREE] || 0,
+        remaining: balances[BALANCE_TYPES.CAISHEN_FREE] || 0
+      },
       paid: {
         count: balances[BALANCE_TYPES.PAID] || 0,
         remaining: balances[BALANCE_TYPES.PAID] || 0,
@@ -150,6 +162,7 @@ async function checkBalance(userId, mode = null, retryCount = 0) {
       // 向后兼容
       usage_count: (balances[BALANCE_TYPES.PUZZLE_FREE] || 0) + 
                    (balances[BALANCE_TYPES.TRANSFORM_FREE] || 0) + 
+                   (balances[BALANCE_TYPES.CAISHEN_FREE] || 0) +
                    (balances[BALANCE_TYPES.PAID] || 0),
       can_generate: Object.values(balances).some(amount => amount > 0),
       user_type: paymentInfo.has_ever_paid ? 'paid' : 'free',
@@ -270,6 +283,7 @@ async function decrementBalance(userId, generationId, mode = 'puzzle') {
       remaining: {
         puzzle: updatedBalances[BALANCE_TYPES.PUZZLE_FREE] || 0,
         transform: updatedBalances[BALANCE_TYPES.TRANSFORM_FREE] || 0,
+        caishen: updatedBalances[BALANCE_TYPES.CAISHEN_FREE] || 0,
         paid: updatedBalances[BALANCE_TYPES.PAID] || 0,
         usage_count: totalRemaining
       }
@@ -380,6 +394,7 @@ async function restoreBalance(userId, generationId, mode = 'puzzle') {
       remaining: {
         puzzle: updatedBalances[BALANCE_TYPES.PUZZLE_FREE] || 0,
         transform: updatedBalances[BALANCE_TYPES.TRANSFORM_FREE] || 0,
+        caishen: updatedBalances[BALANCE_TYPES.CAISHEN_FREE] || 0,
         paid: updatedBalances[BALANCE_TYPES.PAID] || 0,
         usage_count: totalRemaining
       }

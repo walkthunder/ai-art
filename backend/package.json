@@ -21,6 +21,7 @@
     "db:cloudbase:sql": "node db/sync-cloudbase.js sql",
     "db:test": "node -e \"require('./db/connection').testConnection().then(() => process.exit(0)).catch(() => process.exit(1))\"",
     "test:api": "node scripts/test-apis.js",
+    "test:caishen-api": "node test-caishen-api.js",
     "test:e2e": "node test-e2e.js",
     "test": "jest --runInBand"
   },

@@ -240,8 +240,207 @@ async function shouldAddWatermark(paymentStatus) {
   return paymentStatus === 'free' && enableWatermark;
 }
 
+/**
+ * 为视频添加水印
+ * @param {string} videoUrl - 视频URL
+ * @param {string} userId - 用户ID
+ * @returns {Promise<string>} 带水印的视频URL
+ */
+async function addWatermarkToVideo(videoUrl, userId) {
+  try {
+    console.log(`[视频水印] 开始为视频添加水印: ${videoUrl}`);
+    
+    // 获取水印配置
+    const watermarkConfig = await appConfig.getWatermarkConfig();
+    const watermarkText = watermarkConfig.text || '团圆照相馆';
+    
+    console.log(`[视频水印] 水印文字: ${watermarkText}`);
+    
+    // 如果是URL，先下载视频
+    let inputPath = videoUrl;
+    let needCleanup = false;
+    
+    if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
+      inputPath = await downloadVideo(videoUrl);
+      needCleanup = true;
+    }
+    
+    // 生成输出路径
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const os = require('os');
+    const tempDir = os.tmpdir();
+    const outputPath = path.join(tempDir, `watermarked_video_${timestamp}_${random}.mp4`);
+    
+    // 使用FFmpeg添加水印
+    await addWatermarkWithFFmpeg(inputPath, outputPath, watermarkText);
+    
+    console.log(`[视频水印] 水印添加成功: ${outputPath}`);
+    
+    // 上传到OSS
+    const watermarkedVideoUrl = await uploadWatermarkedVideo(outputPath);
+    
+    console.log(`[视频水印] 水印视频已上传: ${watermarkedVideoUrl}`);
+    
+    // 清理临时文件
+    if (needCleanup) {
+      await fs.unlink(inputPath).catch(err => 
+        console.warn(`[视频水印] 清理临时文件失败: ${err.message}`)
+      );
+    }
+    await fs.unlink(outputPath).catch(err => 
+      console.warn(`[视频水印] 清理输出文件失败: ${err.message}`)
+    );
+    
+    return watermarkedVideoUrl;
+  } catch (error) {
+    console.error('[视频水印] 添加水印失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 下载视频到本地
+ * @param {string} videoUrl - 视频URL
+ * @returns {Promise<string>} 本地文件路径
+ */
+async function downloadVideo(videoUrl) {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(7);
+  const os = require('os');
+  const tempDir = os.tmpdir();
+  const tempPath = path.join(tempDir, `download_video_${timestamp}_${random}.mp4`);
+  
+  console.log(`[视频水印] 下载视频: ${videoUrl}`);
+  
+  const response = await fetch(videoUrl);
+  if (!response.ok) {
+    throw new Error(`下载视频失败: ${response.status}`);
+  }
+  
+  // 限制文件大小为50MB
+  const contentLength = response.headers.get('content-length');
+  if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
+    throw new Error('视频文件过大，超过50MB限制');
+  }
+  
+  const buffer = await response.arrayBuffer();
+  
+  // 再次检查实际大小
+  if (buffer.byteLength > 50 * 1024 * 1024) {
+    throw new Error('视频文件过大，超过50MB限制');
+  }
+  
+  await fs.writeFile(tempPath, Buffer.from(buffer));
+  
+  console.log(`[视频水印] 视频下载完成: ${tempPath}`);
+  return tempPath;
+}
+
+/**
+ * 使用FFmpeg为视频添加水印
+ * @param {string} inputPath - 输入视频路径
+ * @param {string} outputPath - 输出视频路径
+ * @param {string} watermarkText - 水印文字
+ * @returns {Promise<void>}
+ */
+function addWatermarkWithFFmpeg(inputPath, outputPath, watermarkText) {
+  return new Promise((resolve, reject) => {
+    const ffmpegCmd = process.env.FFMPEG_CMD || 'ffmpeg';
+    
+    // FFmpeg命令：在视频右下角添加半透明水印
+    // -vf "drawtext=text='文字':x=W-tw-10:y=H-th-10:fontsize=24:fontcolor=white@0.5"
+    const args = [
+      '-i', inputPath,
+      '-vf', `drawtext=text='${watermarkText}':x=W-tw-10:y=H-th-10:fontsize=24:fontcolor=white@0.5`,
+      '-codec:a', 'copy', // 音频直接复制，不重新编码
+      '-y', // 覆盖输出文件
+      outputPath
+    ];
+    
+    console.log(`[视频水印] 执行FFmpeg命令: ${ffmpegCmd} ${args.join(' ')}`);
+    
+    const ffmpeg = spawn(ffmpegCmd, args);
+    
+    // 设置60秒超时
+    const timeout = setTimeout(() => {
+      ffmpeg.kill();
+      reject(new Error('FFmpeg执行超时（60秒）'));
+    }, 60000);
+    
+    let stderr = '';
+    
+    ffmpeg.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    
+    ffmpeg.on('close', (code) => {
+      clearTimeout(timeout);
+      
+      if (code !== 0) {
+        console.error(`[视频水印] FFmpeg执行失败 (code ${code}):`, stderr);
+        reject(new Error(`FFmpeg执行失败: ${stderr}`));
+        return;
+      }
+      
+      console.log('[视频水印] FFmpeg执行成功');
+      resolve();
+    });
+    
+    ffmpeg.on('error', (error) => {
+      clearTimeout(timeout);
+      console.error(`[视频水印] 启动FFmpeg失败:`, error);
+      reject(new Error(`启动FFmpeg失败: ${error.message}`));
+    });
+  });
+}
+
+/**
+ * 上传水印视频到OSS
+ * @param {string} filePath - 本地文件路径
+ * @returns {Promise<string>} OSS URL
+ */
+async function uploadWatermarkedVideo(filePath) {
+  try {
+    console.log('[视频水印] 开始上传水印视频到OSS...');
+    
+    // 读取文件
+    const fileBuffer = await fs.readFile(filePath);
+    
+    // 上传到OSS（需要实现视频上传功能）
+    // 注意：这里假设ossService有uploadVideoToOSS方法
+    // 如果没有，需要扩展ossService
+    const ossService = require('./ossService');
+    
+    // 生成文件名
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const fileName = `caishen-videos/watermarked_${timestamp}_${random}.mp4`;
+    
+    // 上传视频
+    let ossUrl;
+    if (typeof ossService.uploadVideoToOSS === 'function') {
+      ossUrl = await ossService.uploadVideoToOSS(fileBuffer, fileName);
+    } else {
+      // 如果没有专门的视频上传方法，使用通用上传
+      ossUrl = await ossService.uploadFileToOSS(fileBuffer, fileName, 'video/mp4');
+    }
+    
+    // 添加水印标识参数
+    const urlWithFlag = `${ossUrl}${ossUrl.includes('?') ? '&' : '?'}watermark=true&t=${Date.now()}`;
+    
+    console.log(`[视频水印] 水印视频已上传: ${urlWithFlag}`);
+    
+    return urlWithFlag;
+  } catch (error) {
+    console.error('[视频水印] 上传水印视频失败:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   addWatermarkToImage,
   addWatermarkToImages,
+  addWatermarkToVideo,
   shouldAddWatermark,
 };

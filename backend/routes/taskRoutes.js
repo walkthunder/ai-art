@@ -117,6 +117,12 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
         message: '时空拼图模式需要2-5张用户照片' 
       });
     }
+    if (mode === 'caishen' && userImageCount !== 1) {
+      return res.status(400).json({ 
+        error: '参数验证失败', 
+        message: '财神变身模式需要且仅需要1张用户照片' 
+      });
+    }
     
     // 获取用户付费状态
     let paymentStatus = 'free';
@@ -132,11 +138,15 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
     // 构建最终图片URL列表和prompt
     // puzzle 模式：只使用用户上传的照片，不添加模板图片
     // transform 模式：用户照片 + 模板图片
+    // caishen 模式：只使用用户照片，用于视频生成
     let finalImageUrls;
     if (mode === 'puzzle') {
       finalImageUrls = [...imageUrls]; // 只使用用户照片
       console.log('📷 Puzzle模式：仅使用用户照片（第一张作为背景基准），不添加模板图片');
       console.log('📷 图片顺序：图1为背景基准，图2-图N的人物将融入图1场景');
+    } else if (mode === 'caishen') {
+      finalImageUrls = [...imageUrls]; // 只使用用户照片
+      console.log('📷 Caishen模式：使用用户照片生成财神视频');
     } else {
       finalImageUrls = [...imageUrls, templateConfig.imageUrl]; // 用户照片 + 模板
       console.log('📷 Transform模式：用户照片 + 模板图片');

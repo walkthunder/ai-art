@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "生成中",
+  "navigationBarBackgroundColor": "#8B0000",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "corner-background": "/components/corner-background/corner-background"
+  }
+}

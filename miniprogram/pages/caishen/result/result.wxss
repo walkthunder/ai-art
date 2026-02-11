@@ -1,0 +1,335 @@
+/**
+ * 财神变身结果页样式 - 视频播放
+ * Requirements: 4.5
+ */
+
+@import '/styles/common-navigation.wxss';
+
+.caishen-result-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #8B0000 0%, #6B0000 50%, #4B0000 100%);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* 背景图片层 - 去掉导航栏和安全区域 */
+.result-bg-image {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
+  /* top 由 JS 动态设置 */
+}
+
+.result-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.08) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 装饰元素 */
+.decorations {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.decoration {
+  position: absolute;
+  opacity: 0.2;
+  font-size: 48rpx;
+}
+
+.lantern-1 {
+  top: 200rpx;
+  left: 40rpx;
+}
+
+.lantern-2 {
+  bottom: 400rpx;
+  right: 40rpx;
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+.animate-float-delay {
+  animation: float 6s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20rpx) rotate(5deg); }
+}
+
+/* 导航栏样式使用通用样式文件 common-navigation.wxss */
+
+/* 主内容区 */
+.result-content {
+  flex: 1;
+  position: fixed;
+  z-index: 10;
+  width: 100%;
+  bottom: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* 视频展示区 */
+.video-section {
+  padding: 32rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.video-frame {
+  position: relative;
+  background: linear-gradient(135deg, #8B0000, #6B0000);
+  border-radius: 28rpx;
+  padding: 24rpx;
+  overflow: hidden;
+  min-height: 600rpx;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 600rpx;
+  z-index: 10;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #FFD700;
+  margin-top: 16rpx;
+}
+
+/* 视频播放器 */
+.caishen-video {
+  width: 100%;
+  height: 600rpx;
+  border-radius: 16rpx;
+  background: #000;
+}
+
+
+
+/* AI标识 */
+.ai-badge {
+  position: absolute;
+  bottom: 40rpx;
+  right: 40rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 20rpx;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border-radius: 16rpx;
+  border: 2rpx solid rgba(255, 215, 0, 0.2);
+  z-index: 20;
+}
+
+.badge-icon {
+  font-size: 24rpx;
+  color: #FFD700;
+}
+
+.badge-text {
+  font-size: 24rpx;
+  color: #FFD700;
+}
+
+/* 功能按钮区 */
+.action-section {
+  padding: 32rpx;
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  box-sizing: border-box;
+}
+
+.action-btn {
+  position: relative;
+  width: 100%;
+  height: 96rpx;
+  border-radius: 48rpx;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: normal;
+}
+
+.action-btn::after {
+  border: none;
+}
+
+.action-btn.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.btn-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  border-radius: 48rpx;
+  white-space: nowrap;
+  padding: 0 32rpx;
+}
+
+/* 金色按钮 - 保存 */
+.btn-inner.gold {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border: 4rpx solid #FF6B6B;
+  box-shadow: 0 8rpx 24rpx rgba(255, 215, 0, 0.4);
+}
+
+.btn-inner.gold .btn-text {
+  color: #8B0000;
+  font-weight: bold;
+}
+
+.btn-inner.red {
+  background: linear-gradient(135deg, var(--color-festival-red), #8B0000);
+  border: 4rpx solid var(--color-festival-gold);
+}
+
+.btn-inner.purple {
+  background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+  border: 4rpx solid var(--color-festival-gold);
+}
+
+.btn-inner.transparent {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2rpx solid rgba(255, 215, 0, 0.3);
+}
+
+.btn-icon {
+  font-size: 36rpx;
+}
+
+.btn-text {
+  font-size: 50rpx;
+  white-space: nowrap;
+}
+
+.btn-inner.gold .btn-text {
+  color: #8B0000;
+}
+
+.btn-inner.red .btn-text {
+  color: var(--color-festival-gold);
+}
+
+.btn-inner.purple .btn-text {
+  color: #FFFFFF;
+}
+
+.btn-inner.transparent .btn-text {
+  color: var(--color-festival-gold);
+}
+
+/* 按钮光效 */
+.btn-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shine 2s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  50%, 100% { left: 200%; }
+}
+
+
+
+/* ========================================
+   老年模式适配
+   ======================================== */
+
+.elder-mode .nav-title {
+  font-size: 42rpx;
+}
+
+.elder-mode .tip-text {
+  font-size: 32rpx;
+}
+
+.elder-mode .action-btn {
+  height: 120rpx;
+  min-width: 400rpx;
+}
+
+.elder-mode .btn-icon {
+  font-size: 44rpx;
+}
+
+.elder-mode .btn-text {
+  font-size: 44rpx;
+  white-space: nowrap;
+}
+
+.elder-mode .badge-text {
+  font-size: 28rpx;
+}
+
+
+
+
+/* AI生成提示（合规要求） */
+.ai-notice {
+  width: 100%;
+  text-align: center;
+  margin-top: 32rpx;
+  padding-bottom: 32rpx;
+}
+
+.ai-notice-text {
+  font-size: 22rpx;
+  color: #fff2b3;
+  line-height: 1.5;
+}
+
+/* 老年模式 - AI提示 */
+.elder-mode .ai-notice-text {
+  font-size: 26rpx;
+}

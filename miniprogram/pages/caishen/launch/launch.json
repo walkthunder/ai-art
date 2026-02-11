@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "财神变身",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "usage-modal": "/components/usage-modal/usage-modal",
+    "payment-modal": "/components/payment-modal/payment-modal",
+    "dev-mode-panel": "/components/dev-mode-panel/dev-mode-panel"
+  }
+}
