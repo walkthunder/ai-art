@@ -65,17 +65,17 @@ async function generateArtPhotoInternal(prompt, imageUrls, facePositions = null,
     throw new Error('请提供至少一张有效的照片');
   }
   
-  // 根据付费状态确定画质和水印
-  // 免费版：2K画质 + API水印关闭（后续添加自定义水印）
+  // 根据付费状态确定画质
+  // 免费版：2K画质 + 后端自定义水印
   // 付费版：4K画质 + 无水印
   const isPaid = paymentStatus === 'paid';
   const imageSize = isPaid ? "4K" : "2K";
-  // 注意：API的watermark参数设为false，我们会在后端添加自定义水印
+  // 注意：API的watermark参数设为false，统一使用后端自定义水印
   const hasWatermark = false;
   
   console.log(`💎 付费状态: ${paymentStatus}`);
   console.log(`📐 图片尺寸: ${imageSize} (${isPaid ? '高清' : '普通'})`);
-  console.log(`🏷️  水印设置: ${isPaid ? '无水印' : '后端添加自定义水印'}`);
+  console.log(`🏷️  水印设置: ${isPaid ? '无水印' : '后端添加自定义水印（统一品牌）'}`);
   
   // 构造请求体
   const requestBody = {
@@ -87,7 +87,7 @@ async function generateArtPhotoInternal(prompt, imageUrls, facePositions = null,
     sequential_image_generation_options: { max_images: 4 },
     stream: false,
     response_format: "url",
-    watermark: hasWatermark,
+    watermark: hasWatermark, // 关闭API水印，统一使用后端自定义水印
   };
   
   if (mode === 'transform') {

@@ -708,8 +708,9 @@ App({
         // 使用 ?? 而不是 || 来正确处理 0 值
         const puzzleRemaining = data.puzzle?.remaining ?? 0;
         const transformRemaining = data.transform?.remaining ?? 0;
+        const caishenRemaining = data.caishen?.remaining ?? 0;
         const paidRemaining = data.paid?.remaining ?? 0;
-        const usageCount = puzzleRemaining + transformRemaining + paidRemaining;
+        const usageCount = puzzleRemaining + transformRemaining + caishenRemaining + paidRemaining;
         
         // 更新全局状态
         this.globalData.usageCount = usageCount;
@@ -718,6 +719,7 @@ App({
         console.log('[App] 使用次数已更新:', {
           puzzle: puzzleRemaining,
           transform: transformRemaining,
+          caishen: caishenRemaining,
           paid: paidRemaining,
           total: usageCount,
           can_generate: data.can_generate
@@ -731,6 +733,7 @@ App({
           modeData: {
             puzzle: data.puzzle || { free_count: 3, remaining: 0 },
             transform: data.transform || { free_count: 3, remaining: 0 },
+            caishen: data.caishen || { free_count: 3, remaining: 0 },
             paid: data.paid || { count: 0, remaining: 0 }
           }
         };

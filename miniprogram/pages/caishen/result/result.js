@@ -23,6 +23,8 @@ Page({
     paymentStatus: 'free',
     hasEverPaid: false,
     showPaymentModal: false,
+    taskId: '',
+    recordId: '',
     commonBgUrl: getAssetUrl('bg/caishen-result-bg.jpg')
   },
 
@@ -36,7 +38,9 @@ Page({
     this.setData({
       isElderMode: app.globalData.isElderMode,
       paymentStatus: paymentStatus,
-      hasEverPaid: hasEverPaid
+      hasEverPaid: hasEverPaid,
+      taskId: options.taskId || '',
+      recordId: options.recordId || ''
     });
     
     // 获取视频URL - 三级fallback机制
@@ -187,9 +191,13 @@ Page({
   },
 
   handleShare() {
-    wx.showShareMenu({
-      withShareTicket: true,
-      menus: ['shareAppMessage', 'shareTimeline']
+    console.log('[CaishenResult] 点击分享按钮');
+    // 显示分享提示
+    wx.showModal({
+      title: '分享财神视频',
+      content: '点击右上角"..."按钮，选择"转发"或"分享到朋友圈"，让更多朋友看到你的财神变身视频！',
+      showCancel: false,
+      confirmText: '知道了'
     });
   },
 
@@ -230,17 +238,30 @@ Page({
   },
 
   onShareAppMessage() {
+    const { taskId, recordId } = this.data;
+    console.log('[CaishenResult] 分享到好友, taskId:', taskId, 'recordId:', recordId);
+    
+    // 构建分享路径，包含taskId和recordId以便接收者查看
+    let sharePath = '/pages/caishen/launch/launch';
+    if (taskId && recordId) {
+      sharePath = `/pages/caishen/result/result?taskId=${taskId}&recordId=${recordId}&from=share`;
+    }
+    
     return {
-      title: '财神变身 - 财神附体，财运亨通！',
-      path: '/pages/caishen/launch/launch',
-      imageUrl: '/assets/images/share-caishen.png'
+      title: '我的财神变身视频，财运亨通！🧧💰',
+      path: sharePath,
+      imageUrl: '/assets/logo/share-icon.png' // 使用应用图标作为分享图
     };
   },
 
   onShareTimeline() {
+    const { taskId, recordId } = this.data;
+    console.log('[CaishenResult] 分享到朋友圈, taskId:', taskId, 'recordId:', recordId);
+    
     return {
-      title: '财神变身 - AI生成财神发钱视频',
-      imageUrl: '/assets/images/share-caishen.png'
+      title: '财神变身 - AI生成财神发钱视频，财运滚滚来！',
+      query: taskId && recordId ? `taskId=${taskId}&recordId=${recordId}&from=share` : '',
+      imageUrl: '/assets/logo/share-icon.png'
     };
   }
 });

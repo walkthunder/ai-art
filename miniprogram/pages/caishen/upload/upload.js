@@ -72,11 +72,22 @@ Page({
           return;
         }
         
-        console.log('[CaishenUpload] 检查使用次数...');
+        console.log('[CaishenUpload] 检查财神模式使用次数...');
         const usageInfo = await app.updateUsageCount();
         
-        if (usageInfo.usageCount === 0) {
-          console.log('[CaishenUpload] 次数为0，显示套餐选择');
+        // 检查财神模式的余额
+        const caishenRemaining = usageInfo.modeData?.caishen?.remaining ?? 0;
+        const paidRemaining = usageInfo.modeData?.paid?.remaining ?? 0;
+        const totalRemaining = caishenRemaining + paidRemaining;
+        
+        console.log('[CaishenUpload] 财神模式余额:', {
+          caishen: caishenRemaining,
+          paid: paidRemaining,
+          total: totalRemaining
+        });
+        
+        if (totalRemaining === 0) {
+          console.log('[CaishenUpload] 财神模式次数为0，显示套餐选择');
           this.setData({
             showPaymentModal: true,
             currentPaymentStatus: usageInfo.paymentStatus || 'free',

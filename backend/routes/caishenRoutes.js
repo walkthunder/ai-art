@@ -158,8 +158,27 @@ router.get('/task/:taskId', async (req, res) => {
       const record = await generationService.getGenerationHistoryByTaskId(taskId);
       
       if (record) {
+        // 获取用户付费状态
+        const user = await userServiceV2.getUserById(record.userId);
+        const paymentStatus = user?.payment_status || 'free';
+        
+        // 为免费用户添加自定义水印
+        let finalVideoUrl = status.videoUrl;
+        if (paymentStatus === 'free') {
+          console.log('[财神API] 免费用户，准备添加自定义水印...');
+          try {
+            finalVideoUrl = await videoGenerationService.applyVideoWatermarkIfNeeded(
+              status.videoUrl, 
+              paymentStatus
+            );
+            status.videoUrl = finalVideoUrl;
+          } catch (watermarkError) {
+            console.error('[财神API] 添加水印失败，使用原视频:', watermarkError);
+          }
+        }
+        
         await generationService.updateGenerationHistory(record.id, {
-          generatedImageUrls: [status.videoUrl],
+          generatedImageUrls: [finalVideoUrl],
           status: 'completed'
         });
         

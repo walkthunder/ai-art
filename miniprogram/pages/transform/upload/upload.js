@@ -86,8 +86,19 @@ Page({
       console.log('[TransformUpload] 使用次数检查:', usageInfo);
       
       // 如果次数为0，显示套餐选择弹窗
-      if (usageInfo.usageCount === 0) {
-        console.log('[TransformUpload] 次数为0，显示套餐选择');
+      // 检查transform模式的余额
+      const transformRemaining = usageInfo.modeData?.transform?.remaining ?? 0;
+      const paidRemaining = usageInfo.modeData?.paid?.remaining ?? 0;
+      const totalRemaining = transformRemaining + paidRemaining;
+      
+      console.log('[TransformUpload] 富贵变身模式余额:', {
+        transform: transformRemaining,
+        paid: paidRemaining,
+        total: totalRemaining
+      });
+      
+      if (totalRemaining === 0) {
+        console.log('[TransformUpload] 富贵变身模式次数为0，显示套餐选择');
         this.setData({
           showPaymentModal: true,
           currentPaymentStatus: usageInfo.paymentStatus || 'free',

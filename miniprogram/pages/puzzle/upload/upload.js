@@ -99,8 +99,19 @@ Page({
         console.log('[PuzzleUpload] 使用次数检查:', usageInfo);
         
         // 如果次数为0，显示套餐选择弹窗
-        if (usageInfo.usageCount === 0) {
-          console.log('[PuzzleUpload] 次数为0，显示套餐选择');
+        // 检查puzzle模式的余额
+        const puzzleRemaining = usageInfo.modeData?.puzzle?.remaining ?? 0;
+        const paidRemaining = usageInfo.modeData?.paid?.remaining ?? 0;
+        const totalRemaining = puzzleRemaining + paidRemaining;
+        
+        console.log('[PuzzleUpload] 时空拼图模式余额:', {
+          puzzle: puzzleRemaining,
+          paid: paidRemaining,
+          total: totalRemaining
+        });
+        
+        if (totalRemaining === 0) {
+          console.log('[PuzzleUpload] 时空拼图模式次数为0，显示套餐选择');
           this.setData({
             showPaymentModal: true,
             currentPaymentStatus: usageInfo.paymentStatus || 'free',

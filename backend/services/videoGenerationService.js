@@ -133,8 +133,9 @@ async function callArkVideoAPI(params) {
   console.log('[视频API] 提示词:', prompt);
   console.log('[视频API] 时长:', duration, '秒');
   
-  // 根据付费状态决定是否添加水印
-  const needWatermark = paymentStatus === 'free';
+  // 不使用火山引擎API水印，统一使用后端自定义水印
+  // 这样可以保持品牌一致性
+  const needWatermark = false; // 关闭API水印
   
   // 构造请求体
   const requestBody = {
@@ -154,7 +155,7 @@ async function callArkVideoAPI(params) {
     generate_audio: false, // 财神视频不需要音频
     ratio: "adaptive", // 自动适配宽高比
     duration: parseInt(process.env.CAISHEN_VIDEO_DURATION) || duration,
-    watermark: needWatermark, // 免费用户添加水印（火山引擎水印）
+    watermark: needWatermark, // 关闭API水印，使用后端自定义水印
     resolution: process.env.CAISHEN_VIDEO_RESOLUTION || "720p"
   };
   
@@ -332,12 +333,34 @@ function getStatusMessage(status) {
   return messageMap[status] || '未知状态';
 }
 
-// 注意：视频水印功能已在 API 层面通过 watermark 参数实现
-// 免费用户的视频会在生成时自动添加火山引擎的水印
-// 如果未来需要自定义水印，可以调用 watermarkService.addWatermarkToVideo()
-// 该方法已实现但当前未启用，需要FFmpeg支持
+/**
+ * 为视频添加自定义水印（如果需要）
+ * @param {string} videoUrl - 原始视频URL
+ * @param {string} paymentStatus - 付费状态
+ * @returns {Promise<string>} 处理后的视频URL
+ */
+async function applyVideoWatermarkIfNeeded(videoUrl, paymentStatus) {
+  const watermarkService = require('./watermarkService');
+  
+  // 只为免费用户添加自定义水印
+  if (await watermarkService.shouldAddWatermark(paymentStatus)) {
+    console.log('[视频水印] 开始为免费用户添加自定义水印...');
+    try {
+      const watermarkedUrl = await watermarkService.addWatermarkToVideo(videoUrl);
+      console.log('[视频水印] ✅ 自定义水印添加完成');
+      return watermarkedUrl;
+    } catch (error) {
+      console.error('[视频水印] ❌ 添加自定义水印失败:', error);
+      // 水印添加失败不影响主流程，返回原视频
+      return videoUrl;
+    }
+  }
+  
+  return videoUrl;
+}
 
 module.exports = {
   generateCaishenVideo,
-  getVideoTaskStatus
+  getVideoTaskStatus,
+  applyVideoWatermarkIfNeeded
 };
