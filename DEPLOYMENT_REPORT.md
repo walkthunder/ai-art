@@ -1,8 +1,21 @@
 # 财神模式部署报告
 
-**部署时间**: 2026-02-13 11:17 (初次) / 11:40 (修复API) / 13:30 (修复视频URL)  
+**部署时间**: 2026-02-13 11:17 (初次) / 11:40 (修复API) / 13:30 (修复视频URL) / 13:40 (生产部署)  
 **部署人**: 技术总监  
-**部署状态**: ✅ 成功（已修复视频URL解析问题）
+**部署状态**: ✅ 已部署到生产环境
+
+---
+
+## 🚀 生产环境部署 (2026-02-13 13:40)
+
+### 部署内容
+- ✅ 修复视频URL解析问题的代码已部署到生产环境
+- ✅ 部署环境：test-1g71tc7eb37627e2
+- ✅ 服务名称：express
+- ✅ 部署方式：CloudBase 云托管
+
+### 部署链接
+https://tcb.cloud.tencent.com/dev?envId=test-1g71tc7eb37627e2#/platform-run/service/detail?serverName=express&tabId=deploy&envId=test-1g71tc7eb37627e2
 
 ---
 
