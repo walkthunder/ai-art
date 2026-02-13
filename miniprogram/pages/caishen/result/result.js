@@ -26,6 +26,7 @@ Page({
     taskId: '',
     recordId: '',
     isSharedView: false, // 是否是分享视图
+    originalImageUrl: '', // 用户上传的原始图片，用于分享封面
     // 使用通用背景
     commonBgUrl: getAssetUrl('common-bg.jpg')
   },
@@ -41,13 +42,28 @@ Page({
     const isFromShare = options.from === 'share';
     const shareId = options.shareId || options.recordId;
     
+    // 获取用户上传的原始图片 - 三级fallback机制
+    let originalImageUrl = '';
+    
+    // 1. 优先从URL参数读取（从历史记录进入）
+    if (options.originalImage) {
+      originalImageUrl = decodeURIComponent(options.originalImage);
+      console.log('[CaishenResult] 从URL参数获取原始图片:', originalImageUrl);
+    }
+    // 2. 其次从 globalData 获取（正常生成流程）
+    else if (app.globalData.caishenData?.uploadedImage) {
+      originalImageUrl = app.globalData.caishenData.uploadedImage;
+      console.log('[CaishenResult] 从 globalData 获取原始图片:', originalImageUrl);
+    }
+    
     this.setData({
       isElderMode: app.globalData.isElderMode,
       paymentStatus: paymentStatus,
       hasEverPaid: hasEverPaid,
       taskId: options.taskId || '',
       recordId: options.recordId || '',
-      isSharedView: isFromShare
+      isSharedView: isFromShare,
+      originalImageUrl: originalImageUrl // 保存原始图片用于分享
     });
     
     // 如果是分享进入，优先通过 recordId 从历史记录加载
@@ -139,12 +155,21 @@ Page({
           throw new Error('未找到视频');
         }
         
+        // 获取用户上传的原始图片作为分享封面
+        let originalImageUrl = '';
+        if (result.originalImageUrls && result.originalImageUrls.length > 0) {
+          originalImageUrl = result.originalImageUrls[0];
+        }
+        
         console.log('[CaishenResult] 从分享加载视频成功:', videoUrl);
+        console.log('[CaishenResult] 原始图片URL:', originalImageUrl);
+        
         this.setData({ 
           videoUrl,
           videoLoaded: true, // 标记视频已加载，显示视频组件
           recordId: shareId,
-          taskId: result.taskIds?.[0] || ''
+          taskId: result.taskIds?.[0] || '',
+          originalImageUrl: originalImageUrl // 保存原始图片用于分享
         });
         
       } else {
@@ -367,8 +392,8 @@ Page({
   },
 
   onShareAppMessage() {
-    const { recordId, videoUrl } = this.data;
-    console.log('[CaishenResult] 分享到好友, recordId:', recordId);
+    const { recordId, originalImageUrl } = this.data;
+    console.log('[CaishenResult] 分享到好友, recordId:', recordId, 'originalImageUrl:', originalImageUrl);
     
     if (!recordId) {
       console.warn('[CaishenResult] 警告：缺少 recordId，分享功能可能无法正常工作');
@@ -379,30 +404,25 @@ Page({
       ? `/pages/caishen/result/result?shareId=${recordId}&from=share`
       : '/pages/caishen/launch/launch';
     
-    // 尝试生成视频封面作为分享图
-    let shareImageUrl = '';
-    if (videoUrl) {
-      // 如果有视频URL，尝试使用视频的第一帧作为封面
-      // 注意：微信小程序不支持直接从视频生成封面，需要后端支持
-      // 这里先使用默认图，后续可以优化为后端生成封面
-      shareImageUrl = '';
-    }
+    // 使用用户上传的原始图片作为分享封面
+    // 如果没有原始图片，则留空让微信自动截取页面
+    const shareImageUrl = originalImageUrl || '';
     
     return {
       title: '我的财神变身视频，财运亨通！🧧💰',
       path: sharePath,
-      imageUrl: shareImageUrl || '' // 空字符串会使用默认截图
+      imageUrl: shareImageUrl
     };
   },
 
   onShareTimeline() {
-    const { recordId } = this.data;
-    console.log('[CaishenResult] 分享到朋友圈, recordId:', recordId);
+    const { recordId, originalImageUrl } = this.data;
+    console.log('[CaishenResult] 分享到朋友圈, recordId:', recordId, 'originalImageUrl:', originalImageUrl);
     
     return {
       title: '财神变身 - AI生成财神发钱视频，财运滚滚来！',
       query: recordId ? `shareId=${recordId}&from=share` : '',
-      imageUrl: '' // 空字符串会使用默认截图
+      imageUrl: originalImageUrl || '' // 使用原始图片或页面截图
     };
   }
 });

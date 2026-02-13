@@ -252,6 +252,7 @@ Page({
         
         this.setData({
           selectedImage: imageUrl,
+          imageLoaded: true, // 标记图片已加载
           generationId: shareId,
           isSharedView: true // 标记为分享视图
         });

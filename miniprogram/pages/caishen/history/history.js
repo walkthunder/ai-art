@@ -127,10 +127,14 @@ Page({
       return;
     }
     
-    // 构建 URL，包含 recordId 以支持分享功能
+    // 构建 URL，包含 recordId 和 originalImage 以支持分享功能
     let url = `/pages/caishen/result/result?videoUrl=${encodeURIComponent(record.videoUrl)}`;
     if (record.id) {
       url += `&recordId=${record.id}`;
+    }
+    // 传递原始图片用于分享封面
+    if (record.originalImage) {
+      url += `&originalImage=${encodeURIComponent(record.originalImage)}`;
     }
     
     console.log('[CaishenHistory] 跳转到结果页:', url);
