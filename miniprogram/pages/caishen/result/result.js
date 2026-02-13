@@ -88,6 +88,14 @@ Page({
     
     console.log('[CaishenResult] 最终加载视频:', videoUrl);
     this.setData({ videoUrl });
+    
+    // 设置超时保护，如果5秒后视频还没加载完成，强制显示视频
+    setTimeout(() => {
+      if (!this.data.videoLoaded) {
+        console.warn('[CaishenResult] 视频加载超时，强制显示视频');
+        this.setData({ videoLoaded: true });
+      }
+    }, 5000);
   },
 
   onShow() {
