@@ -142,6 +142,7 @@ Page({
         console.log('[CaishenResult] 从分享加载视频成功:', videoUrl);
         this.setData({ 
           videoUrl,
+          videoLoaded: true, // 标记视频已加载，显示视频组件
           recordId: shareId,
           taskId: result.taskIds?.[0] || ''
         });
