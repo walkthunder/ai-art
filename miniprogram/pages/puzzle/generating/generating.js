@@ -176,7 +176,13 @@ Page({
     saveHistory(historyItem);
     console.log('[PuzzleGenerating] 已保存到历史记录, recordId:', recordId, 'taskId:', taskId);
     
-    app.globalData.puzzleData = { ...puzzleData, generatedImages, taskId: this.data.taskId };
+    // 保存到 globalData，包含 recordId 用于分享
+    app.globalData.puzzleData = { 
+      ...puzzleData, 
+      generatedImages, 
+      taskId: this.data.taskId,
+      recordId: recordId // 添加 recordId 到 globalData
+    };
     
     setTimeout(() => {
       const { recordId } = this.data;

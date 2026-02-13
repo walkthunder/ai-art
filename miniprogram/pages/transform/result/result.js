@@ -66,7 +66,30 @@ Page({
     const app = getApp();
     const paymentStatus = wx.getStorageSync('paymentStatus') || 'free';
     const hasEverPaid = wx.getStorageSync('hasEverPaid') || false;
-    const generationId = options.generationId || Date.now().toString();
+    
+    // 检查是否从分享进入
+    if (options.shareId && options.from === 'share') {
+      console.log('[TransformResult] 从分享进入，shareId:', options.shareId);
+      initNavigation(this);
+      this.setData({
+        isElderMode: app.globalData.isElderMode,
+        isPremiumUser: paymentStatus === 'premium' || paymentStatus === 'basic',
+        paymentStatus: paymentStatus,
+        hasEverPaid: hasEverPaid,
+        generationId: options.shareId, // 使用 shareId 作为 generationId
+        isSharedView: true,
+        hasSavedFreeVersion: false // 重置状态，避免污染
+      });
+      this.loadSharedResult(options.shareId);
+      return;
+    }
+    
+    // 正常流程：从生成页进入
+    const generationId = options.generationId || '';
+    
+    if (!generationId) {
+      console.warn('[TransformResult] 警告：未提供 generationId，分享功能可能无法正常工作');
+    }
     
     // 使用工具函数恢复保存状态
     const hasSavedFreeVersion = saveImageHelper.getSaveState(generationId);
@@ -83,18 +106,6 @@ Page({
       hasSavedFreeVersion: hasSavedFreeVersion,
       savedStateKey: saveImageHelper.getSaveStateKey(generationId)
     });
-    
-    // 检查是否从分享进入
-    if (options.shareId && options.from === 'share') {
-      console.log('[TransformResult] 从分享进入，shareId:', options.shareId);
-      // 分享视图不显示保存按钮状态
-      this.setData({ 
-        isSharedView: true,
-        hasSavedFreeVersion: false // 重置状态，避免污染
-      });
-      this.loadSharedResult(options.shareId);
-      return;
-    }
     
     // 获取图片URL
     let imageUrl = '';
@@ -299,7 +310,8 @@ Page({
     this.setData({
       usageCount: data.usageCount,
       userType: data.userType,
-      paymentStatus: data.paymentStatus || 'free'
+      paymentStatus: data.paymentStatus || 'free',
+      hasEverPaid: data.hasEverPaid !== undefined ? data.hasEverPaid : this.data.hasEverPaid
     });
   },
 
@@ -669,11 +681,46 @@ Page({
     this.setData({ isSaving: true });
     
     try {
+      // 1. 先检查授权状态
+      const settingRes = await new Promise((resolve) => {
+        wx.getSetting({
+          success: resolve,
+          fail: () => resolve({ authSetting: {} })
+        });
+      });
+      
+      // 2. 如果未授权，先请求授权
+      if (!settingRes.authSetting['scope.writePhotosAlbum']) {
+        try {
+          await new Promise((resolve, reject) => {
+            wx.authorize({
+              scope: 'scope.writePhotosAlbum',
+              success: resolve,
+              fail: reject
+            });
+          });
+        } catch (authErr) {
+          // 用户拒绝授权，引导去设置
+          wx.showModal({
+            title: '需要相册权限',
+            content: '保存图片需要您授权访问相册',
+            confirmText: '去设置',
+            success: (res) => {
+              if (res.confirm) {
+                wx.openSetting();
+              }
+            }
+          });
+          this.setData({ isSaving: false });
+          return;
+        }
+      }
+      
       wx.showLoading({ title: '保存中...', mask: true });
       
       console.log('[TransformResult] 开始下载图片:', selectedImage);
       
-      // 下载图片到本地
+      // 3. 下载图片到本地
       const downloadRes = await new Promise((resolve, reject) => {
         wx.downloadFile({
           url: selectedImage,
@@ -977,6 +1024,23 @@ Page({
    */
   onShareAppMessage() {
     const { generationId, selectedImage } = this.data;
+    
+    // 如果没有 generationId，不允许分享（避免分享无效链接）
+    if (!generationId) {
+      console.error('[TransformResult] 无法分享：缺少 generationId');
+      wx.showToast({
+        title: '分享功能暂不可用',
+        icon: 'none'
+      });
+      return {
+        title: '看看我的富贵变身效果！🎊',
+        path: '/pages/transform/launch/launch',
+        imageUrl: selectedImage
+      };
+    }
+    
+    console.log('[TransformResult] 分享链接:', `/pages/transform/result/result?shareId=${generationId}&from=share`);
+    
     return getShareAppMessage({
       title: '看看我的富贵变身效果！🎊',
       imageUrl: selectedImage,

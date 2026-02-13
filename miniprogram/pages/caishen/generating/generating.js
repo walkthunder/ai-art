@@ -199,10 +199,21 @@ Page({
       recordId: this.data.recordId
     };
     
+    console.log('[CaishenGenerating] 生成成功，准备跳转，recordId:', this.data.recordId);
+    
     // 延迟跳转，保存定时器引用以便清理
     const redirectTimer = setTimeout(() => {
+      const { taskId, recordId } = this.data;
+      
+      // 确保 recordId 被传递
+      const url = recordId 
+        ? `/pages/caishen/result/result?taskId=${taskId}&recordId=${recordId}`
+        : `/pages/caishen/result/result?taskId=${taskId}`;
+      
+      console.log('[CaishenGenerating] 跳转URL:', url);
+      
       wx.redirectTo({
-        url: `/pages/caishen/result/result?taskId=${this.data.taskId}&recordId=${this.data.recordId}`,
+        url: url,
         fail: () => {
           wx.showToast({
             title: '跳转失败',

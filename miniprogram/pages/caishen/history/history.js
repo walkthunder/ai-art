@@ -23,7 +23,7 @@ Page({
     loading: true,
     error: null,
     isDeleting: false,
-    commonBgUrl: getAssetUrl('bg/caishen-result-bg.jpg')
+    commonBgUrl: getAssetUrl('common-bg.jpg')
   },
 
   onLoad() {
@@ -74,9 +74,9 @@ Page({
           if (result.success && result.data && result.data.length > 0) {
             const serverRecords = result.data.map(r => ({
               id: r.id,
-              videoUrl: r.generated_image_urls && r.generated_image_urls[0] || '',
-              originalImage: r.original_image_urls && r.original_image_urls[0] || '',
-              createdAt: r.created_at,
+              videoUrl: r.generatedImageUrls && r.generatedImageUrls[0] || '',
+              originalImage: r.originalImageUrls && r.originalImageUrls[0] || '',
+              createdAt: r.createdAt,
               status: r.status,
               mode: 'caishen',
               isServerRecord: true
@@ -127,8 +127,16 @@ Page({
       return;
     }
     
+    // 构建 URL，包含 recordId 以支持分享功能
+    let url = `/pages/caishen/result/result?videoUrl=${encodeURIComponent(record.videoUrl)}`;
+    if (record.id) {
+      url += `&recordId=${record.id}`;
+    }
+    
+    console.log('[CaishenHistory] 跳转到结果页:', url);
+    
     wx.navigateTo({
-      url: `/pages/caishen/result/result?videoUrl=${encodeURIComponent(record.videoUrl)}`
+      url: url
     });
   },
 

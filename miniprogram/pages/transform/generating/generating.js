@@ -240,11 +240,12 @@ Page({
     saveHistory(historyItem);
     console.log('[TransformGenerating] 已保存到历史记录, recordId:', recordId, 'taskId:', taskId);
     
-    // 存储结果
+    // 存储结果，包含 recordId 用于分享
     app.globalData.transformData = {
       ...transformData,
       generatedImages,
-      taskId: this.data.taskId
+      taskId: this.data.taskId,
+      recordId: recordId // 添加 recordId 到 globalData
     };
     
     // 延迟跳转

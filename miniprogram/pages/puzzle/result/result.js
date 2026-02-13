@@ -63,7 +63,28 @@ Page({
     const app = getApp();
     const paymentStatus = wx.getStorageSync('paymentStatus') || 'free';
     const hasEverPaid = wx.getStorageSync('hasEverPaid') || false;
-    const generationId = options.generationId || Date.now().toString();
+    
+    // 检查是否从分享进入
+    if (options.shareId && options.from === 'share') {
+      console.log('[PuzzleResult] 从分享进入，shareId:', options.shareId);
+      initNavigation(this);
+      this.setData({
+        isElderMode: app.globalData.isElderMode,
+        isPremiumUser: paymentStatus === 'premium' || paymentStatus === 'basic',
+        paymentStatus: paymentStatus,
+        hasEverPaid: hasEverPaid,
+        generationId: options.shareId // 使用 shareId 作为 generationId
+      });
+      this.loadSharedResult(options.shareId);
+      return;
+    }
+    
+    // 正常流程：从生成页进入
+    const generationId = options.generationId || '';
+    
+    if (!generationId) {
+      console.warn('[PuzzleResult] 警告：未提供 generationId，分享功能可能无法正常工作');
+    }
     
     // 使用工具函数恢复保存状态
     const hasSavedFreeVersion = saveImageHelper.getSaveState(generationId);
@@ -81,13 +102,6 @@ Page({
       savedStateKey: saveImageHelper.getSaveStateKey(generationId)
     });
     
-    // 检查是否从分享进入
-    if (options.shareId && options.from === 'share') {
-      console.log('[PuzzleResult] 从分享进入，shareId:', options.shareId);
-      this.loadSharedResult(options.shareId);
-      return;
-    }
-    
     let imageUrl = '';
     if (options.image) {
       imageUrl = decodeURIComponent(options.image);
@@ -104,7 +118,7 @@ Page({
       return;
     }
     
-    console.log('[PuzzleResult] 加载图片:', imageUrl);
+    console.log('[PuzzleResult] 加载图片:', imageUrl, 'generationId:', generationId);
     this.setData({ selectedImage: imageUrl });
     
     if (options.livePhotoUrl) {
@@ -122,13 +136,15 @@ Page({
   async onShow() {
     const app = getApp();
     const paymentStatus = wx.getStorageSync('paymentStatus') || 'free';
+    const hasEverPaid = wx.getStorageSync('hasEverPaid') || false;
     
-    console.log('[PuzzleResult] onShow 触发');
+    console.log('[PuzzleResult] onShow 触发, hasEverPaid:', hasEverPaid);
     
     this.setData({
       isElderMode: app.globalData.isElderMode,
       isPremiumUser: paymentStatus === 'premium' || paymentStatus === 'basic',
-      paymentStatus: paymentStatus
+      paymentStatus: paymentStatus,
+      hasEverPaid: hasEverPaid
     });
     
     // 只在非首次显示时刷新使用次数（首次显示已在onLoad中加载）
@@ -272,7 +288,8 @@ Page({
     this.setData({
       usageCount: data.usageCount,
       userType: data.userType,
-      paymentStatus: data.paymentStatus || 'free'
+      paymentStatus: data.paymentStatus || 'free',
+      hasEverPaid: data.hasEverPaid !== undefined ? data.hasEverPaid : this.data.hasEverPaid
     });
   },
 
@@ -551,31 +568,16 @@ Page({
   },
 
   async handleSaveImage() {
-    const { selectedImage, isSaving, hasEverPaid } = this.data;
+    const result = saveImageHelper.handleSaveImageLogic(this.data, 'PuzzleResult');
     
-    console.log('[PuzzleResult] handleSaveImage 被调用:', {
-      selectedImage: !!selectedImage,
-      isSaving,
-      hasEverPaid,
-      showPaymentModal: this.data.showPaymentModal
-    });
-    
-    if (!selectedImage || isSaving) {
-      console.log('[PuzzleResult] 返回：selectedImage=', !!selectedImage, 'isSaving=', isSaving);
-      return;
-    }
-    
-    // 免费用户（从未付费）显示支付弹窗
-    if (!hasEverPaid) {
-      console.log('[PuzzleResult] 用户从未付费，显示支付弹窗，设置 showPaymentModal=true');
+    if (result.shouldShowPayment) {
       this.setData({ showPaymentModal: true });
-      console.log('[PuzzleResult] 设置后 showPaymentModal:', this.data.showPaymentModal);
       return;
     }
     
-    // 已付费，直接保存
-    console.log('[PuzzleResult] 用户已付费，开始保存');
-    await this.doSaveImage();
+    if (result.shouldSave) {
+      await this.doSaveImage();
+    }
   },
 
   showUpgradeModal() {
@@ -591,11 +593,46 @@ Page({
     this.setData({ isSaving: true });
     
     try {
+      // 1. 先检查授权状态
+      const settingRes = await new Promise((resolve) => {
+        wx.getSetting({
+          success: resolve,
+          fail: () => resolve({ authSetting: {} })
+        });
+      });
+      
+      // 2. 如果未授权，先请求授权
+      if (!settingRes.authSetting['scope.writePhotosAlbum']) {
+        try {
+          await new Promise((resolve, reject) => {
+            wx.authorize({
+              scope: 'scope.writePhotosAlbum',
+              success: resolve,
+              fail: reject
+            });
+          });
+        } catch (authErr) {
+          // 用户拒绝授权，引导去设置
+          wx.showModal({
+            title: '需要相册权限',
+            content: '保存图片需要您授权访问相册',
+            confirmText: '去设置',
+            success: (res) => {
+              if (res.confirm) {
+                wx.openSetting();
+              }
+            }
+          });
+          this.setData({ isSaving: false });
+          return;
+        }
+      }
+      
       wx.showLoading({ title: '保存中...', mask: true });
       
       console.log('[PuzzleResult] 开始下载图片:', selectedImage);
       
-      // 下载图片到本地
+      // 3. 下载图片到本地
       const downloadRes = await new Promise((resolve, reject) => {
         wx.downloadFile({ url: selectedImage, success: resolve, fail: reject });
       });
@@ -643,6 +680,18 @@ Page({
           success: () => {
             wx.hideLoading();
             wx.showToast({ title: '保存成功', icon: 'success' });
+            
+            // 使用工具函数处理保存成功后的逻辑
+            const needUpdate = saveImageHelper.handleSaveSuccess(
+              this.data.hasEverPaid, 
+              this.data.hasSavedFreeVersion, 
+              this.data.generationId
+            );
+            
+            if (needUpdate) {
+              this.setData({ hasSavedFreeVersion: true });
+            }
+            
             resolve();
           },
           fail: reject
@@ -682,18 +731,24 @@ Page({
     
     const newPaymentStatus = packageType;
     wx.setStorageSync('paymentStatus', newPaymentStatus);
+    wx.setStorageSync('hasEverPaid', true);
+    
+    // 清除免费版本保存状态
+    const generationId = this.data.generationId;
+    if (generationId) {
+      saveImageHelper.clearSaveState(generationId);
+      console.log('[PuzzleResult] 已清除免费版本保存状态');
+    }
     
     this.setData({
       showPaymentModal: false,
       paymentStatus: newPaymentStatus,
       isPremiumUser: newPaymentStatus === 'premium' || newPaymentStatus === 'basic',
-      hasEverPaid: true // 付费后立即更新状态
+      hasEverPaid: true,
+      hasSavedFreeVersion: false
     });
     
-    // 缓存到本地存储
-    wx.setStorageSync('hasEverPaid', true);
-    
-    // 支付/选择完成后自动保存图片
+    // 支付/选择完成后自动保存高清图片
     setTimeout(() => {
       this.doSaveImage();
     }, 500);
@@ -807,6 +862,23 @@ Page({
 
   onShareAppMessage() {
     const { generationId, selectedImage } = this.data;
+    
+    // 如果没有 generationId，不允许分享（避免分享无效链接）
+    if (!generationId) {
+      console.error('[PuzzleResult] 无法分享：缺少 generationId');
+      wx.showToast({
+        title: '分享功能暂不可用',
+        icon: 'none'
+      });
+      return {
+        title: '看看我的AI全家福！🎊',
+        path: '/pages/puzzle/launch/launch',
+        imageUrl: selectedImage
+      };
+    }
+    
+    console.log('[PuzzleResult] 分享链接:', `/pages/puzzle/result/result?shareId=${generationId}&from=share`);
+    
     return getShareAppMessage({
       title: '看看我的AI全家福！🎊',
       imageUrl: selectedImage,

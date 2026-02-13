@@ -41,9 +41,9 @@ async function saveGenerationHistory(data) {
     throw new Error('缺少必要参数: originalImageUrls 必须是数组');
   }
 
-  if (!templateUrl) {
-    throw new Error('缺少必要参数: templateUrl 是必需的');
-  }
+  // templateUrl 对于 puzzle 模式是可选的（puzzle 不使用模板）
+  // 对于其他模式，如果没有提供则使用空字符串
+  const finalTemplateUrl = templateUrl || '';
 
   // 生成记录ID
   const recordId = uuidv4();
@@ -60,7 +60,7 @@ async function saveGenerationHistory(data) {
       `INSERT INTO generation_history 
       (id, user_id, task_ids, original_image_urls, template_url, generated_image_urls, selected_image_url, status, mode, created_at, updated_at) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [recordId, userId, taskIdsJson, originalImageUrlsJson, templateUrl, generatedImageUrlsJson, selectedImageUrl, status, mode]
+      [recordId, userId, taskIdsJson, originalImageUrlsJson, finalTemplateUrl, generatedImageUrlsJson, selectedImageUrl, status, mode]
     );
 
     console.log(`生成历史记录已保存: ${recordId}, 用户: ${userId}, 模式: ${mode}, 任务数: ${taskIds.length}`);
@@ -71,7 +71,7 @@ async function saveGenerationHistory(data) {
       userId,
       taskIds,
       originalImageUrls,
-      templateUrl,
+      templateUrl: finalTemplateUrl,
       generatedImageUrls,
       selectedImageUrl,
       status,
