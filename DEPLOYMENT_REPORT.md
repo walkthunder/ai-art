@@ -1,8 +1,76 @@
 # 财神模式部署报告
 
-**部署时间**: 2026-02-13 11:17  
+**部署时间**: 2026-02-13 11:17 (初次) / 11:40 (修复API) / 13:30 (修复视频URL)  
 **部署人**: 技术总监  
-**部署状态**: ✅ 成功
+**部署状态**: ✅ 成功（已修复视频URL解析问题）
+
+---
+
+## 🔧 最新修复 (2026-02-13 13:30)
+
+### 问题描述
+生成完成100%但小程序不跳转到结果页面：
+- ❌ 小程序日志显示：`videoUrl: undefined`
+- ❌ 后端日志显示：`[视频任务] ⚠️ 任务成功但未找到视频URL`
+- ✅ 实际情况：视频URL存在于 `result.content.video_url`
+
+### 根本原因
+`backend/services/videoGenerationService.js` 第 284 行：
+- ❌ 错误：只从 `result.output?.video_url` 提取
+- ✅ 正确：应该从 `result.content?.video_url` 优先提取
+
+### 修复内容
+修改 `backend/services/videoGenerationService.js` 的 `getVideoTaskStatusInternal` 函数：
+```javascript
+// 修复前
+const videoUrl = result.output?.video_url || result.video_url;
+
+// 修复后
+const videoUrl = result.content?.video_url || result.output?.video_url || result.video_url;
+```
+
+### 影响范围
+- ✅ 财神API路由 (`/api/caishen/task/:taskId`)
+- ✅ 轮询服务 (`cleanupService.js`)
+- ✅ 小程序生成页面跳转逻辑
+
+---
+
+## 🔧 之前的修复 (2026-02-13 11:40)
+
+### 问题描述
+初次部署后发现财神模式调用了错误的 API：
+- ❌ 错误：调用 `/api/generate-art-photo`（通用接口）
+- ✅ 正确：调用 `/api/caishen/generate`（财神专用接口）
+
+### 修复内容
+- 修改 `miniprogram/pages/caishen/upload/upload.js`
+- 改用 `cloudbaseRequest.post('/api/caishen/generate', ...)`
+- 后端代码已重新部署（2026-02-13 11:40）
+
+### ⚠️ 小程序需要重新发布
+
+**当前状态**：
+- ✅ 后端代码已部署（修复完成）
+- ✅ 小程序代码已修复（本地）
+- ❌ 小程序还未发布到微信平台
+
+**问题**：
+- 线上用户看到的还是旧版本小程序
+- 旧版本调用错误的API，导致任务失败
+
+**解决方案**：
+需要通过微信开发者工具发布小程序：
+1. 打开微信开发者工具
+2. 上传代码（版本号：1.0.1，说明：修复财神模式API调用）
+3. 提交审核
+4. 审核通过后发布
+
+**线上错误示例**（2026-02-13 11:37）：
+```
+message: "查询视频任务状态失败: The specified resource not found"
+原因: 小程序调用了错误的API，任务ID不匹配
+```
 
 ---
 
@@ -176,15 +244,34 @@ mysql -h sh-cynosdbmysql-grp-ei51puvy.sql.tencentcdb.com \
 
 ## ✅ 部署确认
 
-- [x] 代码已部署
+### 后端部署
+- [x] 代码已推送到 GitHub
+- [x] 代码已部署到腾讯云
 - [x] 数据库已更新
 - [x] 服务正常运行
-- [x] 验证已完成
+- [x] 路由注册正确
+- [x] API端点可访问
+
+### 小程序部署
+- [x] 代码已修复（本地）
+- [ ] **代码已上传到微信平台**（待执行）
+- [ ] **已提交审核**（待执行）
+- [ ] **审核已通过**（预计1-7天）
+- [ ] **已发布上线**（待执行）
+
+### 功能验证
+- [x] 后端API测试通过
+- [x] 数据库验证通过
+- [x] 现有功能不受影响
+- [ ] 小程序端到端测试（待小程序发布后）
+
+### 监控
 - [ ] 监控已就绪（待确认）
-- [ ] 功能测试完成（待执行）
+- [ ] 错误日志监控（待确认）
+- [ ] 用户反馈收集（待确认）
 
 ---
 
 **部署人签字**: ________________  
 **日期**: 2026-02-13  
-**状态**: ✅ 部署成功，等待验证
+**状态**: ⚠️ 后端已部署，小程序待发布

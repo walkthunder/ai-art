@@ -279,16 +279,16 @@ async function getVideoTaskStatusInternal(taskId) {
     };
     
     // 如果任务成功，添加视频URL
-    // 注意：Ark API返回的字段可能是 output.video_url 或 video_url
+    // 注意：Ark API返回的字段可能在多个位置：content.video_url, output.video_url, video_url
     if (result.status === 'succeeded') {
-      const videoUrl = result.output?.video_url || result.video_url;
+      const videoUrl = result.content?.video_url || result.output?.video_url || result.video_url;
       if (videoUrl) {
         statusResponse.videoUrl = videoUrl;
-        statusResponse.duration = result.output?.duration || result.duration;
-        statusResponse.ratio = result.output?.ratio || result.ratio;
+        statusResponse.duration = result.content?.duration || result.output?.duration || result.duration;
+        statusResponse.ratio = result.content?.ratio || result.output?.ratio || result.ratio;
         console.log('[视频任务] ✅ 视频生成完成:', statusResponse.videoUrl);
       } else {
-        console.warn('[视频任务] ⚠️  任务成功但未找到视频URL');
+        console.warn('[视频任务] ⚠️  任务成功但未找到视频URL，完整响应:', JSON.stringify(result, null, 2));
       }
     }
     
