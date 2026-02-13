@@ -135,13 +135,15 @@ module.exports = {
 应用静音状态（音量 0 或恢复）
 ```
 
-## 🎨 UI 设计
+## 🎨 UI 设计（最小侵入式）
 
 ### 静音按钮位置
 
+**方案：复用现有导航栏的 nav-right 区域**
+
 ```
 ┌─────────────────────────────────────┐
-│  [<]  财神变身结果         [🔊/🔇]  │  ← 导航栏右侧
+│  [<]  财神变身         [🔊/🔇]      │  ← 复用 nav-right
 ├─────────────────────────────────────┤
 │                                      │
 │         ┌─────────────────┐         │
@@ -152,11 +154,63 @@ module.exports = {
 └─────────────────────────────────────┘
 ```
 
+**优势**：
+- 不需要修改 WXML 结构，只需在现有的 `<view class="nav-right"></view>` 中添加内容
+- 不影响现有布局和样式
+- 与返回按钮对称，符合用户习惯
+
 ### 按钮样式
-- **开启音乐**: 🔊 图标，主题色
-- **静音状态**: 🔇 图标，灰色
+- **开启音乐**: 🔊 图标，金色 (#FFD700)
+- **静音状态**: 🔇 图标，灰色 (#999)
 - **按钮大小**: 44x44 rpx
-- **位置**: 导航栏右侧
+- **样式**: 复用 back-btn 的样式，保持一致性
+
+## 📝 代码修改（最小化原则）
+
+### 修改的文件
+1. **result.js**: 添加 7 个新方法，不修改现有方法
+2. **result.wxml**: 修改 2 处（nav-right 和 video 事件）
+3. **result.wxss**: 添加 2 个新样式类
+
+### 不需要修改
+- 页面布局结构
+- 现有功能逻辑
+- 其他组件
+
+### 修改示例
+
+**result.wxml 修改点 1**:
+```xml
+<!-- 原来 -->
+<view class="nav-right"></view>
+
+<!-- 修改后 -->
+<view class="nav-right">
+  <view class="music-btn" bindtap="toggleMusicMute">
+    <text class="music-icon">{{isMusicMuted ? '🔇' : '🔊'}}</text>
+  </view>
+</view>
+```
+
+**result.wxml 修改点 2**:
+```xml
+<!-- 原来 -->
+<video 
+  bindloadeddata="onVideoLoad"
+  bindcanplay="onVideoLoad"
+  binderror="onVideoError"
+/>
+
+<!-- 修改后（添加 3 个事件） -->
+<video 
+  bindloadeddata="onVideoLoad"
+  bindcanplay="onVideoLoad"
+  binderror="onVideoError"
+  bindplay="onVideoPlay"
+  bindpause="onVideoPause"
+  bindended="onVideoEnded"
+/>
+```
 
 ## 💾 数据存储
 

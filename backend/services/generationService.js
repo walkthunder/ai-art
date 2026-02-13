@@ -293,9 +293,9 @@ async function getGenerationHistoryByUserId(userId, limit = 20, mode = null, pag
     }
     
     // 查询分页数据 - 使用参数化查询避免 SQL 注入
-    const dataQuery = `SELECT * FROM generation_history ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-    const dataParams = [...params, validPageSize, offset];
-    const [rows] = await connection.execute(dataQuery, dataParams);
+    // 注意：LIMIT 和 OFFSET 必须是整数，不能使用参数化查询中的字符串
+    const dataQuery = `SELECT * FROM generation_history ${whereClause} ORDER BY created_at DESC LIMIT ${validPageSize} OFFSET ${offset}`;
+    const [rows] = await connection.execute(dataQuery, params);
 
     // 解析JSON字段 - 处理可能是字符串或已解析的JSON
     const parseJsonField = (field) => {

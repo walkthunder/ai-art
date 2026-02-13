@@ -37,23 +37,31 @@
   - [ ] 定义默认配置
   - [ ] 添加音乐元数据
 
-### 2.3 结果页面集成
+### 2.3 结果页面集成（最小侵入式）
+
 - [ ] 2.3.1 修改 `miniprogram/pages/caishen/result/result.js`
-  - [ ] 导入音乐管理器
-  - [ ] 在 `onLoad` 中初始化音乐
-  - [ ] 在 `onUnload` 中销毁音乐
-  - [ ] 监听视频 `onPlay` 事件，调用 `musicManager.play()`
-  - [ ] 监听视频 `onPause` 事件，调用 `musicManager.pause()`
-  - [ ] 监听视频 `onEnded` 事件，调用 `musicManager.stop()`
-  - [ ] 添加静音按钮点击事件处理
+  - [ ] 在文件顶部导入音乐管理器
+  - [ ] 在 data 中添加 `isMusicMuted` 和 `musicManager`
+  - [ ] 在 `onLoad` 末尾添加 `initBackgroundMusic()` 调用
+  - [ ] 在 `onUnload` 末尾添加音乐资源清理
+  - [ ] 添加新方法 `initBackgroundMusic()`
+  - [ ] 添加新方法 `onVideoPlay()`
+  - [ ] 添加新方法 `onVideoPause()`
+  - [ ] 添加新方法 `onVideoEnded()`
+  - [ ] 添加新方法 `toggleMusicMute()`
+  - **注意**: 不修改任何现有方法，只添加新方法
 
 - [ ] 2.3.2 修改 `miniprogram/pages/caishen/result/result.wxml`
-  - [ ] 添加静音按钮到导航栏
-  - [ ] 绑定静音按钮点击事件
+  - [ ] 在 `<view class="nav-right"></view>` 中添加静音按钮
+  - [ ] 在 `<video>` 组件上添加 `bindplay="onVideoPlay"`
+  - [ ] 在 `<video>` 组件上添加 `bindpause="onVideoPause"`
+  - [ ] 在 `<video>` 组件上添加 `bindended="onVideoEnded"`
+  - **注意**: 只修改 2 处，不改变页面结构
 
 - [ ] 2.3.3 修改 `miniprogram/pages/caishen/result/result.wxss`
-  - [ ] 添加静音按钮样式
-  - [ ] 添加图标样式（开启/静音）
+  - [ ] 添加 `.music-btn` 样式（复用 `.back-btn` 的样式）
+  - [ ] 添加 `.music-icon` 样式
+  - **注意**: 只添加新样式，不修改现有样式
 
 ## 3. UI/UX 优化
 
