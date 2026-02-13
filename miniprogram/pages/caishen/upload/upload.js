@@ -205,14 +205,12 @@ Page({
         userId
       });
       
-      // 调用生成API
-      const { generationAPI } = require('../../../utils/api');
-      const result = await generationAPI.generateArtPhoto({
-        imageUrls: [uploadedUrl],
+      // 调用财神专用API
+      const cloudbaseRequest = require('../../../utils/cloudbase-request');
+      const result = await cloudbaseRequest.post('/api/caishen/generate', {
+        userImageUrl: uploadedUrl,
         templateId: 'caishen-default',
-        mode: 'caishen',
-        userId: userId,
-        facePositions: null
+        userId: userId
       });
       
       console.log('[CaishenUpload] 生成API响应:', result);
