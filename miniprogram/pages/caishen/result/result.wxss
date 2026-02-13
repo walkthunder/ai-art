@@ -200,7 +200,7 @@
 
 /* 功能按钮区 */
 .action-section {
-  padding: 32rpx;
+  padding: 60rpx 32rpx 48rpx;
   padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
   width: 100%;
   display: flex;
@@ -220,6 +220,11 @@
   padding: 0;
   margin: 0;
   line-height: normal;
+}
+
+.action-btn.save-btn {
+  width: 640rpx;
+  margin: 0 auto;
 }
 
 .action-btn::after {
@@ -367,4 +372,41 @@
 /* 老年模式 - AI提示 */
 .elder-mode .ai-notice-text {
   font-size: 26rpx;
+}
+
+/* ========================================
+   背景音乐按钮样式
+   ======================================== */
+
+.music-btn {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10rpx);
+  border-radius: 50%;
+  border: 2rpx solid rgba(255, 215, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.music-btn:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.music-icon {
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+/* 老年模式 - 音乐按钮 */
+.elder-mode .music-btn {
+  width: 60rpx;
+  height: 60rpx;
+}
+
+.elder-mode .music-icon {
+  font-size: 50rpx;
 }

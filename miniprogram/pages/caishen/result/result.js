@@ -6,10 +6,13 @@
  * - 视频播放控制
  * - 保存视频功能
  * - 分享功能
+ * - 背景音乐播放
  */
 
 const { initNavigation } = require('../../../utils/navigation-helper');
 const { getAssetUrl } = require('../../../utils/oss-assets');
+const { getInstance: getMusicManager } = require('../../../utils/backgroundMusicManager');
+const musicConfig = require('../../../config/music');
 
 Page({
   data: {
@@ -28,7 +31,10 @@ Page({
     isSharedView: false, // 是否是分享视图
     originalImageUrl: '', // 用户上传的原始图片，用于分享封面
     // 使用通用背景
-    commonBgUrl: getAssetUrl('common-bg.jpg')
+    commonBgUrl: getAssetUrl('common-bg.jpg'),
+    // 背景音乐相关
+    isMusicMuted: false,
+    musicManager: null
   },
 
   async onLoad(options) {
@@ -125,6 +131,9 @@ Page({
         this.setData({ videoLoaded: true });
       }
     }, 5000);
+    
+    // 初始化背景音乐
+    this.initBackgroundMusic();
   },
 
   /**
@@ -424,5 +433,100 @@ Page({
       query: recordId ? `shareId=${recordId}&from=share` : '',
       imageUrl: originalImageUrl || '' // 使用原始图片或页面截图
     };
+  },
+
+  /**
+   * 初始化背景音乐
+   */
+  initBackgroundMusic() {
+    try {
+      const musicManager = getMusicManager();
+      const musicData = musicConfig.caishen[0];
+      const defaultConfig = musicConfig.defaultConfig;
+      
+      if (!musicData || !musicData.url) {
+        console.warn('[CaishenResult] 音乐配置不存在');
+        return;
+      }
+      
+      // 初始化音乐管理器
+      musicManager.init(musicData.url, {
+        volume: defaultConfig.volume,
+        loop: defaultConfig.loop,
+        autoplay: false
+      });
+      
+      // 获取静音状态
+      const isMuted = musicManager.getMuted();
+      
+      this.setData({
+        musicManager: musicManager,
+        isMusicMuted: isMuted
+      });
+      
+      console.log('[CaishenResult] 背景音乐初始化成功');
+      
+    } catch (error) {
+      console.error('[CaishenResult] 背景音乐初始化失败:', error);
+      // 静默失败，不影响视频播放
+    }
+  },
+
+  /**
+   * 视频开始播放
+   */
+  onVideoPlay() {
+    console.log('[CaishenResult] 视频开始播放');
+    const { musicManager } = this.data;
+    if (musicManager) {
+      musicManager.play();
+    }
+  },
+
+  /**
+   * 视频暂停
+   */
+  onVideoPause() {
+    console.log('[CaishenResult] 视频暂停');
+    const { musicManager } = this.data;
+    if (musicManager) {
+      musicManager.pause();
+    }
+  },
+
+  /**
+   * 视频播放结束
+   */
+  onVideoEnded() {
+    console.log('[CaishenResult] 视频播放结束');
+    const { musicManager } = this.data;
+    if (musicManager) {
+      musicManager.stop();
+    }
+  },
+
+  /**
+   * 切换音乐静音状态
+   */
+  toggleMusicMute() {
+    const { musicManager } = this.data;
+    if (!musicManager) {
+      return;
+    }
+    
+    const isMuted = musicManager.toggleMute();
+    this.setData({ isMusicMuted: isMuted });
+    
+    console.log('[CaishenResult] 音乐静音状态:', isMuted);
+  },
+
+  /**
+   * 页面卸载
+   */
+  onUnload() {
+    const { musicManager } = this.data;
+    if (musicManager) {
+      musicManager.destroy();
+    }
   }
 });

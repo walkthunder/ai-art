@@ -17,7 +17,11 @@
       </view>
     </view>
     <text class="nav-title">财神变身</text>
-    <view class="nav-right"></view>
+    <view class="nav-right">
+      <view class="music-btn" bindtap="toggleMusicMute">
+        <text class="music-icon">{{isMusicMuted ? '🔇' : '🔊'}}</text>
+      </view>
+    </view>
   </view>
   
   <!-- 主内容区 -->
@@ -46,6 +50,9 @@
           bindloadeddata="onVideoLoad"
           bindcanplay="onVideoLoad"
           binderror="onVideoError"
+          bindplay="onVideoPlay"
+          bindpause="onVideoPause"
+          bindended="onVideoEnded"
         />
         
         <!-- 无视频提示 -->
@@ -85,6 +92,7 @@
           <text class="btn-icon">📤</text>
           <text class="btn-text">分享好友</text>
         </view>
+        <view class="btn-shine"></view>
       </button>
       
       <!-- 返回首页 -->

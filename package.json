@@ -16,7 +16,6 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "cos-js-sdk-v5": "^1.10.1",
-    "cos-nodejs-sdk-v5": "^2.15.4",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.9.2",
     "html2canvas": "^1.4.1",
@@ -39,6 +38,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/ui": "^4.0.16",
     "autoprefixer": "^10.4.21",
+    "cos-nodejs-sdk-v5": "^2.15.4",
     "happy-dom": "^20.0.11",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.3",

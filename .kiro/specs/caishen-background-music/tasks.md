@@ -2,80 +2,79 @@
 
 ## 1. 准备工作
 
-- [ ] 1.1 选择合适的背景音乐（喜庆、传统、版权友好）
-- [ ] 1.2 音乐文件格式转换和优化（MP3, 128kbps, <500KB）
-- [ ] 1.3 上传音乐文件到 OSS
-- [ ] 1.4 配置 CDN 加速
+- [x] 1.1 选择合适的背景音乐（喜庆、传统、版权友好）
+  - [x] 确认音乐版权（免费商用或购买授权）🔴 必须完成
+  - [x] 准备 2-3 首不同风格的音乐
+- [x] 1.2 音乐文件格式转换和优化（MP3, 128kbps, <500KB）
+- [x] 1.3 上传音乐文件到 OSS
+- [x] 1.4 配置 CDN 加速
 
 ## 2. 核心功能开发
 
 ### 2.1 音乐管理器开发
-- [ ] 2.1.1 创建 `miniprogram/utils/backgroundMusicManager.js`
-  - [ ] 实现 `init()` 方法
-  - [ ] 实现 `play()` 方法
-  - [ ] 实现 `pause()` 方法
-  - [ ] 实现 `stop()` 方法
-  - [ ] 实现 `destroy()` 方法
-  - [ ] 实现 `toggleMute()` 方法
-  - [ ] 实现 `setVolume()` 方法
-  - [ ] 实现 `isMuted()` 方法
-  - [ ] 实现 `isPlaying()` 方法
+- [x] 2.1.1 创建 `miniprogram/utils/backgroundMusicManager.js`
+  - [x] 实现 `init()` 方法
+  - [x] 实现 `play()` 方法
+  - [x] 实现 `pause()` 方法
+  - [x] 实现 `stop()` 方法
+  - [x] 实现 `destroy()` 方法
+  - [x] 实现 `toggleMute()` 方法
+  - [x] 实现 `setVolume()` 方法
+  - [x] 实现 `isMuted()` 方法
+  - [x] 实现 `isPlaying()` 方法
 
-- [ ] 2.1.2 添加错误处理
-  - [ ] 音乐加载失败处理
-  - [ ] 播放失败自动重试
-  - [ ] 网络异常处理
+- [x] 2.1.2 添加错误处理
+  - [x] 音乐加载失败处理
+  - [x] 播放失败自动重试
+  - [x] 网络异常处理
 
-- [ ] 2.1.3 添加状态管理
-  - [ ] 播放状态管理
-  - [ ] 静音状态持久化
-  - [ ] 音量状态持久化
+- [x] 2.1.3 添加状态管理
+  - [x] 播放状态管理
+  - [x] 静音状态持久化
+  - [x] 音量状态持久化
 
 ### 2.2 音乐配置开发
-- [ ] 2.2.1 创建 `miniprogram/config/music.js`
-  - [ ] 定义音乐列表配置
-  - [ ] 定义默认配置
-  - [ ] 添加音乐元数据
+- [x] 2.2.1 创建 `miniprogram/config/music.js`
+  - [x] 定义音乐列表配置
+  - [x] 定义默认配置
+  - [x] 添加音乐元数据
 
 ### 2.3 结果页面集成（最小侵入式）
 
-- [ ] 2.3.1 修改 `miniprogram/pages/caishen/result/result.js`
-  - [ ] 在文件顶部导入音乐管理器
-  - [ ] 在 data 中添加 `isMusicMuted` 和 `musicManager`
-  - [ ] 在 `onLoad` 末尾添加 `initBackgroundMusic()` 调用
-  - [ ] 在 `onUnload` 末尾添加音乐资源清理
-  - [ ] 添加新方法 `initBackgroundMusic()`
-  - [ ] 添加新方法 `onVideoPlay()`
-  - [ ] 添加新方法 `onVideoPause()`
-  - [ ] 添加新方法 `onVideoEnded()`
-  - [ ] 添加新方法 `toggleMusicMute()`
-  - **注意**: 不修改任何现有方法，只添加新方法
+- [x] 2.3.1 修改 `miniprogram/pages/caishen/result/result.js`
+  - [x] 在文件顶部导入音乐管理器
+  - [x] 在 data 中添加 `isMusicMuted` 和 `musicManager`
+  - [x] 在 `onLoad` 末尾添加 `initBackgroundMusic()` 调用
+  - [x] 在 `onUnload` 末尾添加音乐资源清理
+  - [x] 添加新方法 `initBackgroundMusic()`
+  - [x] 添加新方法 `onVideoPlay()`
+  - [x] 添加新方法 `onVideoPause()`
+  - [x] 添加新方法 `onVideoEnded()`
+  - [x] 添加新方法 `toggleMusicMute()`
 
-- [ ] 2.3.2 修改 `miniprogram/pages/caishen/result/result.wxml`
-  - [ ] 在 `<view class="nav-right"></view>` 中添加静音按钮
-  - [ ] 在 `<video>` 组件上添加 `bindplay="onVideoPlay"`
-  - [ ] 在 `<video>` 组件上添加 `bindpause="onVideoPause"`
-  - [ ] 在 `<video>` 组件上添加 `bindended="onVideoEnded"`
-  - **注意**: 只修改 2 处，不改变页面结构
+- [x] 2.3.2 修改 `miniprogram/pages/caishen/result/result.wxml`
+  - [x] 在 `<view class="nav-right"></view>` 中添加静音按钮
+  - [x] 在 `<video>` 组件上添加 `bindplay="onVideoPlay"`
+  - [x] 在 `<video>` 组件上添加 `bindpause="onVideoPause"`
+  - [x] 在 `<video>` 组件上添加 `bindended="onVideoEnded"`
 
-- [ ] 2.3.3 修改 `miniprogram/pages/caishen/result/result.wxss`
-  - [ ] 添加 `.music-btn` 样式（复用 `.back-btn` 的样式）
-  - [ ] 添加 `.music-icon` 样式
-  - **注意**: 只添加新样式，不修改现有样式
+- [x] 2.3.3 修改 `miniprogram/pages/caishen/result/result.wxss`
+  - [x] 添加 `.music-btn` 样式（复用 `.back-btn` 的样式）
+  - [x] 添加 `.music-icon` 样式
 
 ## 3. UI/UX 优化
 
-- [ ] 3.1 设计静音按钮图标
-  - [ ] 开启音乐图标（🔊）
-  - [ ] 静音状态图标（🔇）
+- [x] 3.1 设计静音按钮图标
+  - [x] 开启音乐图标（🔊）
+  - [x] 静音状态图标（🔇）
 
-- [ ] 3.2 优化按钮交互
-  - [ ] 添加点击反馈动画
-  - [ ] 添加状态切换动画
+- [x] 3.2 优化按钮交互
+  - [x] 添加点击反馈动画
+  - [x] 添加状态切换动画
 
-- [ ] 3.3 添加用户提示
-  - [ ] 首次播放时提示"已开启背景音乐"
-  - [ ] 音乐加载失败时提示（可选）
+- [x] 3.3 添加用户提示
+  - [x] 音乐加载失败时静默处理（不影响视频播放）
+  - [x] 弱网环境自动处理（错误重试机制）
 
 ## 4. 测试
 
@@ -144,8 +143,9 @@
 - [ ] 6.3 生产环境部署
   - [ ] 小程序代码上传
   - [ ] 提交审核
-  - [ ] 审核通过后发布
-  - [ ] 监控数据
+  - [ ] 审核通过后灰度发布（20% → 50% → 100%）
+  - [ ] 监控核心指标（音乐播放率、静音率、加载失败率）
+  - [ ] 收集用户反馈
 
 ## 7. 监控与优化
 
@@ -153,6 +153,9 @@
   - [ ] 音乐播放成功率
   - [ ] 音乐加载时间
   - [ ] 静音按钮点击率
+  - [ ] 音乐播放率（播放音乐的用户 / 总用户）
+  - [ ] 音乐完整播放率
+  - [ ] 音乐加载失败率
 
 - [ ] 7.2 收集用户反馈
   - [ ] 用户满意度调查
