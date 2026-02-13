@@ -1,83 +1,104 @@
-<view class="launch-container" style="background-image: url('{{commonBgUrl}}');">
-  <!-- 自定义导航栏 -->
-  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;" bindtap="onNavBarTap">
-    <view class="navbar-content">
-      <view class="back-button" bindtap="goBack">
+<!--
+  财神变身模式启动页 - 复用 puzzle 模式样式
+-->
+<view class="caishen-launch-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+  <!-- 四角装饰背景 -->
+  <corner-background />
+  
+  <!-- 红色渐变背景 -->
+  <image class="launch-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
+  <view class="launch-bg"></view>
+  
+  <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
+  <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
+    <elder-mode-toggle />
+  </view>
+  
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;" bindtap="onNavBarTap">
+    <view class="nav-left">
+      <view class="back-btn" bindtap="goBack">
         <text class="back-icon">‹</text>
       </view>
-      <view class="navbar-title">{{modeConfig.name}}</view>
-      <view class="navbar-right" style="width: {{menuRight}}px;"></view>
     </view>
+    <text class="nav-title">{{modeConfig.name}}</text>
+    <view class="nav-right"></view>
   </view>
-
+  
   <!-- 主内容区 -->
-  <view class="content-wrapper">
-    <!-- 模式图标和标题 -->
-    <view class="mode-header">
-      <view class="mode-icon">{{modeConfig.icon}}</view>
-      <view class="mode-name">{{modeConfig.name}}</view>
-      <view class="mode-slogan">{{modeConfig.slogan}}</view>
-    </view>
-
-    <!-- 功能说明 -->
-    <view class="feature-card">
-      <view class="feature-title">功能介绍</view>
-      <view class="feature-desc">{{modeConfig.description}}</view>
-      <view class="feature-guide">{{modeConfig.uploadGuide}}</view>
-    </view>
-
+  <view class="launch-content">
     <!-- 使用次数显示 -->
     <usage-display 
       usageCount="{{usageCount}}" 
       userType="{{userType}}"
-      paymentStatus="{{paymentStatus}}"
-      bind:getmore="handleGetMore"
+      isElderMode="{{isElderMode}}"
+      hasEverPaid="{{hasEverPaid}}"
     />
-
-    <!-- 操作按钮 -->
-    <view class="action-buttons">
-      <button 
-        class="primary-button {{buttonDisabled ? 'disabled' : ''}}" 
-        bindtap="handleStart"
-        disabled="{{buttonDisabled}}"
-      >
-        {{buttonText}}
-      </button>
+    
+    <!-- 立即制作按钮 -->
+    <view class="action-section">
+    
+      <!-- 功能说明 -->
+      <view class="description-section animate-fade-in">
+        <view class="description-card">
+          <text class="description-text">{{modeConfig.description}}</text>
+        </view>
+        <view class="guide-card">
+          <text class="guide-text">{{modeConfig.uploadGuide}}</text>
+        </view>
+      </view>
+      <view class="start-btn {{buttonDisabled ? 'disabled' : ''}}" bindtap="handleStart" hover-class="{{buttonDisabled ? '' : 'start-btn-hover'}}">
+        <view class="btn-inner">
+          <text class="btn-text">{{buttonText}}</text>
+        </view>
+        <!-- 光效动画 -->
+        <view class="btn-shine" wx:if="{{!buttonDisabled}}"></view>
+      </view>
       
-      <button class="secondary-button" bindtap="viewHistory">
-        查看历史记录
-      </button>
+      <!-- 我的记录按钮 -->
+      <view class="history-btn" bindtap="viewHistory" hover-class="history-btn-hover">
+        <text class="history-icon">🕐</text>
+        <text class="history-text">我的记录</text>
+      </view>
       
-      <button class="invite-button" bindtap="viewInvite">
-        <text class="invite-icon">🎁</text>
-        <text class="invite-text">邀请好友得次数</text>
-      </button>
+      <!-- 获取更多次数按钮（次数不足时显示） -->
+      <view class="get-more-btn {{usageCount <= 2 ? 'show' : ''}}" bindtap="handleGetMore" hover-class="get-more-btn-hover">
+        <text class="get-more-icon">🎁</text>
+        <text class="get-more-text">获取更多次数</text>
+      </view>
+      
+      <!-- AI生成提示 -->
+      <view class="ai-notice">
+        <text class="ai-notice-text">本服务为AI生成内容，结果仅供参考</text>
+      </view>
     </view>
   </view>
-
+  
   <!-- 使用次数模态框 -->
   <usage-modal
-    show="{{showModal}}"
+    visible="{{showModal}}"
     modalType="{{modalType}}"
     usageCount="{{usageCount}}"
-    userType="{{userType}}"
-    paymentStatus="{{paymentStatus}}"
+    isElderMode="{{isElderMode}}"
     bind:close="onModalClose"
     bind:payment="onModalPayment"
+    bind:share="onModalShare"
   />
-
+  
   <!-- 支付模态框 -->
   <payment-modal
-    show="{{showPaymentModal}}"
+    visible="{{showPaymentModal}}"
+    isElderMode="{{isElderMode}}"
     currentPaymentStatus="{{paymentStatus}}"
+    usageCount="{{usageCount}}"
+    hasEverPaid="{{hasEverPaid}}"
     bind:complete="onPaymentComplete"
     bind:close="closePaymentModal"
   />
-
-  <!-- 开发者面板 -->
+  
+  <!-- 开发者模式面板 -->
   <dev-mode-panel
-    wx:if="{{devModeActive && showDevPanel}}"
-    show="{{showDevPanel}}"
+    visible="{{showDevPanel}}"
     usageCount="{{usageCount}}"
     bind:close="closeDevPanel"
     bind:update="onDevPanelUpdate"

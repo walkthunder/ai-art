@@ -1,55 +1,124 @@
-<view class="upload-container" style="background-image: url('{{commonBgUrl}}');">
-  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
-    <view class="navbar-content">
-      <view class="back-button" bindtap="goBack">
+<!--
+  财神变身模式上传页 - 复用 puzzle 模式样式
+-->
+<view class="upload-page page-with-nav {{isElderMode ? 'elder-mode' : ''}}">
+  <!-- 四角装饰背景 -->
+  <corner-background />
+  
+  <!-- 背景 -->
+  <image class="upload-bg-image" src="{{commonBgUrl}}" mode="aspectFill" style="top: {{statusBarHeight + navBarHeight}}px;" />
+  
+  <!-- 大小字切换按钮（右上角，胶囊按钮下方） -->
+  <view class="elder-mode-toggle-fixed" style="top: {{statusBarHeight + navBarHeight + 16}}px; right: {{menuRight}}px; left: auto;">
+    <elder-mode-toggle />
+  </view>
+  
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;">
+    <view class="nav-left">
+      <view class="back-btn" bindtap="goBack">
         <text class="back-icon">‹</text>
       </view>
-      <view class="navbar-title">上传照片</view>
-      <view class="navbar-right" style="width: {{menuRight}}px;"></view>
     </view>
+    <text class="nav-title">上传照片</text>
+    <view class="nav-right"></view>
   </view>
-
-  <view class="content-wrapper">
-    <view class="upload-tip">
-      <text class="tip-icon">💡</text>
-      <text class="tip-text">上传一张清晰的人物照片，AI将为您生成财神发钱视频</text>
-    </view>
-
-    <view class="upload-area">
-      <view class="image-box" bindtap="handleUploadClick">
-        <image wx:if="{{selectedImage}}" src="{{selectedImage}}" class="uploaded-image" mode="aspectFill" />
-        <view wx:else class="upload-placeholder">
-          <image src="{{cameraUploadUrl}}" class="camera-icon" mode="aspectFit" />
-          <text class="upload-text">点击上传照片</text>
-        </view>
-        <view wx:if="{{selectedImage}}" class="remove-button" catchtap="removeImage">
-          <text class="remove-icon">×</text>
+  
+  <!-- 主内容区 -->
+  <view class="upload-content" style="top: {{statusBarHeight + navBarHeight}}px; margin-top: {{260 - statusBarHeight - navBarHeight}}px;">
+    
+    <!-- 单个图片框布局 -->
+    <view class="upload-grid">
+      <view class="upload-row">
+        <!-- 单个上传框 -->
+        <view class="upload-box" bindtap="handleUploadClick">
+          <image 
+            wx:if="{{selectedImage}}" 
+            class="uploaded-image" 
+            src="{{selectedImage}}" 
+            mode="aspectFill"
+          />
+          <image 
+            wx:else 
+            class="placeholder-image" 
+            src="{{cameraUploadUrl}}" 
+            mode="scaleToFill"
+          />
+          <view wx:if="{{selectedImage}}" class="delete-btn" catchtap="removeImage">
+            <text class="delete-icon">✕</text>
+          </view>
         </view>
       </view>
     </view>
-
-    <view wx:if="{{errorMessage}}" class="error-message" bindtap="clearError">
-      <text>{{errorMessage}}</text>
+    
+    <!-- 提示文字 -->
+    <view class="upload-tips">
+      <text class="tips-hint">{{selectedImage ? '点击框内更换照片' : '点击上传照片'}}</text>
+      <text class="tips-hint">💡 上传清晰的人物照片，AI将生成财神发钱视频</text>
     </view>
-
-    <view wx:if="{{isProcessing}}" class="processing-status">
-      <view class="status-text">{{statusText}}</view>
-      <view class="progress-bar">
-        <view class="progress-fill" style="width: {{uploadProgress}}%;"></view>
+    
+    <!-- 开始生成按钮 -->
+    <view class="action-buttons">
+      <view 
+        class="start-btn {{!selectedImage || isProcessing ? 'disabled' : ''}}" 
+        bindtap="startGeneration"
+        hover-class="{{!selectedImage || isProcessing ? '' : 'start-btn-hover'}}"
+      >
+        <view class="btn-inner">
+          <text class="btn-text">{{isProcessing ? '处理中...' : '开始生成'}}</text>
+        </view>
+        <!-- 光效动画 -->
+        <view class="btn-shine" wx:if="{{selectedImage && !isProcessing}}"></view>
       </view>
     </view>
-
-    <button 
-      class="generate-button {{!selectedImage || isProcessing ? 'disabled' : ''}}" 
-      bindtap="startGeneration"
-      disabled="{{!selectedImage || isProcessing}}"
-    >
-      {{isProcessing ? '处理中...' : '开始生成'}}
-    </button>
+    
+    <!-- 示例提示 -->
+    <view class="example-tips">
+      <view class="tip-item">
+        <text class="tip-icon">✓</text>
+        <text class="tip-text">上传清晰的正面人物照片</text>
+      </view>
+      <view class="tip-item">
+        <text class="tip-icon">✓</text>
+        <text class="tip-text">AI将自动生成财神发钱视频</text>
+      </view>
+      <view class="tip-item">
+        <text class="tip-icon">✓</text>
+        <text class="tip-text">支持 JPG、PNG 格式，最大 10MB</text>
+      </view>
+    </view>
+    
+    <!-- 错误提示 -->
+    <view wx:if="{{errorMessage}}" class="error-toast">
+      <text class="error-icon">⚠️</text>
+      <text class="error-text">{{errorMessage}}</text>
+      <view class="error-close" bindtap="clearError">
+        <text class="close-icon">✕</text>
+      </view>
+    </view>
+    
+    <!-- AI生成提示（合规要求） -->
+    <view class="ai-notice">
+      <text class="ai-notice-text">本服务为AI生成内容，结果仅供参考</text>
+    </view>
   </view>
-
+  
+  <!-- 处理中状态 - 页面居中 -->
+  <view class="processing-overlay" wx:if="{{isProcessing}}">
+    <view class="processing-content">
+      <view class="loading-spinner">
+        <loading showText="{{false}}" />
+      </view>
+      <text class="status-text">{{statusText}}</text>
+      <view class="progress-bar" wx:if="{{uploadProgress > 0 && uploadProgress < 100}}">
+        <view class="progress-fill" style="width: {{uploadProgress}}%"></view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 支付弹窗 -->
   <payment-modal
-    show="{{showPaymentModal}}"
+    visible="{{showPaymentModal}}"
     currentPaymentStatus="{{currentPaymentStatus}}"
     bind:complete="handlePaymentComplete"
     bind:close="handlePaymentClose"

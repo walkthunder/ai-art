@@ -180,7 +180,26 @@ async function uploadWatermarkedImage(filePath) {
 function callWatermarkScript(params) {
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(__dirname, '../utils/add_watermark.py');
-    const pythonCmd = process.env.PYTHON_CMD || 'python3';
+    const fs = require('fs');
+    
+    // Python 路径优先级：
+    // 1. 环境变量 PYTHON_CMD（生产环境）
+    // 2. 虚拟环境 Python（本地开发）
+    // 3. 系统 Python（fallback）
+    let pythonCmd = process.env.PYTHON_CMD || process.env.PYTHON_PATH || 'python3';
+    
+    // 如果没有设置环境变量，检查虚拟环境
+    if (!process.env.PYTHON_CMD && !process.env.PYTHON_PATH) {
+      const venvPython = path.join(__dirname, '../venv/bin/python3');
+      if (fs.existsSync(venvPython)) {
+        pythonCmd = venvPython;
+        console.log(`[水印服务] 使用虚拟环境 Python: ${pythonCmd}`);
+      } else {
+        console.log(`[水印服务] 使用系统 Python: ${pythonCmd}`);
+      }
+    } else {
+      console.log(`[水印服务] 使用环境变量配置的 Python: ${pythonCmd}`);
+    }
     
     console.log(`[水印服务] 调用Python脚本: ${scriptPath}`);
     console.log(`[水印服务] 参数:`, JSON.stringify(params, null, 2));
@@ -250,6 +269,13 @@ async function addWatermarkToVideo(videoUrl, userId) {
   try {
     console.log(`[视频水印] 开始为视频添加水印: ${videoUrl}`);
     
+    // 检查 FFmpeg 是否可用
+    const ffmpegAvailable = await checkFFmpegAvailable();
+    if (!ffmpegAvailable) {
+      console.warn('[视频水印] FFmpeg 不可用，跳过视频水印添加');
+      return videoUrl; // 返回原视频
+    }
+    
     // 获取水印配置
     const watermarkConfig = await appConfig.getWatermarkConfig();
     const watermarkText = watermarkConfig.text || '团圆照相馆';
@@ -295,8 +321,31 @@ async function addWatermarkToVideo(videoUrl, userId) {
     return watermarkedVideoUrl;
   } catch (error) {
     console.error('[视频水印] 添加水印失败:', error);
-    throw error;
+    // 水印添加失败时返回原视频，不影响主流程
+    console.warn('[视频水印] 降级处理：返回原视频');
+    return videoUrl;
   }
+}
+
+/**
+ * 检查 FFmpeg 是否可用
+ * @returns {Promise<boolean>}
+ */
+async function checkFFmpegAvailable() {
+  return new Promise((resolve) => {
+    const ffmpegCmd = process.env.FFMPEG_CMD || 'ffmpeg';
+    const { exec } = require('child_process');
+    
+    exec(`${ffmpegCmd} -version`, (error) => {
+      if (error) {
+        console.warn(`[视频水印] FFmpeg 不可用: ${error.message}`);
+        resolve(false);
+      } else {
+        console.log('[视频水印] FFmpeg 可用');
+        resolve(true);
+      }
+    });
+  });
 }
 
 /**
@@ -348,11 +397,20 @@ function addWatermarkWithFFmpeg(inputPath, outputPath, watermarkText) {
   return new Promise((resolve, reject) => {
     const ffmpegCmd = process.env.FFMPEG_CMD || 'ffmpeg';
     
+    // 转义水印文字中的特殊字符，防止命令注入
+    // 移除或转义单引号、反斜杠等特殊字符
+    const escapedText = watermarkText
+      .replace(/\\/g, '\\\\')  // 转义反斜杠
+      .replace(/'/g, "\\'")     // 转义单引号
+      .replace(/:/g, '\\:')     // 转义冒号（FFmpeg特殊字符）
+      .replace(/\n/g, ' ')      // 换行符替换为空格
+      .replace(/\r/g, '');      // 移除回车符
+    
     // FFmpeg命令：在视频右下角添加半透明水印
-    // -vf "drawtext=text='文字':x=W-tw-10:y=H-th-10:fontsize=24:fontcolor=white@0.5"
+    // 使用 fontcolor=white@0.5 表示白色半透明
     const args = [
       '-i', inputPath,
-      '-vf', `drawtext=text='${watermarkText}':x=W-tw-10:y=H-th-10:fontsize=24:fontcolor=white@0.5`,
+      '-vf', `drawtext=text='${escapedText}':x=W-tw-10:y=H-th-10:fontsize=24:fontcolor=white@0.5`,
       '-codec:a', 'copy', // 音频直接复制，不重新编码
       '-y', // 覆盖输出文件
       outputPath
@@ -407,9 +465,6 @@ async function uploadWatermarkedVideo(filePath) {
     // 读取文件
     const fileBuffer = await fs.readFile(filePath);
     
-    // 上传到OSS（需要实现视频上传功能）
-    // 注意：这里假设ossService有uploadVideoToOSS方法
-    // 如果没有，需要扩展ossService
     const ossService = require('./ossService');
     
     // 生成文件名
@@ -417,14 +472,8 @@ async function uploadWatermarkedVideo(filePath) {
     const random = Math.random().toString(36).substring(7);
     const fileName = `caishen-videos/watermarked_${timestamp}_${random}.mp4`;
     
-    // 上传视频
-    let ossUrl;
-    if (typeof ossService.uploadVideoToOSS === 'function') {
-      ossUrl = await ossService.uploadVideoToOSS(fileBuffer, fileName);
-    } else {
-      // 如果没有专门的视频上传方法，使用通用上传
-      ossUrl = await ossService.uploadFileToOSS(fileBuffer, fileName, 'video/mp4');
-    }
+    // 使用通用上传方法（uploadFileToOSS 接受 Buffer）
+    const ossUrl = await ossService.uploadFileToOSS(fileBuffer, fileName, 'video/mp4');
     
     // 添加水印标识参数
     const urlWithFlag = `${ossUrl}${ossUrl.includes('?') ? '&' : '?'}watermark=true&t=${Date.now()}`;

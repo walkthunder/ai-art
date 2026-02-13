@@ -1,166 +1,290 @@
-.launch-container {
-  min-height: 100vh;
-  background-size: cover;
-  background-position: center;
-  background-color: #FFF8F0;
-}
+/**
+ * 财神变身启动页样式 - 复用 puzzle 模式设计
+ */
 
-.custom-navbar {
+@import "../../../styles/common-navigation.wxss";
+
+/* 页面容器 - 固定一屏高度，禁止滚动 */
+.caishen-launch-page {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
-  background: linear-gradient(180deg, rgba(139, 0, 0, 0.95) 0%, rgba(139, 0, 0, 0.8) 100%);
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
 }
 
-.navbar-content {
+/* 背景图片层 - 去掉导航栏和安全区域 */
+.launch-bg-image {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 主内容区 - 使用 flex 布局自适应一屏 */
+.launch-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+  padding: 24rpx 40rpx;
+  padding-top: calc(env(safe-area-inset-top) + 144rpx);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
-  padding: 0 16rpx;
+  box-sizing: border-box;
 }
 
-.back-button {
-  width: 80rpx;
-  height: 60rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* 功能说明 */
+.description-section {
+  width: 100%;
 }
 
-.back-icon {
-  font-size: 48rpx;
-  color: #FFD700;
-  font-weight: bold;
-}
-
-.navbar-title {
-  flex: 1;
+.description-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 12rpx;
+  padding: 16rpx 24rpx;
   text-align: center;
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #FFD700;
+  margin-bottom: 12rpx;
 }
 
-.navbar-right {
-  width: 80rpx;
-}
-
-.content-wrapper {
-  padding: 200rpx 40rpx 40rpx;
-}
-
-.mode-header {
-  text-align: center;
-  margin-bottom: 60rpx;
-}
-
-.mode-icon {
-  font-size: 120rpx;
-  margin-bottom: 20rpx;
-}
-
-.mode-name {
-  font-size: 48rpx;
-  font-weight: bold;
-  color: #8B0000;
-  margin-bottom: 16rpx;
-}
-
-.mode-slogan {
-  font-size: 32rpx;
-  color: #D4AF37;
+.description-text {
+  font-size: 28rpx;
+  color: #8B4513;
   font-weight: 500;
 }
 
-.feature-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 24rpx;
-  padding: 40rpx;
-  margin-bottom: 40rpx;
-  box-shadow: 0 8rpx 24rpx rgba(139, 0, 0, 0.1);
-}
-
-.feature-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #8B0000;
-  margin-bottom: 20rpx;
-}
-
-.feature-desc {
-  font-size: 28rpx;
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 16rpx;
-}
-
-.feature-guide {
-  font-size: 24rpx;
-  color: #999;
-  line-height: 1.5;
-  padding: 20rpx;
-  background: #FFF8F0;
+.guide-card {
+  background: rgba(212, 48, 43, 0.08);
   border-radius: 12rpx;
-  border-left: 4rpx solid #D4AF37;
+  padding: 14rpx 24rpx;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.action-buttons {
-  margin-top: 40rpx;
+.guide-text {
+  font-size: 24rpx;
+  color: #9CA3AF;
+  white-space: nowrap;
 }
 
-.primary-button {
+/* 操作按钮区域 */
+.action-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
   width: 100%;
-  height: 96rpx;
-  background: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%);
-  color: #8B0000;
-  font-size: 32rpx;
-  font-weight: bold;
-  border-radius: 48rpx;
-  border: none;
-  box-shadow: 0 8rpx 24rpx rgba(212, 175, 55, 0.4);
-  margin-bottom: 24rpx;
 }
 
-.primary-button.disabled {
-  background: #CCC;
-  color: #999;
-  box-shadow: none;
-}
-
-.secondary-button {
-  width: 100%;
+/* 立即制作按钮 */
+.start-btn {
+  position: relative;
+  width: 420rpx;
   height: 88rpx;
-  background: rgba(255, 255, 255, 0.9);
-  color: #8B0000;
-  font-size: 28rpx;
   border-radius: 44rpx;
-  border: 2rpx solid #D4AF37;
-  margin-bottom: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 6rpx 24rpx rgba(212, 48, 43, 0.4);
 }
 
-.invite-button {
+.start-btn.disabled {
+  opacity: 0.6;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.start-btn.disabled .btn-inner {
+  background: linear-gradient(135deg, #CCCCCC 0%, #999999 100%);
+  border-color: #CCCCCC;
+}
+
+.start-btn.disabled .btn-text {
+  color: #666666;
+}
+
+.start-btn-hover {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(212, 48, 43, 0.3);
+}
+
+.btn-inner {
   width: 100%;
-  height: 88rpx;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  color: #8B0000;
-  font-size: 28rpx;
-  font-weight: bold;
+  height: 100%;
+  background: linear-gradient(135deg, var(--color-festival-red) 0%, #E85A55 100%);
+  border: 3rpx solid var(--color-festival-gold);
   border-radius: 44rpx;
-  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
-  box-shadow: 0 4rpx 16rpx rgba(255, 165, 0, 0.3);
 }
 
-.invite-icon {
+.btn-text {
   font-size: 32rpx;
+  font-weight: bold;
+  color: var(--color-festival-gold);
+  letter-spacing: 4rpx;
 }
 
-.invite-text {
+/* 按钮光效 */
+.btn-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shine 2s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  50%, 100% { left: 200%; }
+}
+
+/* 动画类 */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* AI生成提示（合规要求） */
+.ai-notice {
+  width: 100%;
+  text-align: center;
+  margin-top: 24rpx;
+}
+
+.ai-notice-text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+/* 我的记录按钮 */
+.history-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 32rpx;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.history-btn-hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: scale(0.98);
+}
+
+.history-icon {
   font-size: 28rpx;
+}
+
+.history-text {
+  font-size: 24rpx;
+  color: wheat;
+  font-weight: 500;
+}
+
+/* 获取更多次数按钮 */
+.get-more-btn {
+  display: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 32rpx;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%);
+  backdrop-filter: blur(10px);
+  border: 2rpx solid rgba(212, 175, 55, 0.3);
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(212, 175, 55, 0.2);
+  opacity: 0;
+  transform: translateY(10rpx);
+  transition: all 0.3s ease;
+}
+
+.get-more-btn.show {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.get-more-btn-hover {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(255, 215, 0, 0.25) 100%);
+  transform: scale(0.98);
+  box-shadow: 0 6rpx 16rpx rgba(212, 175, 55, 0.3);
+}
+
+.get-more-icon {
+  font-size: 28rpx;
+}
+
+.get-more-text {
+  font-size: 24rpx;
+  color: wheat;
+  font-weight: 600;
+}
+
+/* 老年模式适配 */
+.elder-mode .description-text {
+  font-size: 34rpx;
+}
+
+.elder-mode .guide-text {
+  font-size: 30rpx;
+}
+
+.elder-mode .start-btn {
+  width: 480rpx;
+  height: 100rpx;
+}
+
+.elder-mode .btn-text {
+  font-size: 38rpx;
+}
+
+.elder-mode .ai-notice-text {
+  font-size: 26rpx;
+}
+
+.elder-mode .history-btn {
+  padding: 20rpx 40rpx;
+}
+
+.elder-mode .history-icon {
+  font-size: 34rpx;
+}
+
+.elder-mode .history-text {
+  font-size: 30rpx;
+}
+
+.elder-mode .get-more-btn {
+  padding: 20rpx 40rpx;
+}
+
+.elder-mode .get-more-icon {
+  font-size: 34rpx;
+}
+
+.elder-mode .get-more-text {
+  font-size: 30rpx;
 }

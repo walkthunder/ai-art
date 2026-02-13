@@ -149,57 +149,82 @@ router.get('/task/:taskId', async (req, res) => {
   console.log('[财神API] 查询任务状态:', taskId);
   
   try {
-    // 查询任务状态
+    // 财神模式直接查询火山引擎视频 API，不使用本地任务队列
+    // 因为视频生成是异步的，由火山引擎处理，不需要本地 worker
+    console.log('[财神API] 查询火山引擎视频 API');
     const status = await videoGenerationService.getVideoTaskStatus(taskId);
     
-    // 如果任务成功，更新数据库记录（使用 generationService）
+    console.log('[财神API] 视频任务状态:', status.status);
+    
+    // 如果任务成功，更新数据库记录并添加水印
     if (status.status === 'succeeded' && status.videoUrl) {
+      console.log('[财神API] 视频生成成功，URL:', status.videoUrl);
+      
       // 查找对应的生成记录
       const record = await generationService.getGenerationHistoryByTaskId(taskId);
       
       if (record) {
-        // 获取用户付费状态
-        const user = await userServiceV2.getUserById(record.userId);
-        const paymentStatus = user?.payment_status || 'free';
-        
-        // 为免费用户添加自定义水印
-        let finalVideoUrl = status.videoUrl;
-        if (paymentStatus === 'free') {
-          console.log('[财神API] 免费用户，准备添加自定义水印...');
-          try {
-            finalVideoUrl = await videoGenerationService.applyVideoWatermarkIfNeeded(
-              status.videoUrl, 
-              paymentStatus
-            );
-            status.videoUrl = finalVideoUrl;
-          } catch (watermarkError) {
-            console.error('[财神API] 添加水印失败，使用原视频:', watermarkError);
+        // 检查是否已经处理过（避免重复添加水印）
+        if (record.status === 'completed' && record.generatedImageUrls?.length > 0) {
+          console.log('[财神API] 记录已完成，返回已保存的视频URL');
+          status.videoUrl = record.generatedImageUrls[0];
+        } else {
+          // 获取用户付费状态
+          const user = await userServiceV2.getUserById(record.userId);
+          const paymentStatus = user?.payment_status || 'free';
+          
+          // 为免费用户添加自定义水印
+          let finalVideoUrl = status.videoUrl;
+          if (paymentStatus === 'free') {
+            console.log('[财神API] 免费用户，准备添加自定义水印...');
+            try {
+              finalVideoUrl = await videoGenerationService.applyVideoWatermarkIfNeeded(
+                status.videoUrl, 
+                paymentStatus
+              );
+              status.videoUrl = finalVideoUrl;
+              console.log('[财神API] 水印添加完成:', finalVideoUrl);
+            } catch (watermarkError) {
+              console.error('[财神API] 添加水印失败，使用原视频:', watermarkError);
+            }
           }
+          
+          // 更新数据库记录
+          await generationService.updateGenerationHistory(record.id, {
+            generatedImageUrls: [finalVideoUrl],
+            status: 'completed'
+          });
+          
+          console.log('[财神API] 数据库记录已更新');
         }
-        
-        await generationService.updateGenerationHistory(record.id, {
-          generatedImageUrls: [finalVideoUrl],
-          status: 'completed'
-        });
-        
-        console.log('[财神API] 数据库记录已更新');
+      } else {
+        console.warn('[财神API] 未找到对应的生成记录，taskId:', taskId);
       }
     }
     
     // 如果任务失败，更新数据库记录并恢复余额
     if (status.status === 'failed') {
+      console.log('[财神API] 视频生成失败');
+      
       // 查找对应的生成记录
       const record = await generationService.getGenerationHistoryByTaskId(taskId);
       
       if (record) {
-        // 更新状态为失败
-        await generationService.updateGenerationHistory(record.id, {
-          status: 'failed'
-        });
-        
-        // 恢复用户余额（使用 balanceService 标准API）
-        await balanceService.restoreBalance(record.userId, record.id, 'caishen');
-        console.log('[财神API] 任务失败，已恢复用户余额');
+        // 检查是否已经处理过失败（避免重复恢复余额）
+        if (record.status !== 'failed') {
+          // 更新状态为失败
+          await generationService.updateGenerationHistory(record.id, {
+            status: 'failed'
+          });
+          
+          // 恢复用户余额（使用 balanceService 标准API）
+          await balanceService.restoreBalance(record.userId, record.id, 'caishen');
+          console.log('[财神API] 任务失败，已恢复用户余额');
+        } else {
+          console.log('[财神API] 记录已标记为失败，跳过余额恢复');
+        }
+      } else {
+        console.warn('[财神API] 未找到对应的生成记录，无法恢复余额');
       }
     }
     

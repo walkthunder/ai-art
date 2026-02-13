@@ -25,28 +25,35 @@
     <!-- 视频展示区 -->
     <view class="video-section">
       <view class="video-frame">
-        <!-- 加载状态 -->
-        <view class="loading-state" wx:if="{{!videoLoaded}}">
-          <loading />
-          <text class="loading-text">视频加载中...</text>
+        <!-- 统一的加载状态 - 只在视频未加载完成时显示 -->
+        <view class="loading-overlay" wx:if="{{videoUrl && !videoLoaded}}">
+          <view class="loading-content">
+            <loading />
+            <text class="loading-text">视频加载中...</text>
+          </view>
         </view>
         
-        <!-- 视频播放器 -->
+        <!-- 视频播放器 - 隐藏原生 loading -->
         <video 
           wx:if="{{videoUrl}}"
-          class="caishen-video"
+          class="caishen-video {{videoLoaded ? 'loaded' : 'loading'}}"
           src="{{videoUrl}}"
-          autoplay
+          autoplay="{{false}}"
           loop
-          show-center-play-btn="{{true}}"
-          controls="{{true}}"
+          show-center-play-btn="{{videoLoaded}}"
+          controls="{{videoLoaded}}"
           object-fit="contain"
           bindloadeddata="onVideoLoad"
           binderror="onVideoError"
         />
         
+        <!-- 无视频提示 -->
+        <view class="no-video" wx:if="{{!videoUrl}}">
+          <text class="no-video-text">视频加载失败</text>
+        </view>
+        
         <!-- AI标识 -->
-        <view class="ai-badge">
+        <view class="ai-badge" wx:if="{{videoLoaded}}">
           <text class="badge-icon">✓</text>
           <text class="badge-text">AI财神变身</text>
         </view>

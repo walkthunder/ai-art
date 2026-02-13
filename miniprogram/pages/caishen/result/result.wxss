@@ -110,20 +110,33 @@
   min-height: 600rpx;
 }
 
-/* 加载状态 */
-.loading-state {
+/* 统一的加载遮罩层 */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8B0000, #6B0000);
+  z-index: 100;
+  border-radius: 16rpx;
+}
+
+.loading-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 600rpx;
-  z-index: 10;
+  gap: 16rpx;
 }
 
 .loading-text {
   font-size: 28rpx;
   color: #FFD700;
-  margin-top: 16rpx;
+  font-weight: 500;
 }
 
 /* 视频播放器 */
@@ -132,6 +145,28 @@
   height: 600rpx;
   border-radius: 16rpx;
   background: #000;
+}
+
+.caishen-video.loading {
+  opacity: 0;
+}
+
+.caishen-video.loaded {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* 无视频提示 */
+.no-video {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 600rpx;
+}
+
+.no-video-text {
+  font-size: 28rpx;
+  color: #FFD700;
 }
 
 

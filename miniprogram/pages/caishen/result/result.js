@@ -25,7 +25,8 @@ Page({
     showPaymentModal: false,
     taskId: '',
     recordId: '',
-    commonBgUrl: getAssetUrl('bg/caishen-result-bg.jpg')
+    // 暂时复用 puzzle 的背景
+    commonBgUrl: getAssetUrl('bg/puzzle-bg.jpg')
   },
 
   async onLoad(options) {
@@ -62,16 +63,13 @@ Page({
       wx.showLoading({ title: '加载中...', mask: true });
       
       try {
-        const API_BASE_URL = require('../../../config/api').API_BASE_URL;
-        const response = await wx.request({
-          url: `${API_BASE_URL}/api/caishen/task/${options.taskId}`,
-          method: 'GET'
-        });
+        const cloudbaseRequest = require('../../../utils/cloudbase-request');
+        const response = await cloudbaseRequest.get(`/api/caishen/task/${options.taskId}`);
         
         wx.hideLoading();
         
-        if (response.statusCode === 200 && response.data.success) {
-          videoUrl = response.data.data.videoUrl || '';
+        if (response && response.success && response.data) {
+          videoUrl = response.data.videoUrl || '';
           console.log('[CaishenResult] 从服务器获取视频成功:', videoUrl);
         } else {
           throw new Error('查询失败');
@@ -106,10 +104,22 @@ Page({
 
   onVideoError(e) {
     console.error('[CaishenResult] 视频加载失败:', e.detail);
-    wx.showToast({
-      title: '视频加载失败',
-      icon: 'none'
-    });
+    
+    // 检查是否是 Mock 数据（图片URL）
+    const { videoUrl } = this.data;
+    if (videoUrl && (videoUrl.endsWith('.jpg') || videoUrl.endsWith('.png') || videoUrl.endsWith('.jpeg'))) {
+      wx.showModal({
+        title: '开发模式提示',
+        content: '当前为 Mock 模式，返回的是图片而非视频。生产环境将返回真实视频。\n\n图片URL: ' + videoUrl,
+        showCancel: false,
+        confirmText: '知道了'
+      });
+    } else {
+      wx.showToast({
+        title: '视频加载失败',
+        icon: 'none'
+      });
+    }
   },
 
   async handleSaveVideo() {

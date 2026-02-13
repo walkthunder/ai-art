@@ -234,10 +234,19 @@ const getFileSize = (filePath) => {
     // 微信返回的路径可能是 http://tmp/ 或 http://usr/ 格式
     // getFileInfo 需要去掉 http:// 协议头
     let normalizedPath = filePath;
-    if (filePath.startsWith('http://tmp/')) {
+    
+    // 移除 http:// 或 https:// 前缀
+    if (filePath.startsWith('http://')) {
       normalizedPath = filePath.replace('http://', '');
-    } else if (filePath.startsWith('http://usr/')) {
-      normalizedPath = filePath.replace('http://', '');
+    } else if (filePath.startsWith('https://')) {
+      normalizedPath = filePath.replace('https://', '');
+    }
+    
+    // 如果路径不是以 tmp/ 或 usr/ 开头，可能是网络路径，直接返回 0
+    if (!normalizedPath.startsWith('tmp/') && !normalizedPath.startsWith('usr/') && !normalizedPath.startsWith('wxfile://')) {
+      console.log('[Upload] 跳过网络路径的文件大小获取:', filePath);
+      resolve(0);
+      return;
     }
     
     const fs = wx.getFileSystemManager();
@@ -248,7 +257,7 @@ const getFileSize = (filePath) => {
         resolve(res.size);
       },
       fail: (err) => {
-        console.warn('[Upload] 获取文件大小失败:', err);
+        console.log('[Upload] 获取文件大小失败 (这是正常的):', err.errMsg);
         // 失败时返回 0，让后续逻辑使用云存储
         resolve(0);
       }

@@ -78,24 +78,17 @@ Page({
     
     try {
       // 调用财神视频任务状态查询API
-      const API_BASE_URL = require('../../../config/api').API_BASE_URL;
-      const response = await wx.request({
-        url: `${API_BASE_URL}/api/caishen/task/${taskId}`,
-        method: 'GET',
-        timeout: this.REQUEST_TIMEOUT
-      });
+      const cloudbaseRequest = require('../../../utils/cloudbase-request');
+      const response = await cloudbaseRequest.get(`/api/caishen/task/${taskId}`);
       
-      // 处理 HTTP 错误
-      if (response.statusCode !== 200) {
-        throw new Error(`HTTP ${response.statusCode}: ${response.data?.message || '服务器错误'}`);
-      }
+      console.log('[CaishenGenerating] API响应:', response);
       
-      // 处理业务错误
-      if (!response.data.success) {
-        const errorMsg = response.data.message || '查询失败';
+      // cloudbaseRequest 已经处理了错误，直接使用返回的数据
+      if (!response || !response.success) {
+        const errorMsg = response?.message || '查询失败';
         
         // 业务错误（如任务不存在）不应重试
-        if (response.statusCode === 404 || errorMsg.includes('不存在')) {
+        if (errorMsg.includes('不存在')) {
           this.clearPollingTimer();
           this.setData({
             status: 'failed',
@@ -108,8 +101,15 @@ Page({
         throw new Error(errorMsg);
       }
       
-      const taskStatus = response.data.data;
+      const taskStatus = response.data;
+      
+      if (!taskStatus) {
+        throw new Error('返回数据格式错误');
+      }
+      
       const { status, videoUrl } = taskStatus;
+      
+      console.log('[CaishenGenerating] 任务状态:', status, '视频URL:', videoUrl);
       
       // 请求成功，重置连续错误计数，增加成功轮询计数
       const newSuccessfulPolls = successfulPolls + 1;

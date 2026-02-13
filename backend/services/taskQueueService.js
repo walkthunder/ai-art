@@ -582,6 +582,15 @@ async function recoverPendingTasks(executeTaskFn) {
           createdAt: task.createdAt
         });
         
+        // ⚠️ 跳过财神模式任务 - 财神任务由火山引擎管理，不需要本地恢复
+        // 财神任务应该存储在 generation_history 表中，由 cleanupService 轮询处理
+        if (task.meta?.mode === 'caishen') {
+          logQueue(task.id, '恢复', '⚠️ 财神模式任务由火山引擎管理，跳过本地恢复');
+          logQueue(task.id, '恢复', '💡 提示：财神任务应该在 generation_history 表中查询，不应该在本地任务队列');
+          // 不加载到内存，让它自然过期
+          continue;
+        }
+        
         // 检查任务是否过期（超过1小时的任务标记为超时）
         const taskAge = Date.now() - new Date(task.createdAt).getTime();
         const maxAge = 60 * 60 * 1000; // 1小时

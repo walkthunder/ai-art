@@ -1,186 +1,360 @@
-.upload-container {
+/**
+ * 财神变身上传页样式 - 复用 puzzle 模式设计
+ */
+
+@import "../../../styles/common-navigation.wxss";
+
+.upload-page {
+  position: relative;
+  width: 100%;
   min-height: 100vh;
-  background-size: cover;
-  background-position: center;
-  background-color: #FFF8F0;
+  background: linear-gradient(180deg, #FFF8F0 0%, #FFE4E1 50%, #FFF0F0 100%);
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
-.custom-navbar {
-  position: fixed;
-  top: 0;
+.upload-page.page-with-nav {
+  padding-top: 0;
+}
+
+/* 背景图片层 - 去掉导航栏和安全区域 */
+.upload-bg-image {
+  position: absolute;
   left: 0;
   right: 0;
-  z-index: 1000;
-  background: linear-gradient(180deg, rgba(139, 0, 0, 0.95) 0%, rgba(139, 0, 0, 0.8) 100%);
-}
-
-.navbar-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 100%;
-  padding: 0 16rpx;
-}
-
-.back-button {
-  width: 80rpx;
-  height: 60rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.back-icon {
-  font-size: 48rpx;
-  color: #FFD700;
-  font-weight: bold;
-}
-
-.navbar-title {
-  flex: 1;
-  text-align: center;
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #FFD700;
-}
-
-.navbar-right {
-  width: 80rpx;
-}
-
-.content-wrapper {
-  padding: 180rpx 40rpx 40rpx;
-}
-
-.upload-tip {
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 40rpx;
-  display: flex;
-  align-items: center;
-  border: 2rpx solid #FFD700;
-}
-
-.tip-icon {
-  font-size: 40rpx;
-  margin-right: 16rpx;
-}
-
-.tip-text {
-  flex: 1;
-  font-size: 26rpx;
-  color: #8B0000;
-  line-height: 1.5;
-}
-
-.upload-area {
-  margin-bottom: 40rpx;
-}
-
-.image-box {
+  bottom: 0;
   width: 100%;
-  height: 600rpx;
-  border-radius: 24rpx;
-  overflow: hidden;
-  position: relative;
-  background: rgba(255, 255, 255, 0.9);
-  border: 4rpx dashed #D4AF37;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
 }
 
-.uploaded-image {
+/* 主内容区 */
+.upload-content {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
   width: 100%;
-  height: 100%;
-}
-
-.upload-placeholder {
-  width: 100%;
-  height: 100%;
+  padding: 32rpx 48rpx;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* 单个图片框布局 */
+.upload-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.upload-row {
+  display: flex;
+  flex-direction: row;
   justify-content: center;
+  gap: 20rpx;
 }
 
-.camera-icon {
-  width: 120rpx;
-  height: 120rpx;
-  margin-bottom: 20rpx;
+.upload-box {
+  position: relative;
+  width: 480rpx;
+  height: 480rpx;
+  border: 4rpx dashed var(--color-chinese-red);
+  border-radius: 24rpx;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-.upload-text {
-  font-size: 28rpx;
-  color: #999;
+/* 占位图片 */
+.placeholder-image {
+  width: 100%;
+  height: 100%;
 }
 
-.remove-button {
+/* 已上传的图片 */
+.uploaded-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 删除按钮 */
+.delete-btn {
   position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-  width: 60rpx;
-  height: 60rpx;
+  top: 8rpx;
+  right: 8rpx;
+  width: 48rpx;
+  height: 48rpx;
   background: rgba(0, 0, 0, 0.6);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10;
 }
 
-.remove-icon {
-  font-size: 48rpx;
-  color: #FFF;
-  line-height: 1;
+.delete-icon {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: bold;
 }
 
-.error-message {
-  background: #FFE4E1;
-  color: #D32F2F;
-  padding: 24rpx;
-  border-radius: 12rpx;
+/* 提示文字 */
+.upload-tips {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
   margin-bottom: 24rpx;
+}
+
+.tips-hint {
+  font-size: 24rpx;
+  color: #FFD700;
+}
+
+/* 示例提示 */
+.example-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding: 20rpx 28rpx;
+  border-radius: 16rpx;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 24rpx;
+}
+
+.tip-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.tip-icon {
+  font-size: 22rpx;
+  color: #10B981;
+  font-weight: bold;
+}
+
+.tip-text {
+  font-size: 24rpx;
+  color: #fff2b3;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24rpx;
+}
+
+/* 立即制作按钮 */
+.start-btn {
+  position: relative;
+  width: 420rpx;
+  height: 88rpx;
+  border-radius: 44rpx;
+  overflow: hidden;
+  box-shadow: 0 6rpx 24rpx rgba(212, 48, 43, 0.4);
+}
+
+.start-btn.disabled {
+  opacity: 0.6;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.start-btn.disabled .btn-inner {
+  background: linear-gradient(135deg, #CCCCCC 0%, #999999 100%);
+  border-color: #CCCCCC;
+}
+
+.start-btn.disabled .btn-text {
+  color: #666666;
+}
+
+.start-btn-hover {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(212, 48, 43, 0.3);
+}
+
+.btn-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--color-festival-red) 0%, #E85A55 100%);
+  border: 3rpx solid var(--color-festival-gold);
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: var(--color-festival-gold);
+  letter-spacing: 2rpx;
+}
+
+/* 按钮光效 */
+.btn-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shine 2s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  50%, 100% { left: 200%; }
+}
+
+/* 错误提示 */
+.error-toast {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  background: #FEF2F2;
+  border: 2rpx solid #FECACA;
+  border-radius: 16rpx;
+  margin-bottom: 24rpx;
+  box-sizing: border-box;
+}
+
+.error-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.error-text {
+  flex: 1;
   font-size: 26rpx;
-  text-align: center;
+  color: #DC2626;
 }
 
-.processing-status {
-  margin-bottom: 24rpx;
+.error-close {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.close-icon {
+  font-size: 32rpx;
+  color: #9CA3AF;
+}
+
+/* 处理中遮罩 */
+.processing-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.processing-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20rpx;
+  background: #FFD700;
+  width: 400rpx;
+  height: 400rpx;
+  border-radius: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+}
+
+.loading-spinner {
+  width: 120rpx;
+  height: 120rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .status-text {
-  font-size: 28rpx;
-  color: #8B0000;
+  font-size: 32rpx;
+  color: #8B4513;
+  font-weight: bold;
   text-align: center;
-  margin-bottom: 16rpx;
+  white-space: nowrap;
 }
 
 .progress-bar {
-  width: 100%;
+  width: 320rpx;
   height: 8rpx;
-  background: rgba(212, 175, 55, 0.2);
+  background: rgba(139, 69, 19, 0.2);
   border-radius: 4rpx;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #D4AF37 0%, #FFD700 100%);
+  background: #8B4513;
+  border-radius: 4rpx;
   transition: width 0.3s ease;
 }
 
-.generate-button {
+/* AI生成提示（合规要求） */
+.ai-notice {
   width: 100%;
-  height: 96rpx;
-  background: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%);
-  color: #8B0000;
-  font-size: 32rpx;
-  font-weight: bold;
-  border-radius: 48rpx;
-  border: none;
-  box-shadow: 0 8rpx 24rpx rgba(212, 175, 55, 0.4);
+  text-align: center;
+  margin-top: 24rpx;
+  padding-bottom: 32rpx;
 }
 
-.generate-button.disabled {
-  background: #CCC;
-  color: #999;
-  box-shadow: none;
+.ai-notice-text {
+  font-size: 22rpx;
+  color: #fff2b3;
+  line-height: 1.5;
+}
+
+/* 老年模式适配 */
+.elder-mode .upload-box {
+  width: 500rpx;
+  height: 500rpx;
+}
+
+.elder-mode .tips-hint {
+  font-size: 30rpx;
+}
+
+.elder-mode .tip-text {
+  font-size: 30rpx;
+}
+
+.elder-mode .status-text {
+  font-size: 38rpx;
+}
+
+.elder-mode .error-text {
+  font-size: 32rpx;
+}
+
+.elder-mode .ai-notice-text {
+  font-size: 26rpx;
 }

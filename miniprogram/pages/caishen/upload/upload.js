@@ -24,9 +24,9 @@ Page({
     statusText: '',
     errorMessage: '',
     uploadProgress: 0,
-    // OSS 资源
-    commonBgUrl: getAssetUrl('bg/caishen-upload-bg.jpg'),
-    cameraUploadUrl: getAssetUrl('caishen-upload.png'),
+    // OSS 资源 - 暂时复用 puzzle 的背景和上传图标
+    commonBgUrl: getAssetUrl('bg/puzzle-upload-bg.jpg'),
+    cameraUploadUrl: getAssetUrl('puzzle-upload.png'),
     // 支付弹窗
     showPaymentModal: false,
     currentPaymentStatus: 'free'

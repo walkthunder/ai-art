@@ -2,6 +2,9 @@
   "navigationBarTitleText": "上传照片",
   "navigationStyle": "custom",
   "usingComponents": {
+    "corner-background": "/components/corner-background/corner-background",
+    "elder-mode-toggle": "/components/elder-mode-toggle/elder-mode-toggle",
+    "loading": "/components/loading/loading",
     "payment-modal": "/components/payment-modal/payment-modal"
   }
 }

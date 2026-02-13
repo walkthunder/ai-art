@@ -26,8 +26,8 @@ Page({
       uploadGuide: '上传您的照片，AI将您变身为财神爷，生成喜庆发钱视频',
       buttonText: '立即变身财神'
     },
-    // OSS 资源
-    commonBgUrl: getAssetUrl('bg/caishen-bg.jpg'),
+    // OSS 资源 - 暂时复用 puzzle 的背景
+    commonBgUrl: getAssetUrl('bg/puzzle-bg.jpg'),
     // 使用次数相关
     usageCount: 0,
     userType: 'free',

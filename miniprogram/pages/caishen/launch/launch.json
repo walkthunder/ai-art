@@ -2,6 +2,9 @@
   "navigationBarTitleText": "财神变身",
   "navigationStyle": "custom",
   "usingComponents": {
+    "corner-background": "/components/corner-background/corner-background",
+    "elder-mode-toggle": "/components/elder-mode-toggle/elder-mode-toggle",
+    "usage-display": "/components/usage-display/usage-display",
     "usage-modal": "/components/usage-modal/usage-modal",
     "payment-modal": "/components/payment-modal/payment-modal",
     "dev-mode-panel": "/components/dev-mode-panel/dev-mode-panel"
