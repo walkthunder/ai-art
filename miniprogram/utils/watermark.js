@@ -9,10 +9,10 @@
 /**
  * 为图片添加水印
  * @param {string} imagePath - 图片路径（本地临时路径）
- * @param {string} watermarkText - 水印文字，默认"团圆照相馆"
+ * @param {string} watermarkText - 水印文字，默认"WhisperAI"
  * @returns {Promise<string>} 添加水印后的图片临时路径
  */
-function addWatermark(imagePath, watermarkText = '团圆照相馆') {
+function addWatermark(imagePath, watermarkText = 'WhisperAI') {
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
     
@@ -115,7 +115,7 @@ function addWatermark(imagePath, watermarkText = '团圆照相馆') {
  * @param {string} watermarkText - 水印文字
  * @returns {Promise<string>} 添加水印后的图片临时路径
  */
-function addWatermarkWithCanvas(imagePath, canvasId, component, watermarkText = '团圆照相馆') {
+function addWatermarkWithCanvas(imagePath, canvasId, component, watermarkText = 'WhisperAI') {
   return new Promise((resolve, reject) => {
     wx.getImageInfo({
       src: imagePath,

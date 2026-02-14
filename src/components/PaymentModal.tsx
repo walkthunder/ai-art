@@ -44,13 +44,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     },
     {
       type: 'basic',
-      name: '0.01元尝鲜包',
+      name: '尝鲜包',
       price: prices.packages.basic,
       features: ['高清无水印', '3-5人合成', '热门模板'],
     },
     {
       type: 'premium',
-      name: '29.9元尊享包',
+      name: '尊享包',
       price: prices.packages.premium,
       features: ['4K原图', '微动态', '贺卡', '全模板', '优先队列'],
     }

@@ -90,8 +90,8 @@ function initWechatPaymentSDK() {
 
 // 降级方案 - 本地默认价格
 const FALLBACK_PACKAGES = {
-  basic: { name: '0.01元尝鲜包', amount: 1, description: 'AI全家福-尝鲜包' },
-  premium: { name: '29.9元尊享包', amount: 2990, description: 'AI全家福-尊享包' }
+  basic: { name: '尝鲜包', amount: 1, description: 'AI全家福-尝鲜包' },
+  premium: { name: '尊享包', amount: 2990, description: 'AI全家福-尊享包' }
 };
 
 // 价格缓存

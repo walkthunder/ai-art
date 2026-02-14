@@ -604,23 +604,17 @@ Page({
       });
       
       console.log('[PuzzleResult] 下载结果:', downloadRes);
+      console.log('[PuzzleResult] 临时文件路径:', downloadRes.tempFilePath);
       
       if (downloadRes.statusCode !== 200) throw new Error('下载图片失败');
       
-      // 处理临时文件路径
-      let tempFilePath = downloadRes.tempFilePath;
-      if (tempFilePath.startsWith('http://tmp/')) {
-        tempFilePath = tempFilePath.replace('http://', '');
-      } else if (tempFilePath.startsWith('http://usr/')) {
-        tempFilePath = tempFilePath.replace('http://', '');
-      }
-      
-      let finalImagePath = tempFilePath;
+      // 直接使用微信返回的临时文件路径，不做额外处理
+      let finalImagePath = downloadRes.tempFilePath;
       
       // 前端降级方案：免费用户且服务端水印失败时，前端静默添加水印
       if (!hasEverPaid) {
         try {
-          // 检测图片是否已有水印
+          // 检测图片是否已有水印（通过URL参数或其他标识）
           const hasWatermarkFlag = selectedImage.includes('watermark=true') || 
                                    selectedImage.includes('_wm.') ||
                                    this.data.serverWatermarkApplied;
@@ -628,16 +622,19 @@ Page({
           if (!hasWatermarkFlag) {
             console.log('[PuzzleResult] 检测到服务端水印可能失败，启用前端降级方案');
             const { addWatermark } = require('../../../utils/watermark');
-            finalImagePath = await addWatermark(tempFilePath, '团圆照相馆');
-            console.log('[PuzzleResult] 前端水印添加成功（降级方案）');
+            const watermarkedPath = await addWatermark(downloadRes.tempFilePath, 'WhisperAI');
+            finalImagePath = watermarkedPath;
+            console.log('[PuzzleResult] 前端水印添加成功（降级方案）, 新路径:', watermarkedPath);
           } else {
             console.log('[PuzzleResult] 服务端水印已应用，跳过前端处理');
           }
         } catch (watermarkErr) {
           console.error('[PuzzleResult] 前端水印添加失败，使用原图:', watermarkErr);
-          // 降级方案失败也不影响保存
+          // 降级方案失败也不影响保存，继续使用原始下载的文件
         }
       }
+      
+      console.log('[PuzzleResult] 最终保存路径:', finalImagePath);
       
       wx.hideLoading();
       
@@ -705,6 +702,11 @@ Page({
       
     } catch (err) {
       console.error('[PuzzleResult] 保存失败:', err);
+      console.error('[PuzzleResult] 错误详情:', {
+        errMsg: err.errMsg,
+        errCode: err.errCode,
+        message: err.message
+      });
       wx.hideLoading();
       
       if (err.errMsg && err.errMsg.includes('auth deny')) {
@@ -722,8 +724,21 @@ Page({
           showCancel: false,
           confirmText: '我知道了'
         });
+      } else if (err.errMsg && err.errMsg.includes('file not exist')) {
+        // 文件不存在错误
+        wx.showModal({
+          title: '保存失败',
+          content: '临时文件不存在，请重新生成图片后再试',
+          showCancel: false
+        });
       } else {
-        wx.showToast({ title: '保存失败，请重试', icon: 'none', duration: 2000 });
+        // 显示详细错误信息，方便调试
+        const errorMsg = err.errMsg || err.message || '未知错误';
+        wx.showModal({
+          title: '保存失败',
+          content: `错误：${errorMsg}\n\n如持续失败，请联系客服`,
+          showCancel: false
+        });
       }
     } finally {
       this.setData({ isSaving: false });

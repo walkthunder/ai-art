@@ -24,7 +24,7 @@ const FALLBACK_PACKAGES = {
   },
   basic: {
     id: 'basic',
-    name: '0.01元尝鲜包',
+    name: '尝鲜包',
     price: 0.01,
     amount: 1,  // 分
     description: 'AI全家福-尝鲜包',
@@ -32,7 +32,7 @@ const FALLBACK_PACKAGES = {
   },
   premium: {
     id: 'premium',
-    name: '29.9元尊享包',
+    name: '尊享包',
     price: 29.9,
     amount: 2990,  // 分
     description: 'AI全家福-尊享包',

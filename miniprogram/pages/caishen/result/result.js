@@ -275,6 +275,7 @@ Page({
       });
       
       console.log('[CaishenResult] 下载结果:', downloadRes);
+      console.log('[CaishenResult] 临时文件路径:', downloadRes.tempFilePath);
       
       if (downloadRes.statusCode !== 200) {
         throw new Error('下载视频失败');
@@ -334,6 +335,11 @@ Page({
       
     } catch (err) {
       console.error('[CaishenResult] 保存失败:', err);
+      console.error('[CaishenResult] 错误详情:', {
+        errMsg: err.errMsg,
+        errCode: err.errCode,
+        message: err.message
+      });
       wx.hideLoading();
       
       if (err.errMsg && err.errMsg.includes('auth deny')) {
@@ -345,11 +351,18 @@ Page({
             if (res.confirm) wx.openSetting();
           }
         });
+      } else if (err.errMsg && err.errMsg.includes('file not exist')) {
+        wx.showModal({
+          title: '保存失败',
+          content: '临时文件不存在，请重新生成视频后再试',
+          showCancel: false
+        });
       } else {
-        wx.showToast({
-          title: '保存失败，请重试',
-          icon: 'none',
-          duration: 2000
+        const errorMsg = err.errMsg || err.message || '未知错误';
+        wx.showModal({
+          title: '保存失败',
+          content: `错误：${errorMsg}\n\n如持续失败，请联系客服`,
+          showCancel: false
         });
       }
     } finally {
