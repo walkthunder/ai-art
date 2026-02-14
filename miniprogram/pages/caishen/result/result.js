@@ -261,46 +261,11 @@ Page({
     this.setData({ isSaving: true });
     
     try {
-      // 1. 先检查授权状态
-      const settingRes = await new Promise((resolve) => {
-        wx.getSetting({
-          success: resolve,
-          fail: () => resolve({ authSetting: {} })
-        });
-      });
-      
-      // 2. 如果未授权，先请求授权
-      if (!settingRes.authSetting['scope.writePhotosAlbum']) {
-        try {
-          await new Promise((resolve, reject) => {
-            wx.authorize({
-              scope: 'scope.writePhotosAlbum',
-              success: resolve,
-              fail: reject
-            });
-          });
-        } catch (authErr) {
-          // 用户拒绝授权，引导去设置
-          wx.showModal({
-            title: '需要相册权限',
-            content: '保存视频需要您授权访问相册',
-            confirmText: '去设置',
-            success: (res) => {
-              if (res.confirm) {
-                wx.openSetting();
-              }
-            }
-          });
-          this.setData({ isSaving: false });
-          return;
-        }
-      }
-      
-      wx.showLoading({ title: '保存中...', mask: true });
+      wx.showLoading({ title: '下载中...', mask: true });
       
       console.log('[CaishenResult] 开始下载视频:', videoUrl);
       
-      // 3. 下载视频到本地
+      // 1. 先下载视频到本地（不需要权限）
       const downloadRes = await new Promise((resolve, reject) => {
         wx.downloadFile({
           url: videoUrl,
@@ -314,6 +279,45 @@ Page({
       if (downloadRes.statusCode !== 200) {
         throw new Error('下载视频失败');
       }
+      
+      wx.hideLoading();
+      
+      // 2. 下载成功后，检查相册权限
+      const settingRes = await new Promise((resolve) => {
+        wx.getSetting({
+          success: resolve,
+          fail: () => resolve({ authSetting: {} })
+        });
+      });
+      
+      // 3. 如果未授权，请求授权
+      if (!settingRes.authSetting['scope.writePhotosAlbum']) {
+        try {
+          await new Promise((resolve, reject) => {
+            wx.authorize({
+              scope: 'scope.writePhotosAlbum',
+              success: resolve,
+              fail: reject
+            });
+          });
+        } catch (authErr) {
+          // 用户拒绝授权，引导去设置
+          wx.showModal({
+            title: '需要相册权限',
+            content: '保存视频到相册需要您的授权',
+            confirmText: '去设置',
+            success: (res) => {
+              if (res.confirm) {
+                wx.openSetting();
+              }
+            }
+          });
+          this.setData({ isSaving: false });
+          return;
+        }
+      }
+      
+      wx.showLoading({ title: '保存中...', mask: true });
       
       // 4. 保存到相册
       await new Promise((resolve, reject) => {
