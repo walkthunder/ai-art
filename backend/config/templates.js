@@ -152,32 +152,21 @@ const CAISHEN_TEMPLATES = {
     id: 'caishen-default',
     name: '财神发钱',
     imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/caishen/caishen-default.jpg`,
-    prompt: `生成一段完整连贯的财神爷发钱视频，从头到尾只有一个人物，要求如下：
+    prompt: `将用户上传的人物照片转换为财神爷发钱的喜庆视频，生成一个连贯流畅的单镜头场景。
 
-【最高优先级要求 - 必须严格遵守】
-1. 整个视频从头到尾只有一个财神爷人物，这个财神爷的脸必须完全使用用户上传照片中的人脸
-2. 用户的面部特征必须100%保留并贯穿整个视频，包括五官、脸型、肤色、表情等所有细节
-3. 绝对禁止出现第二个人物或者财神爷脸部变化的情况
-4. 整个视频必须是一个连贯的动作场景，不能分段，不能切换人物
+【人物要求】
+1. 将用户照片中的人脸特征完整应用到财神爷身上，保持用户的五官、脸型、肤色等面部特征
+2. 用户代表的财神爷穿着传统红色官袍、金色装饰、头戴财神帽
+3. 面部不添加胡须等额外装饰，保持用户原本的面容
 
-【人物形象】
-- 财神爷穿着传统红色官袍，金色装饰，头戴财神帽
-- 脸部完全使用用户上传的照片，保持用户的真实面容，不添加胡须或其他面部装饰
-- 面带喜庆笑容，神态慈祥亲切
-
-【动作场景】
-- 财神爷站在画面中央，双手捧着金元宝
-- 向四周撒金币，金币从手中飞出，在空中闪闪发光
-- 整个过程流畅连贯，是一个完整的发钱动作
+【动作内容】
+用户代表的财神爷手持金元宝向四周撒金币，金币飞舞闪光，动作连贯自然。整个视频是一个完整的连续镜头，不切换场景。
 
 【背景环境】
-- 中国传统喜庆场景：红色背景、金色祥云、福字装饰
-- 金币飞舞，财源滚滚的喜庆氛围
+中国传统喜庆场景：红色背景、金色祥云、福字装饰，营造财源滚滚的喜庆氛围。
 
-【视频要求】
-- 高清画质，动作流畅自然
-- 从头到尾只有一个财神爷人物，脸部始终是用户的面容
-- 整个视频是一个连贯的场景，不分段，不切换`,
+【视频效果】
+高清画质，单镜头连贯呈现，动作流畅自然，喜庆热闹，寓意吉祥如意、财运亨通。`,
     category: 'default',
     duration: 5 // 视频时长（秒）
   },
@@ -185,33 +174,21 @@ const CAISHEN_TEMPLATES = {
     id: 'caishen-luxury',
     name: '豪华财神',
     imageUrl: `https://${OSS_DOMAIN}/miniprogram-assets/templates/caishen/caishen-luxury.jpg`,
-    prompt: `生成一段完整连贯的豪华版财神爷发钱视频，从头到尾只有一个人物，要求如下：
+    prompt: `将用户上传的人物照片转换为豪华版财神爷发钱的视频，生成一个连贯流畅的单镜头场景。
 
-【最高优先级要求 - 必须严格遵守】
-1. 整个视频从头到尾只有一个财神爷人物，这个财神爷的脸必须完全使用用户上传照片中的人脸
-2. 用户的面部特征必须100%保留并贯穿整个视频，包括五官、脸型、肤色、表情等所有细节
-3. 绝对禁止出现第二个人物或者财神爷脸部变化的情况
-4. 整个视频必须是一个连贯的动作场景，不能分段，不能切换人物
+【人物要求】
+1. 将用户照片中的人脸特征完整应用到财神爷身上，保持用户的五官、脸型、肤色等面部特征
+2. 豪华财神形象：金色龙袍、珠宝装饰、头戴金冠
+3. 神态威严慈祥，面带喜庆笑容
 
-【人物形象】
-- 豪华财神形象：金色龙袍、珠宝装饰、头戴金冠
-- 脸部完全使用用户上传的照片，保持用户的真实面容
-- 神态威严慈祥，面带喜庆笑容
-
-【动作场景】
-- 财神爷坐在金色宝座上，手持如意
-- 挥动如意，金币、钻石、珠宝从天而降
-- 整个过程流畅连贯，是一个完整的发财动作
+【动作内容】
+用户代表的财神爷坐在金色宝座上，手持如意挥动，金币、钻石、珠宝从天而降。整个视频是一个完整的连续镜头，不切换场景。
 
 【背景环境】
-- 金碧辉煌的宫殿场景
-- 金龙、凤凰等祥瑞元素环绕
-- 金光闪闪，珠光宝气的豪华氛围
+金碧辉煌的宫殿场景，金龙、凤凰等祥瑞元素环绕，金光闪闪，珠光宝气。
 
-【视频要求】
-- 超高清画质，动作流畅自然
-- 从头到尾只有一个财神爷人物，脸部始终是用户的面容
-- 整个视频是一个连贯的场景，不分段，不切换`,
+【视频效果】
+超高清画质，单镜头连贯呈现，动作流畅自然，豪华大气，寓意财运亨通、富贵吉祥。`,
     category: 'luxury',
     duration: 5
   }
@@ -221,9 +198,21 @@ const CAISHEN_TEMPLATES = {
  * 根据模式和模板ID获取模板配置
  * @param {string} mode 模式ID (transform/puzzle/caishen)
  * @param {string} templateId 模板ID
- * @returns {Object|null} 模板配置
+ * @returns {Promise<Object|null>} 模板配置
  */
-function getTemplateConfig(mode, templateId) {
+async function getTemplateConfig(mode, templateId) {
+  // 优先从数据库读取
+  try {
+    const templateDbService = require('../services/templateDbService');
+    const template = await templateDbService.getTemplateByCode(mode, templateId);
+    if (template) {
+      return template;
+    }
+  } catch (error) {
+    console.warn('[模板配置] 从数据库读取失败，使用代码配置:', error.message);
+  }
+  
+  // 降级到代码配置（向后兼容）
   if (mode === 'transform') {
     return TRANSFORM_TEMPLATES[templateId] || null;
   } else if (mode === 'puzzle') {
@@ -237,9 +226,21 @@ function getTemplateConfig(mode, templateId) {
 /**
  * 获取模式的所有模板列表
  * @param {string} mode 模式ID
- * @returns {Array} 模板列表
+ * @returns {Promise<Array>} 模板列表
  */
-function getTemplateList(mode) {
+async function getTemplateList(mode) {
+  // 优先从数据库读取
+  try {
+    const templateDbService = require('../services/templateDbService');
+    const templates = await templateDbService.getTemplatesByMode(mode);
+    if (templates && templates.length > 0) {
+      return templates;
+    }
+  } catch (error) {
+    console.warn('[模板列表] 从数据库读取失败，使用代码配置:', error.message);
+  }
+  
+  // 降级到代码配置（向后兼容）
   if (mode === 'transform') {
     return Object.values(TRANSFORM_TEMPLATES);
   } else if (mode === 'puzzle') {
@@ -253,9 +254,9 @@ function getTemplateList(mode) {
 /**
  * 根据模式获取模板列表（别名方法）
  * @param {string} mode 模式ID
- * @returns {Array} 模板列表
+ * @returns {Promise<Array>} 模板列表
  */
-function getTemplatesByMode(mode) {
+async function getTemplatesByMode(mode) {
   return getTemplateList(mode);
 }
 

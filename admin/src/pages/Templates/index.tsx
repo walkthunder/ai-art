@@ -19,7 +19,8 @@ const { TextArea } = Input;
 
 const MODE_MAP: Record<string, string> = {
   puzzle: '时空拼图',
-  transform: '富贵变身'
+  transform: '富贵变身',
+  caishen: '财神变身'
 };
 
 const STATUS_MAP: Record<string, { text: string; color: string }> = {
@@ -67,6 +68,7 @@ const TemplatesPage: React.FC = () => {
       imageUrl: record.image_url,
       prompt: record.prompt,
       category: record.category,
+      duration: record.duration,
       sortOrder: record.sort_order,
       status: record.status
     });
@@ -104,6 +106,7 @@ const TemplatesPage: React.FC = () => {
           imageUrl: values.imageUrl,
           prompt: values.prompt,
           category: values.category,
+          duration: values.duration,
           sortOrder: values.sortOrder,
           status: values.status
         });
@@ -116,6 +119,7 @@ const TemplatesPage: React.FC = () => {
           imageUrl: values.imageUrl,
           prompt: values.prompt,
           category: values.category,
+          duration: values.duration,
           sortOrder: values.sortOrder,
           status: values.status
         });
@@ -259,6 +263,7 @@ const TemplatesPage: React.FC = () => {
             <Select placeholder="请选择模式" disabled={!!editingTemplate}>
               <Option value="puzzle">时空拼图</Option>
               <Option value="transform">富贵变身</Option>
+              <Option value="caishen">财神变身</Option>
             </Select>
           </Form.Item>
 
@@ -298,6 +303,14 @@ const TemplatesPage: React.FC = () => {
             label="分类"
           >
             <Input placeholder="如: chinese, luxury, modern" />
+          </Form.Item>
+
+          <Form.Item
+            name="duration"
+            label="视频时长（秒）"
+            tooltip="仅用于财神变身模式"
+          >
+            <InputNumber placeholder="默认5秒" min={1} max={30} style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item

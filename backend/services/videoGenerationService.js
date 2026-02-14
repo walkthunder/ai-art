@@ -58,7 +58,7 @@ async function generateCaishenVideoInternal(userImageUrl, templateId, userId, pa
   
   // 获取模板配置
   const templates = require('../config/templates');
-  const template = templates.getTemplateConfig('caishen', templateId);
+  const template = await templates.getTemplateConfig('caishen', templateId);
   
   if (!template) {
     throw new Error(`未找到模板: ${templateId}`);
@@ -133,6 +133,18 @@ async function callArkVideoAPI(params) {
   console.log('[视频API] 提示词:', prompt);
   console.log('[视频API] 时长:', duration, '秒');
   
+  // 下载并处理图片，确保尺寸符合要求（最小宽度300px）
+  let processedImageUrl = userImageUrl;
+  // TODO: 暂时忽略图片尺寸问题
+  // try {
+  //   processedImageUrl = await ensureImageMinSize(userImageUrl, 300);
+  //   console.log('[视频API] 图片尺寸检查完成:', processedImageUrl);
+  // } catch (error) {
+  //   console.error('[视频API] 图片尺寸处理失败:', error);
+  //   // 如果处理失败，仍然使用原图尝试
+  //   console.warn('[视频API] 将使用原图继续尝试...');
+  // }
+  
   // 不使用火山引擎API水印，统一使用后端自定义水印
   // 这样可以保持品牌一致性
   const needWatermark = false; // 关闭API水印
@@ -148,7 +160,7 @@ async function callArkVideoAPI(params) {
       {
         type: "image_url",
         image_url: {
-          url: userImageUrl
+          url: processedImageUrl
         }
       }
     ],
@@ -206,6 +218,92 @@ async function callArkVideoAPI(params) {
     };
   } catch (error) {
     console.error('[视频API] 调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 确保图片满足最小尺寸要求
+ * @param {string} imageUrl - 图片URL
+ * @param {number} minWidth - 最小宽度（像素）
+ * @returns {Promise<string>} 处理后的图片URL
+ */
+async function ensureImageMinSize(imageUrl, minWidth = 300) {
+  const https = require('https');
+  const http = require('http');
+  const fs = require('fs');
+  const path = require('path');
+  const os = require('os');
+  const { compressImage } = require('./pythonBridge');
+  const { uploadImageToOSS } = require('./ossService');
+  
+  console.log(`[图片处理] 检查图片尺寸，最小宽度要求: ${minWidth}px`);
+  
+  // 下载图片到临时文件
+  const tempDir = os.tmpdir();
+  const tempInputPath = path.join(tempDir, `caishen_input_${Date.now()}.jpg`);
+  const tempOutputPath = path.join(tempDir, `caishen_output_${Date.now()}.png`);
+  
+  try {
+    await new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(tempInputPath);
+      const protocol = imageUrl.startsWith('https') ? https : http;
+      
+      protocol.get(imageUrl, (response) => {
+        // 处理重定向
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          const redirectUrl = response.headers.location;
+          const redirectProtocol = redirectUrl.startsWith('https') ? https : http;
+          redirectProtocol.get(redirectUrl, (redirectResponse) => {
+            redirectResponse.pipe(file);
+            file.on('finish', () => { file.close(); resolve(); });
+          }).on('error', reject);
+          return;
+        }
+        
+        if (response.statusCode !== 200) {
+          reject(new Error(`下载失败，状态码: ${response.statusCode}`));
+          return;
+        }
+        
+        response.pipe(file);
+        file.on('finish', () => { file.close(); resolve(); });
+      }).on('error', (err) => {
+        fs.unlink(tempInputPath, () => {});
+        reject(err);
+      });
+    });
+    
+    console.log('[图片处理] 图片下载完成，开始处理...');
+    
+    // 调用 Python 脚本处理图片（压缩并确保最小尺寸）
+    const result = await compressImage(tempInputPath, tempOutputPath, 2, minWidth);
+    
+    if (!result.success) {
+      throw new Error(result.message || '图片处理失败');
+    }
+    
+    console.log('[图片处理] 图片处理完成:', result.message);
+    console.log('[图片处理] 原始尺寸:', result.original_size);
+    console.log('[图片处理] 处理后尺寸:', result.compressed_size);
+    
+    // 读取处理后的图片并上传到 OSS
+    const processedImageBuffer = fs.readFileSync(tempOutputPath);
+    const processedImageBase64 = `data:image/png;base64,${processedImageBuffer.toString('base64')}`;
+    const processedImageUrl = await uploadImageToOSS(processedImageBase64);
+    
+    console.log('[图片处理] 处理后的图片已上传到 OSS:', processedImageUrl);
+    
+    // 清理临时文件
+    fs.unlink(tempInputPath, () => {});
+    fs.unlink(tempOutputPath, () => {});
+    
+    return processedImageUrl;
+    
+  } catch (error) {
+    // 清理临时文件
+    fs.unlink(tempInputPath, () => {});
+    fs.unlink(tempOutputPath, () => {});
     throw error;
   }
 }
@@ -359,8 +457,41 @@ async function applyVideoWatermarkIfNeeded(videoUrl, paymentStatus) {
   return videoUrl;
 }
 
+/**
+ * 为付费用户的视频添加背景音乐
+ * @param {string} videoUrl - 原始视频URL
+ * @param {string} paymentStatus - 付费状态
+ * @returns {Promise<string>} 处理后的视频URL（带音频或原视频）
+ */
+async function addBackgroundMusicIfNeeded(videoUrl, paymentStatus) {
+  const videoAudioMergeService = require('./videoAudioMergeService');
+  
+  // 只为付费用户添加背景音乐
+  if (videoAudioMergeService.shouldMergeAudio(paymentStatus)) {
+    console.log('[视频音频] 开始为付费用户添加背景音乐...');
+    try {
+      const videoWithAudioUrl = await videoAudioMergeService.addBackgroundMusic(videoUrl, {
+        volume: 0.6,
+        fadeIn: 0.5,
+        fadeOut: 0.5,
+        loop: true
+      });
+      console.log('[视频音频] ✅ 背景音乐添加完成');
+      return videoWithAudioUrl;
+    } catch (error) {
+      console.error('[视频音频] ❌ 添加背景音乐失败:', error);
+      // 音频添加失败不影响主流程，返回原视频
+      return videoUrl;
+    }
+  }
+  
+  console.log('[视频音频] 免费用户，跳过音频合成');
+  return videoUrl;
+}
+
 module.exports = {
   generateCaishenVideo,
   getVideoTaskStatus,
-  applyVideoWatermarkIfNeeded
+  applyVideoWatermarkIfNeeded,
+  addBackgroundMusicIfNeeded
 };

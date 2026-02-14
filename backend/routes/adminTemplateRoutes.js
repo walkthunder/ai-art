@@ -50,7 +50,7 @@ router.post('/',
   logOperation,
   async (req, res) => {
     try {
-      const { mode, code, name, imageUrl, prompt, category, sortOrder, status } = req.body;
+      const { mode, code, name, imageUrl, prompt, category, duration, sortOrder, status } = req.body;
       
       if (!mode || !code || !name || !imageUrl) {
         return res.status(400).json({ 
@@ -65,8 +65,8 @@ router.post('/',
         
         await connection.execute(
           `INSERT INTO templates 
-           (id, mode, code, name, image_url, prompt, category, sort_order, status, created_by, created_at, updated_at) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+           (id, mode, code, name, image_url, prompt, category, duration, sort_order, status, created_by, created_at, updated_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
           [
             id, 
             mode, 
@@ -74,7 +74,8 @@ router.post('/',
             name, 
             imageUrl, 
             prompt || '', 
-            category || 'default', 
+            category || 'default',
+            duration || 5,
             sortOrder || 0, 
             status || 'active',
             req.admin.id
@@ -103,7 +104,7 @@ router.put('/:id',
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, imageUrl, prompt, category, sortOrder, status } = req.body;
+      const { name, imageUrl, prompt, category, duration, sortOrder, status } = req.body;
       
       const connection = await db.pool.getConnection();
       try {
@@ -125,6 +126,10 @@ router.put('/:id',
         if (category !== undefined) {
           updates.push('category = ?');
           params.push(category);
+        }
+        if (duration !== undefined) {
+          updates.push('duration = ?');
+          params.push(duration);
         }
         if (sortOrder !== undefined) {
           updates.push('sort_order = ?');

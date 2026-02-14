@@ -97,7 +97,7 @@ router.get('/templates', authenticate, async (req, res) => {
   console.log('[财神管理] 获取模板列表');
   
   try {
-    const caishenTemplates = templates.getTemplatesByMode('caishen');
+    const caishenTemplates = await templates.getTemplatesByMode('caishen');
     
     // 转换为数组格式，包含完整信息
     const templateList = Object.values(caishenTemplates).map(template => ({
@@ -143,7 +143,7 @@ router.post('/templates', authenticate, async (req, res) => {
     }
     
     // 检查模板ID是否已存在
-    const existingTemplate = templates.getTemplateConfig('caishen', id);
+    const existingTemplate = await templates.getTemplateConfig('caishen', id);
     if (existingTemplate) {
       return res.status(400).json({
         success: false,
@@ -190,7 +190,7 @@ router.put('/templates/:id', authenticate, async (req, res) => {
     const { name, prompt, imageUrl, category, duration } = req.body;
     
     // 检查模板是否存在
-    const existingTemplate = templates.getTemplateConfig('caishen', id);
+    const existingTemplate = await templates.getTemplateConfig('caishen', id);
     if (!existingTemplate) {
       return res.status(404).json({
         success: false,
@@ -235,7 +235,7 @@ router.delete('/templates/:id', authenticate, async (req, res) => {
   
   try {
     // 检查模板是否存在
-    const existingTemplate = templates.getTemplateConfig('caishen', id);
+    const existingTemplate = await templates.getTemplateConfig('caishen', id);
     if (!existingTemplate) {
       return res.status(404).json({
         success: false,

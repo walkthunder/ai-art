@@ -90,10 +90,10 @@ router.post('/generate-art-photo', validateRequest(validateGenerateArtPhotoParam
       return res.status(400).json({ error: '无效的模式', message: `模式 ${mode} 不存在` });
     }
     
-    let templateConfig = templateId ? getTemplateConfig(mode, templateId) : getDefaultTemplate(mode);
+    let templateConfig = templateId ? await getTemplateConfig(mode, templateId) : await getDefaultTemplate(mode);
     if (!templateConfig) {
       console.warn(`⚠️ 模板 ${templateId} 不存在，使用默认模板`);
-      templateConfig = getDefaultTemplate(mode);
+      templateConfig = await getDefaultTemplate(mode);
     }
     
     if (!templateConfig) {

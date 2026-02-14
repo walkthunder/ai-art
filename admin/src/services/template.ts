@@ -6,12 +6,13 @@ import api from './api';
 
 export interface Template {
   id: string;
-  mode: 'puzzle' | 'transform';
+  mode: 'puzzle' | 'transform' | 'caishen';
   code: string;
   name: string;
   image_url: string;
   prompt: string;
   category: string;
+  duration?: number;
   sort_order: number;
   status: 'active' | 'inactive';
   created_by?: string;
@@ -20,12 +21,13 @@ export interface Template {
 }
 
 export interface CreateTemplateData {
-  mode: 'puzzle' | 'transform';
+  mode: 'puzzle' | 'transform' | 'caishen';
   code: string;
   name: string;
   imageUrl: string;
   prompt?: string;
   category?: string;
+  duration?: number;
   sortOrder?: number;
   status?: 'active' | 'inactive';
 }
@@ -35,6 +37,7 @@ export interface UpdateTemplateData {
   imageUrl?: string;
   prompt?: string;
   category?: string;
+  duration?: number;
   sortOrder?: number;
   status?: 'active' | 'inactive';
 }
