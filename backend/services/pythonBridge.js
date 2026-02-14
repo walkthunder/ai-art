@@ -211,10 +211,35 @@ async function exportOrdersExcel(orders, outputPath = null) {
   return result;
 }
 
+/**
+ * 压缩图片并确保最小尺寸
+ * @param inputPath 输入图片路径
+ * @param outputPath 输出路径（可选）
+ * @param maxSizeMb 最大文件大小（MB）
+ * @param minWidth 最小宽度（像素），默认300px
+ */
+async function compressImage(inputPath, outputPath = null, maxSizeMb = 2, minWidth = 300) {
+  const params = {
+    input_path: inputPath,
+    output_path: outputPath,
+    max_size_mb: maxSizeMb,
+    min_width: minWidth
+  };
+  
+  const result = await executePythonScript('compress_image.py', params, 30000);
+  
+  if (!result.success) {
+    throw new Error(result.message || '图片压缩失败');
+  }
+  
+  return result;
+}
+
 module.exports = {
   executePythonScript,
   extractFaces,
   addWatermark,
   convertToLivePhoto,
-  exportOrdersExcel
+  exportOrdersExcel,
+  compressImage
 };

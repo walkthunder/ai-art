@@ -12,14 +12,15 @@ from PIL import Image
 import io
 
 
-def compress_image(input_path, output_path=None, max_size_mb=2):
+def compress_image(input_path, output_path=None, max_size_mb=2, min_width=300):
     """
-    压缩图片到指定大小以内
+    压缩图片到指定大小以内，并确保最小宽度
     
     Args:
         input_path: 输入图片路径
         output_path: 输出图片路径（可选，默认覆盖原文件）
         max_size_mb: 最大文件大小（MB）
+        min_width: 最小宽度（像素），默认300px（火山引擎视频API要求）
         
     Returns:
         dict: {success: bool, output_path: str, size_kb: float, message: str}
@@ -46,6 +47,16 @@ def compress_image(input_path, output_path=None, max_size_mb=2):
         
         # 获取原始尺寸
         original_width, original_height = img.size
+        
+        # 检查并调整最小宽度
+        if original_width < min_width:
+            # 按比例放大到最小宽度
+            scale_factor = min_width / original_width
+            new_width = min_width
+            new_height = int(original_height * scale_factor)
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            print(f"图片宽度不足{min_width}px，已放大: {original_width}x{original_height} -> {new_width}x{new_height}", file=sys.stderr)
+            original_width, original_height = new_width, new_height
         
         # 初始质量设置
         quality = 95
@@ -131,6 +142,7 @@ def main():
         input_path = params.get('input_path')
         output_path = params.get('output_path')
         max_size_mb = params.get('max_size_mb', 2)
+        min_width = params.get('min_width', 300)
         
         if not input_path:
             result = {
@@ -138,7 +150,7 @@ def main():
                 'message': '缺少必需参数: input_path'
             }
         else:
-            result = compress_image(input_path, output_path, max_size_mb)
+            result = compress_image(input_path, output_path, max_size_mb, min_width)
         
         # 输出JSON结果
         print(json.dumps(result, ensure_ascii=False))
