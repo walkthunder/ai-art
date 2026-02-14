@@ -25,7 +25,7 @@
   <!-- 主内容区 -->
   <scroll-view class="privacy-content" scroll-y style="padding-top: {{statusBarHeight + navBarHeight}}px;">
     <view class="content-card">
-      <view class="update-time">更新日期：2026年2月5日</view>
+      <view class="update-time">更新日期：2026年2月14日</view>
       
       <view class="section">
         <text class="section-title">引言</text>
@@ -45,6 +45,10 @@
         </view>
         <view class="list-item">
           <text class="bullet">•</text>
+          <text class="list-text">相册权限：用于保存生成的AI照片/视频到您的手机相册</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
           <text class="list-text">使用记录：包括生成记录、模板选择等操作日志</text>
         </view>
         <view class="list-item">
@@ -59,6 +63,10 @@
         <view class="list-item">
           <text class="bullet">•</text>
           <text class="list-text">提供AI照片生成服务</text>
+        </view>
+        <view class="list-item">
+          <text class="bullet">•</text>
+          <text class="list-text">保存生成的照片/视频到您的相册（需要您授权）</text>
         </view>
         <view class="list-item">
           <text class="bullet">•</text>

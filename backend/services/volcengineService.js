@@ -140,7 +140,8 @@ async function generateArtPhotoInternal(prompt, imageUrls, facePositions = null,
       if (await watermarkService.shouldAddWatermark(paymentStatus)) {
         console.log(`🏷️  开始为免费用户添加自定义水印...`);
         try {
-          generatedImages = await watermarkService.addWatermarkToImages(generatedImages);
+          // 传递空对象，让水印服务从数据库配置中读取 qrImageUrl
+          generatedImages = await watermarkService.addWatermarkToImages(generatedImages, {});
           console.log(`✅ 自定义水印添加完成`);
         } catch (watermarkError) {
           console.error('❌ 添加自定义水印失败:', watermarkError);

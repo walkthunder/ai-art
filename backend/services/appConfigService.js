@@ -321,14 +321,19 @@ async function getWatermarkConfig() {
   const appName = await getAppName();
   const textTemplate = await getConfig('watermark.textTemplate', '{appName}\n扫码去水印');
   const qrUrl = await getConfig('watermark.qrUrl', 'https://your-domain.com/pay');
-  const qrImageUrl = await getConfig('watermark.qrImageUrl', ''); // 新增：小程序码图片URL
+  let qrImageUrl = await getConfig('watermark.qrImageUrl', ''); // 小程序码图片URL
   const position = await getConfig('watermark.position', 'center');
   const opacity = await getConfig('watermark.opacity', 180);
+  
+  // 如果 qrImageUrl 是空字符串或只有引号，设置为 null
+  if (!qrImageUrl || qrImageUrl.trim() === '' || qrImageUrl === '""') {
+    qrImageUrl = null;
+  }
   
   return {
     text: textTemplate.replace('{appName}', appName),
     qrUrl,
-    qrImageUrl, // 新增：返回小程序码图片URL
+    qrImageUrl, // 返回 null 或有效的 URL
     position,
     opacity,
   };

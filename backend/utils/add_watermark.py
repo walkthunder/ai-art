@@ -53,17 +53,19 @@ def add_watermark(image_path, output_path=None, watermark_text="AI全家福制�
         watermark_width = max(watermark_width, 300)
         
         # 获取二维码/小程序码图片
-        if qr_image_url:
+        if qr_image_url and qr_image_url.strip():
             # 使用提供的图片URL
             try:
                 response = requests.get(qr_image_url, timeout=10)
+                response.raise_for_status()
                 qr_img = Image.open(BytesIO(response.content))
-                print(f"使用自定义二维码图片: {qr_image_url}")
+                print(f"✅ 使用自定义二维码图片: {qr_image_url}")
             except Exception as e:
-                print(f"下载二维码图片失败，使用生成的二维码: {e}")
+                print(f"⚠️  下载二维码图片失败，使用生成的二维码: {e}")
                 qr_img = generate_qr_code(qr_url)
         else:
             # 生成二维码
+            print(f"ℹ️  qr_image_url 为空，生成二维码: {qr_url}")
             qr_img = generate_qr_code(qr_url)
         
         # 调整二维码大小
