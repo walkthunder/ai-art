@@ -10,7 +10,6 @@ const historyRoutes = require('./historyRoutes');
 const productRoutes = require('./productRoutes');
 const videoRoutes = require('./videoRoutes');
 const greetingCardRoutes = require('./greetingCardRoutes');
-const templateRoutes = require('./templateRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const adminRoutes = require('./adminRoutes');
 const wechatRoutes = require('./wechatRoutes');
@@ -58,9 +57,6 @@ function registerRoutes(app) {
   
   // 贺卡管理
   app.use('/api/greeting-card', greetingCardRoutes);
-  
-  // 模板管理
-  app.use('/api/templates', templateRoutes);
   
   // 上传相关
   app.use('/api', uploadRoutes);
@@ -135,7 +131,6 @@ module.exports = {
   productRoutes,
   videoRoutes,
   greetingCardRoutes,
-  templateRoutes,
   uploadRoutes,
   adminRoutes,
   wechatRoutes,
